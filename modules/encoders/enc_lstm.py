@@ -38,10 +38,34 @@ class LSTMEncoder(nn.Module):
         if self.emb_initializer is not None:
             self.emb_initializer(self.embed.weight.data)
 
+    def reparameterize(self, mu, logvar, nsamples=1):
+        """sample from posterior Gaussian family
+        Args:
+            mu: Tensor
+                Mean of gaussian distribution with shape (batch, nz)
+
+            logvar: Tensor
+                logvar of gaussian distibution with shape (batch, nz)
+
+        Returns: Tensor
+            Sampled z with shape (batch, nsamples, nz)
+        """
+        batch_size, nz = mu.size()
+        std = logvar.mul(0.5).exp()
+
+        mu_expd = mu.unsqueeze(1).expand(batch_size, nsamples, nz)
+        std_expd = std.unsqueeze(1).expand(batch_size, nsamples, nz)
+
+        return torch.normal(mu_expd, std_expd)
+
     def forward(self, input):
         """
         Args:
             x: (batch_size, seq_len)
+
+        Returns: Tensor1, Tensor2
+            Tensor1: the mean tensor, shape (batch, nz)
+            Tensor2: the logvar tensor, shape (batch, nz)
         """
 
         # (batch_size, seq_len-1, args.ni)
@@ -52,4 +76,25 @@ class LSTMEncoder(nn.Module):
         mean, logvar = self.linear(last_state).chunk(2, -1)
 
         return mean.squeeze(0), logvar.squeeze(0)
+
+    def encode(self, input, nsamples):
+        """perform the encoding and compute the KL term
+
+        Returns: Tensor1, Tensor2
+            Tensor1: the tensor latent z with shape [batch, nsamples, nz]
+            Tensor2: the tenor of KL for each x with shape [batch]
+
+        """
+
+        # (batch_size, nz)
+        mu, logvar = self.forward(input)
+
+        # (batch, nsamples, nz)
+        z = self.reparameterize(mu, logvar, nsamples)
+
+        KL = 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
+
+        return z, KL
+
+
 
