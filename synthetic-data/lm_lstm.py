@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 import numpy as np
 
-class LM(nn.modules):
+class LM(nn.Module):
     """docstring for LSTMDecoder"""
     def __init__(self, args, model_init, mlp_init):
         super(LSTMDecoder, self).__init__()
