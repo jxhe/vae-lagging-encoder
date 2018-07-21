@@ -11,7 +11,7 @@ import numpy as np
 
 class LM(nn.modules):
     """docstring for LSTMDecoder"""
-    def __init__(self, args):
+    def __init__(self, args, model_init, mlp_init):
         super(LSTMDecoder, self).__init__()
         self.ni = args.ni
         self.nh = args.nh
@@ -27,7 +27,7 @@ class LM(nn.modules):
 
         self.h_init = torch.zeros()
 
-        self.lstm = nn.LSTM(input_size=args.ni + args.nz,
+        self.lstm = nn.LSTM(input_size=args.ni,
                             hidden_size=args.nh,
                             num_layers=1,
                             batch_first=True)
@@ -36,18 +36,17 @@ class LM(nn.modules):
         self.trans_linear = nn.Linear(args.nz, args.nh, bias=False)
 
         # prediction layer
-        self.pred_linear = nn.Linear(args.nh, self.vocab_size, bias=False)
+        self.out_linear1 = nn.Linear(args.nh, self.vocab_size, bias=False)
+        self.out_linear2 = nn.Linear(args.nz, self.vocab_size, bias=False)
 
-        self.reset_parameters()
+        self.reset_parameters(model_init, mlp_init)
 
-    def reset_parameters(self):
-        if self.rnn_initializer is not None:
-            for param in self.parameters():
-                # self.initializer(param)
-                self.rnn_initializer(param)
+    def reset_parameters(self, model_init, mlp_init):
+        for param in self.parameters():
+            # self.initializer(param)
+            model_init(param)
 
-        if self.emb_initializer is not None:
-            self.emb_initializer(self.embed.weight.data)
+        mlp_init(self.out_linear2.weight)
 
 
     def forward(self, input, z):

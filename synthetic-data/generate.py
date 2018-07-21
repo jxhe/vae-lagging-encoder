@@ -44,9 +44,10 @@ def main(args):
         def forward(tensor):
             nn.init.uniform_(tensor, -stdv, stdv)
 
-
+    model_initializer = uniform_initializer(1.0)
+    mlp_initializer = uniform_initializer(5.0)
     fout = open(args.outpath, 'w')
-    model = LM(args, uniform_initializer)
+    model = LM(args, model_initializer, mlp_initializer)
 
     for i in range(round(args.nsamples / args.batch_size)):
         samples = model.sample(args.batch_size, args.length)
