@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch import nn, optim
 
-from datasets import MonoTextData
+from data import MonoTextData
 
 from modules import LSTMEncoder, LSTMDecoder
 from modules import VAE
@@ -54,6 +54,7 @@ def init_config():
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
     parser.add_argument('--save_path', type=str, default='', help='valid every nepoch epochs')
+    parser.add_argument('--cuda', action='store_true', default=False, help='use gpu')
 
 
     args = parser.parse_args()
@@ -69,7 +70,7 @@ def test(model, test_data, args):
     report_kl_loss = report_rec_loss = 0
     report_num_words = report_num_sents = 0
     for batch_data, sents_len in test_data.data_iter(batch_size=args.batch_size,
-                                                     device=args.device
+                                                     device=args.device,
                                                      batch_first=True):
 
         batch_size = len(batch_data)
@@ -80,19 +81,19 @@ def test(model, test_data, args):
         sents_len = torch.LongTensor(sents_len)
 
         # not predict start symbol
-        report_num_words += (sents_len - 1).sum()
+        report_num_words += (sents_len - 1).sum().item()
 
 
-        loss_rc, loss_kl = model.loss((batch_data, sents_len), nsamples=1)
+        loss_rc, loss_kl = model.loss(batch_data, nsamples=1)
 
-        assert(!loss_rc.requires_grad)
+        assert(not loss_rc.requires_grad)
 
         loss_rc = loss_rc.sum()
         loss_kl = loss_kl.sum()
 
 
-        report_rec_loss += loss_rc.data[0]
-        report_kl_loss += loss_kl.data[0]
+        report_rec_loss += loss_rc.item()
+        report_kl_loss += loss_kl.item()
 
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
@@ -110,17 +111,16 @@ def test(model, test_data, args):
 
 def main(args):
 
-    def uniform_initializer(stdv):
-        def forward(tensor):
-            nn.init.uniform(tensor, -stdv, stdv)
+    class uniform_initializer(object):
+        def __init__(self, stdv):
+            self.stdv = stdv
+        def __call__(self, tensor):
+            nn.init.uniform_(tensor, -self.stdv, self.stdv)
 
-        return forward
 
-    def xavier_normal_initializer():
-        def forward(tensor):
-            nn.init.xavier_normal(tensor)
-
-        return forward
+    class xavier_normal_initializer(object):
+        def __call__(self, tensor):
+            nn.init.xavier_normal_(tensor)
 
     if args.cuda:
         print('using cuda')
@@ -131,8 +131,6 @@ def main(args):
 
     schedule = args.epochs / 5
     lr_ = args.lr
-    if args.eta > 0 or args.gamma > 0:
-        args.kl_start = 1.0
 
     train_data = MonoTextData(args.train_data)
 
@@ -141,12 +139,15 @@ def main(args):
 
     test_data = MonoTextData(args.test_data, vocab)
 
-    print('Train data: %d batches' % len(train_data))
+    print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
     sys.stdout.flush()
 
-    encoder = LSTMEncoder(args, vocab_size, rnn_initializer, emb_initializer)
-    decoder = LSTMDecoder(args, vocab, rnn_initializer, emb_initializer)
+    model_init = xavier_normal_initializer()
+    emb_init = uniform_initializer(0.1)
+
+    encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
+    decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
@@ -161,9 +162,9 @@ def main(args):
     #     return 
 
     if args.optim == 'sgd':
-        optimizer = optim.SGD(hae.parameters(), lr=lr_)
+        optimizer = optim.SGD(vae.parameters(), lr=lr_)
     else:
-        optimizer = optim.Adam(hae.parameters(), lr=lr_, betas=(0.5, 0.999))
+        optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
 
     iter_ = 0
     decay_cnt = 0
@@ -189,13 +190,13 @@ def main(args):
             sents_len = torch.LongTensor(sents_len)
 
             # not predict start symbol
-            report_num_words += (sents_len - 1).sum()
+            report_num_words += (sents_len - 1).sum().item()
 
             report_num_sents += batch_size
 
             optimizer.zero_grad()
 
-            loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
+            loss_rc, loss_kl = vae.loss(batch_data, nsamples=1)
             #print('-----------------')
             #print(loss_bce.mean().data)
             #print(loss_kl.mean().data)
@@ -213,11 +214,11 @@ def main(args):
 
             # assert (loss == loss).all()
 
-            report_rec_loss += loss_rc.data[0]
-            report_kl_loss += loss_kl.data[0]
+            report_rec_loss += loss_rc.item()
+            report_kl_loss += loss_kl.item()
 
             loss.backward()
-            torch.nn.utils.clip_grad_norm(vae.parameters(), args.clip_grad)
+            torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
             optimizer.step()
 
             if iter_ % args.niter == 0:
@@ -229,6 +230,9 @@ def main(args):
                        report_rec_loss / report_num_sents, time.time() - start))
                 sys.stdout.flush()
 
+                report_rec_loss = report_kl_loss = 0
+                report_num_words = report_num_sents = 0
+
             iter_ += 1
 
         if epoch % args.nepoch == 0:
@@ -237,7 +241,7 @@ def main(args):
             vae.eval()
 
             with torch.no_grad():
-                loss, nll, kl, ppl = test(hae, test_data, args)
+                loss, nll, kl, ppl = test(vae, test_data, args)
 
             if loss < best_loss:
                 print('update best loss')

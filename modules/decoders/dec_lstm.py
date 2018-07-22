@@ -13,13 +13,12 @@ import numpy as np
 
 class LSTMDecoder(nn.Module):
     """docstring for LSTMDecoder"""
-    def __init__(self, args, model_init, emb_init):
+    def __init__(self, args, vocab, model_init, emb_init):
         super(LSTMDecoder, self).__init__()
         self.ni = args.ni
         self.nh = args.nh
+        self.nz = args.nz
 
-        self.rnn_initializer = rnn_initializer
-        self.emb_initializer = emb_initializer
         self.vocab = vocab
 
         # no padding when setting padding_idx to -1
@@ -44,14 +43,17 @@ class LSTMDecoder(nn.Module):
         # vocab_mask[vocab['<pad>']] = 0
         self.loss = nn.CrossEntropyLoss(weight=vocab_mask, reduce=False)
 
-        self.reset_parameters()
+        self.reset_parameters(model_init, emb_init)
 
     def reset_parameters(self, model_init, emb_init):
-        for param in self.parameters():
+        for name, param in self.lstm.named_parameters():
             # self.initializer(param)
-            model_init(param)
+            if 'bias' in name:
+                nn.init.constant_(param, 0.0)
+            elif 'weight' in name:
+                model_init(param)
 
-        emb_init(self.emb.weight)
+        emb_init(self.embed.weight)
 
 
     def decode(self, input, z):
@@ -62,7 +64,7 @@ class LSTMDecoder(nn.Module):
         """
 
         # not predicting start symbol
-        sents_len -= 1
+        # sents_len -= 1
 
         batch_size, n_sample, _ = z.size()
         seq_len = input.size(1)

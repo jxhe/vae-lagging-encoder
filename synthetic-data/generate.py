@@ -22,7 +22,7 @@ def init_config():
                         help='number of hidden units')
     parser.add_argument('--vocab_size', type=int, default=1000)
     parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--nsamples', type=int, default=10000, 
+    parser.add_argument('--nsamples', type=int, default=12000, 
                         help='number of generated samples')
     parser.add_argument('--length', type=int, default=10,
                         help='length of each generated sentence')

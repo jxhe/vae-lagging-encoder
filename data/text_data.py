@@ -21,7 +21,7 @@ class VocabEntry(object):
             self.word2id['</s>'] = 2
             self.word2id['<unk>'] = self.unk_id
 
-        self.id2word_ = {v: k for k, v in self.word2id.iteritems()}
+        self.id2word_ = {v: k for k, v in self.word2id.items()}
 
     def __getitem__(self, word):
         return self.word2id.get(word, self.unk_id)
@@ -145,6 +145,6 @@ class MonoTextData(object):
             # uncomment this line if the dataset has variable length
             # batch_data.sort(key=lambda e: -len(e))
 
-            batch_data, sents_len = self._to_tensor(batch_data, batch_first, cuda)
+            batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
 
             yield batch_data, sents_len

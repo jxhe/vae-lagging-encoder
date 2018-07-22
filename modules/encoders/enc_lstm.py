@@ -1,13 +1,12 @@
 from itertools import chain
 import torch
 import torch.nn as nn
-from modules import utils
 
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 class LSTMEncoder(nn.Module):
     """Gaussian LSTM Encoder"""
-    def __init__(self, args, vocab_size, rnn_initializer, emb_initializer):
+    def __init__(self, args, vocab_size, model_init, emb_init):
         super(LSTMEncoder, self).__init__()
         self.ni = args.ni
         self.nh = args.nh
@@ -24,14 +23,17 @@ class LSTMEncoder(nn.Module):
         # dimension transformation to z (mean and logvar)
         self.linear = nn.Linear(args.nh, 2 * args.nz, bias=False)
 
-        self.reset_parameters(rnn_initializer, emb_initializer)
+        self.reset_parameters(model_init, emb_init)
 
-    def reset_parameters(self):
-        for param in self.parameters():
+    def reset_parameters(self, model_init, emb_init):
+        for name, param in self.lstm.named_parameters():
             # self.initializer(param)
-            self.rnn_initializer(param)
+            if 'bias' in name:
+                nn.init.constant_(param, 0.0)
+            elif 'weight' in name:
+                model_init(param)
 
-        self.emb_initializer(self.embed.weight)
+        emb_init(self.embed.weight)
 
     def reparameterize(self, mu, logvar, nsamples=1):
         """sample from posterior Gaussian family
