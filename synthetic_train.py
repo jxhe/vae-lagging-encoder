@@ -86,7 +86,7 @@ def test(model, test_data, args):
         loss_rc, loss_kl = model.loss((batch_data, sents_len), nsamples=1)
 
         assert(!loss_rc.requires_grad)
-        
+
         loss_rc = loss_rc.sum()
         loss_kl = loss_kl.sum()
 
@@ -264,3 +264,7 @@ def main(args):
 
     # vae.eval()
     # calc_nll(vae, test_data, args)
+
+if __name__ == '__main__':
+    args = init_config()
+    main(args)
