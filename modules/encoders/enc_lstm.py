@@ -13,9 +13,6 @@ class LSTMEncoder(nn.Module):
         self.nh = args.nh
         self.nz = args.nz
 
-        self.rnn_initializer = rnn_initializer
-        self.emb_initializer = emb_initializer
-
         self.embed = nn.Embedding(vocab_size, args.ni)
 
         self.lstm = nn.LSTM(input_size=args.ni,
@@ -27,16 +24,14 @@ class LSTMEncoder(nn.Module):
         # dimension transformation to z (mean and logvar)
         self.linear = nn.Linear(args.nh, 2 * args.nz, bias=False)
 
-        self.reset_parameters()
+        self.reset_parameters(rnn_initializer, emb_initializer)
 
     def reset_parameters(self):
-        if self.rnn_initializer is not None:
-            for param in self.parameters():
-                # self.initializer(param)
-                self.rnn_initializer(param)
+        for param in self.parameters():
+            # self.initializer(param)
+            self.rnn_initializer(param)
 
-        if self.emb_initializer is not None:
-            self.emb_initializer(self.embed.weight.data)
+        self.emb_initializer(self.embed.weight)
 
     def reparameterize(self, mu, logvar, nsamples=1):
         """sample from posterior Gaussian family

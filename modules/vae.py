@@ -49,4 +49,19 @@ class VAE(nn.Module):
 
         return reconstruct_err.mean(dim=1), KL
 
+
+    def true_posterior_dist(self, x, z_range):
+        """perform grid search to calculate the true posterior
+        Args:
+
+
+        """
+        pass
+
+    def plot_true_posterior(self, x, z_range):
+        pass
+
+    def plot_approx_posterior(self, x, z_range):
+        pass
+
         

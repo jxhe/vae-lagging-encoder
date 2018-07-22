@@ -9,7 +9,7 @@ def init_config():
     parser = argparse.ArgumentParser(description='generate synthetic data')
 
     # Model parameters.
-    parser.add_argument('--seed', type=int, default=1111,
+    parser.add_argument('--seed', type=int, default=783435,
                         help='random seed')
     parser.add_argument('--cuda', action='store_true',default=false,
                         help='use CUDA')
@@ -31,6 +31,8 @@ def init_config():
     args = parser.parse_args()
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+    if args.cuda:
+        torch.cuda.manual_seed(args.seed)
 
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
