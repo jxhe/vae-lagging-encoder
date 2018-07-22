@@ -12,22 +12,18 @@ import numpy as np
 class LM(nn.Module):
     """docstring for LSTMDecoder"""
     def __init__(self, args, model_init, mlp_init):
-        super(LSTMDecoder, self).__init__()
+        super(LM, self).__init__()
         self.ni = args.ni
         self.nh = args.nh
 
         self.nz = args.nz
         self.device = args.device
 
-        self.rnn_initializer = rnn_initializer
-        self.emb_initializer = emb_initializer
         self.vocab_size = args.vocab_size
 
         self.embed = nn.Embedding(self.vocab_size, args.ni)
 
-        self.h_init = torch.zeros()
-
-        self.lstm = nn.LSTM(input_size=args.ni,
+        self.lstm = nn.LSTM(input_size=args.ni + args.nz,
                             hidden_size=args.nh,
                             num_layers=1,
                             batch_first=True)
@@ -37,7 +33,7 @@ class LM(nn.Module):
 
         # prediction layer
         self.out_linear1 = nn.Linear(args.nh, self.vocab_size, bias=False)
-        self.out_linear2 = nn.Linear(args.nz, self.vocab_size, bias=False)
+        # self.out_linear2 = nn.Linear(args.nz, self.vocab_size, bias=False)
 
         self.reset_parameters(model_init, mlp_init)
 
@@ -46,10 +42,10 @@ class LM(nn.Module):
             # self.initializer(param)
             model_init(param)
 
-        mlp_init(self.out_linear2.weight)
+        # mlp_init(self.out_linear2.weight)
 
 
-    def forward(self, input, z):
+    def forward(self, input, z, h_c_init):
         """
         Args:
             input: (batch_size, 1), the randomly generated start token
@@ -62,23 +58,17 @@ class LM(nn.Module):
         word_embed = self.embed(input)
 
 
-        z = z.unsqueeze(1)
+        z_ = z.unsqueeze(1)
         # (batch_size, 1, ni + nz)
-        word_embed = torch.cat((word_embed, z), -1)
+        word_embed = torch.cat((word_embed, z_), -1)
 
         # (batch_size, 1, nh)
-        c_init = self.trans_linear(z)
-        h_init = torch.tanh(c_init)
-        # h_init = self.trans_linear(z).unsqueeze(0)
-        # c_init = Variable(torch.zeros(1, batch_size * n_sample, self.nh).type_as(z.data), requires_grad=False)
-
-        # (batch_size, 1, nh)
-        output, _ = self.lstm(word_embed, (h_init, c_init))
+        output, h_c_last = self.lstm(word_embed, h_c_init)
 
         # (batch_size, 1, vocab_size)
-        output_logits = self.pred_linear(output)
+        output_logits = self.out_linear1(output)
 
-        return output_logits
+        return output_logits, h_c_last
 
     def sample(self, nsample, length):
         """Sample synthetic data from this language model
@@ -96,16 +86,26 @@ class LM(nn.Module):
         z = torch.normal(mean=torch.zeros(nsample, self.nz), 
                          std=torch.ones(nsample, self.nz)).to(self.device)
 
-        samples = []
-        for _ in range(length):
-            output_logits = self.forward(input, z)
+        # (1, batch_size, nh)
+        c_init = self.trans_linear(z).unsqueeze(0)
+        h_init = torch.tanh(c_init)
+
+        h_c_init = (h_init, c_init)
+
+        samples = [input.squeeze().tolist()]
+        for _ in range(length-1):
+            output_logits, h_c_last = self.forward(input, z, h_c_init)
             sample_weights = output_logits.squeeze().exp()
 
             # (nsample, 1)
-            idx = torch.multinomial(sample_weights, 1)
-            samples.append(idx)
+            idx = torch.multinomial(sample_weights, 1, replacement=True)
+            input = idx
+            h_c_init = h_c_last
 
+            samples.append(idx.squeeze().tolist())
 
-        return samples
+        # (length, nsample)
+        samples = torch.tensor(samples)
+        return samples.permute(1, 0)
         
 

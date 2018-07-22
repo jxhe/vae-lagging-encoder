@@ -1,5 +1,6 @@
 import argparse
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -9,9 +10,9 @@ def init_config():
     parser = argparse.ArgumentParser(description='generate synthetic data')
 
     # Model parameters.
-    parser.add_argument('--seed', type=int, default=783435,
+    parser.add_argument('--seed', type=int, default=19950927,
                         help='random seed')
-    parser.add_argument('--cuda', action='store_true',default=false,
+    parser.add_argument('--cuda', action='store_true',default=False,
                         help='use CUDA')
     parser.add_argument('--ni', type=int, default=100,
                         help='input dimension')
@@ -25,7 +26,7 @@ def init_config():
                         help='number of generated samples')
     parser.add_argument('--length', type=int, default=10,
                         help='length of each generated sentence')
-    parser.add_argument('--outpath', type=int, )
+    parser.add_argument('--outpath', type=str, default='synthetic_data.txt')
 
 
     args = parser.parse_args()
@@ -42,14 +43,19 @@ def init_config():
 
 def main(args):
     
-    def uniform_initializer(stdv):
-        def forward(tensor):
-            nn.init.uniform_(tensor, -stdv, stdv)
+    class uniform_initializer(object):
+        def __init__(self, stdv):
+            self.stdv = stdv
+
+        def __call__(self, tensor):
+            nn.init.uniform_(tensor, -self.stdv, self.stdv)
 
     model_initializer = uniform_initializer(1.0)
-    mlp_initializer = uniform_initializer(5.0)
+    mlp_initializer = uniform_initializer(1.0)
     fout = open(args.outpath, 'w')
     model = LM(args, model_initializer, mlp_initializer)
+
+    torch.set_grad_enabled(False)
 
     for i in range(round(args.nsamples / args.batch_size)):
         samples = model.sample(args.batch_size, args.length)
