@@ -38,6 +38,11 @@ class VAE(nn.Module):
 
     def loss(self, x, nsamples=1):
         """
+        Args:
+            x: if the data is constant-length, x is the data tensor with
+                shape (batch, *). Otherwise x is a tuple that contains 
+                the data tensor and length list
+
         Returns: Tensor1, Tensor2
             Tensor1: reconstruction loss shape [batch]
             Tensor2: KL loss shape [batch]

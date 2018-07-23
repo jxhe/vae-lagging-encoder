@@ -9,7 +9,7 @@ from torch import nn, optim
 
 from data import MonoTextData
 
-from modules import LSTMEncoder, LSTMDecoder
+from modules import VarLSTMEncoder, VarLSTMDecoder
 from modules import VAE
 
 
@@ -84,7 +84,7 @@ def test(model, test_data, args):
         report_num_words += (sents_len - 1).sum().item()
 
 
-        loss_rc, loss_kl = model.loss(batch_data, nsamples=1)
+        loss_rc, loss_kl = model.loss((batch_data, sents_len), nsamples=1)
 
         assert(not loss_rc.requires_grad)
 
@@ -146,8 +146,8 @@ def main(args):
     model_init = uniform_initializer(0.1)
     emb_init = uniform_initializer(0.1)
 
-    encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
-    decoder = LSTMDecoder(args, vocab, model_init, emb_init)
+    encoder = VarLSTMEncoder(args, vocab_size, model_init, emb_init)
+    decoder = VarLSTMDecoder(args, vocab, model_init, emb_init)
 
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
@@ -196,7 +196,7 @@ def main(args):
 
             optimizer.zero_grad()
 
-            loss_rc, loss_kl = vae.loss(batch_data, nsamples=1)
+            loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
             #print('-----------------')
             #print(loss_bce.mean().data)
             #print(loss_kl.mean().data)
@@ -208,7 +208,7 @@ def main(args):
             loss_kl = loss_kl.sum()
 
             # kl_weight = min(1.0, kl_weight + anneal_rate)
-            kl_weight = 1.0
+            kl_weight = 0.0
 
             loss = (loss_rc + kl_weight * loss_kl) / batch_size 
 
@@ -243,24 +243,24 @@ def main(args):
         #     with torch.no_grad():
         #         loss, nll, kl, ppl = test(vae, test_data, args)
 
-            # if loss < best_loss:
-            #     print('update best loss')
-            #     best_loss = loss
-            #     best_nll = nll
-            #     best_kl = kl
-            #     best_ppl = ppl
-            #     torch.save(vae.state_dict(), args.save_path)
+        #     if loss < best_loss:
+        #         print('update best loss')
+        #         best_loss = loss
+        #         best_nll = nll
+        #         best_kl = kl
+        #         best_ppl = ppl
+        #         torch.save(vae.state_dict(), args.save_path)
 
-            # vae.train()
+        #     vae.train()
 
-        if (epoch + 1) % schedule == 0:
-            print('update lr, old lr: %f' % lr_)
-            lr_ = lr_ * args.lr_decay
-            print('new lr: %f' % lr_)
-            if args.optim == 'sgd':
-                optimizer = optim.SGD(vae.parameters(), lr=lr_)
-            else:
-                optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
+        # if (epoch + 1) % schedule == 0:
+        #     print('update lr, old lr: %f' % lr_)
+        #     lr_ = lr_ * args.lr_decay
+        #     print('new lr: %f' % lr_)
+        #     if args.optim == 'sgd':
+        #         optimizer = optim.SGD(vae.parameters(), lr=lr_)
+        #     else:
+        #         optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
 
     print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_kl, best_nll, best_ppl))

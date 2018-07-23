@@ -143,7 +143,7 @@ class MonoTextData(object):
             batch_data = [self.data[index] for index in batch_ids]
 
             # uncomment this line if the dataset has variable length
-            # batch_data.sort(key=lambda e: -len(e))
+            batch_data.sort(key=lambda e: -len(e))
 
             batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
 
