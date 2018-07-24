@@ -153,52 +153,14 @@ class LSTMDecoder(nn.Module):
         return -self.reconstruct_error(x, z)
         
 
-class VarLSTMDecoder(nn.Module):
+class VarLSTMDecoder(LSTMDecoder):
     """LSTM decoder with constant-length data"""
     def __init__(self, args, vocab, model_init, emb_init):
-        super(VarLSTMDecoder, self).__init__()
-        self.ni = args.ni
-        self.nh = args.nh
-        self.nz = args.nz
-
-        self.vocab = vocab
-
-        # no padding when setting padding_idx to -1
-        self.embed = nn.Embedding(len(vocab), args.ni, padding_idx=-1)
-
-        self.dropout_in = nn.Dropout(args.dec_dropout_in)
-        self.dropout_out = nn.Dropout(args.dec_dropout_out)
-
-        # for initializing hidden state and cell
-        self.trans_linear = nn.Linear(args.nz, args.nh, bias=False)
-
-        # concatenate z with input
-        self.lstm = nn.LSTM(input_size=args.ni + args.nz,
-                            hidden_size=args.nh,
-                            num_layers=1,
-                            batch_first=True)
-
-        # prediction layer
-        self.pred_linear = nn.Linear(args.nh, len(vocab), bias=False)
+        super(VarLSTMDecoder, self).__init__(args, vocab, model_init, emb_init)
 
         vocab_mask = torch.ones(len(vocab))
-        # vocab_mask[vocab['<pad>']] = 0
+        vocab_mask[vocab['<pad>']] = 0
         self.loss = nn.CrossEntropyLoss(weight=vocab_mask, reduce=False)
-
-        self.reset_parameters(model_init, emb_init)
-
-    def reset_parameters(self, model_init, emb_init):
-        for name, param in self.lstm.named_parameters():
-            # self.initializer(param)
-            if 'bias' in name:
-                # nn.init.constant_(param, 0.0)
-                model_init(param)
-            elif 'weight' in name:
-                model_init(param)
-                
-        model_init(self.trans_linear.weight)
-        model_init(self.pred_linear.weight)
-        emb_init(self.embed.weight)
 
 
     def decode(self, input, z):
@@ -300,11 +262,12 @@ class VarLSTMDecoder(nn.Module):
     def log_probability(self, x, z):
         """Cross Entropy in the language case
         Args:
-            x: (batch_size, seq_len)
+            x: tuple which contains x_ and sents_len
+                    x_: (batch_size, seq_len)
+                    sents_len: long tensor of sentence lengths
             z: (batch_size, n_sample, nz)
         Returns:
-            log_p: (batch_size, n_sample). 
-            log_p(x|z) across different x and z
+            log_p(x|z): (batch_size, n_sample). 
         """
 
         return -self.reconstruct_error(x, z)

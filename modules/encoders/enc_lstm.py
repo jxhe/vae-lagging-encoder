@@ -96,60 +96,11 @@ class LSTMEncoder(nn.Module):
         return z, KL
 
 
-class VarLSTMEncoder(nn.Module):
+class VarLSTMEncoder(LSTMEncoder):
     """Gaussian LSTM Encoder with variable-length input"""
     def __init__(self, args, vocab_size, model_init, emb_init):
-        super(VarLSTMEncoder, self).__init__()
-        self.ni = args.ni
-        self.nh = args.nh
-        self.nz = args.nz
+        super(VarLSTMEncoder, self).__init__(args, vocab_size, model_init, emb_init)
 
-        self.embed = nn.Embedding(vocab_size, args.ni)
-
-        self.lstm = nn.LSTM(input_size=args.ni,
-                            hidden_size=args.nh,
-                            num_layers=1,
-                            batch_first=True,
-                            dropout=0)
-
-        # dimension transformation to z (mean and logvar)
-        self.linear = nn.Linear(args.nh, 2 * args.nz, bias=False)
-
-        self.reset_parameters(model_init, emb_init)
-
-    def reset_parameters(self, model_init, emb_init):
-        for name, param in self.lstm.named_parameters():
-            # self.initializer(param)
-            if 'bias' in name:
-                # nn.init.constant_(param, 0.0)
-                model_init(param)
-            elif 'weight' in name:
-                model_init(param)
-
-        model_init(self.linear.weight)
-        emb_init(self.embed.weight)
-
-    def reparameterize(self, mu, logvar, nsamples=1):
-        """sample from posterior Gaussian family
-        Args:
-            mu: Tensor
-                Mean of gaussian distribution with shape (batch, nz)
-
-            logvar: Tensor
-                logvar of gaussian distibution with shape (batch, nz)
-
-        Returns: Tensor
-            Sampled z with shape (batch, nsamples, nz)
-        """
-        batch_size, nz = mu.size()
-        std = logvar.mul(0.5).exp()
-
-        mu_expd = mu.unsqueeze(1).expand(batch_size, nsamples, nz)
-        std_expd = std.unsqueeze(1).expand(batch_size, nsamples, nz)
-
-        eps = torch.zeros_like(std_expd).normal_()
-
-        return mu_expd + torch.mul(eps, std_expd)
 
     def forward(self, input):
         """

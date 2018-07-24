@@ -4,10 +4,17 @@ import torch.nn as nn
 
 class VAE(nn.Module):
     """docstring for VAE"""
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, decoder, args):
         super(VAE, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+
+        self.nz = args.nz
+
+        loc = torch.zeros(nz)
+        scale = torch.ones(nz)
+
+        self.prior = torch.distributions.normal.Normal(loc, scale)
 
     def sample_from_posterior(self, x, nsamples=1):
         """sample from posterior
@@ -55,18 +62,25 @@ class VAE(nn.Module):
         return reconstruct_err.mean(dim=1), KL
 
 
-    def true_posterior_dist(self, x, z_range):
+    def true_posterior_dist(self, x, zrange):
         """perform grid search to calculate the true posterior
         Args:
-
-
+            zrange: tensor
+                different z points that will be evaluated, with 
+                shape (nsample, nz)
         """
-        pass
+        try:
+            batch_size = x.size(0)
+        except:
+            batch_size = x[0].size(0)
 
-    def plot_true_posterior(self, x, z_range):
-        pass
+        # (batch_size, nsample, nz)
+        zrange = zrange.repeat(batch_size)
 
-    def plot_approx_posterior(self, x, z_range):
-        pass
+        # (batch_size, nsample)
+        log_gen = self.decoder.log_probability(x, zrange)
+
+    def inference_dist(self, x, zrange)
+        return self.encoder.inference_dist(self, x, zrange)
 
         
