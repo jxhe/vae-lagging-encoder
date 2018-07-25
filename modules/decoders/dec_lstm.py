@@ -109,7 +109,7 @@ class LSTMDecoder(nn.Module):
             x: (batch_size, seq_len)
             z: (batch_size, n_sample, nz)
         Returns:
-            loss: (batch_size, n_sample). Loss 
+            loss: (batch_size, n_sample). Loss
             across different sentence and z
         """
 
@@ -146,19 +146,19 @@ class LSTMDecoder(nn.Module):
             x: (batch_size, seq_len)
             z: (batch_size, n_sample, nz)
         Returns:
-            log_p: (batch_size, n_sample). 
+            log_p: (batch_size, n_sample).
             log_p(x|z) across different x and z
         """
 
         return -self.reconstruct_error(x, z)
-        
+
 
 class VarLSTMDecoder(LSTMDecoder):
     """LSTM decoder with constant-length data"""
     def __init__(self, args, vocab, model_init, emb_init):
         super(VarLSTMDecoder, self).__init__(args, vocab, model_init, emb_init)
 
-        self.embed = nn.Embedding(vocab_size, args.ni, padding_idx=vocab['<pad>'])
+        self.embed = nn.Embedding(len(vocab), args.ni, padding_idx=vocab['<pad>'])
         vocab_mask = torch.ones(len(vocab))
         vocab_mask[vocab['<pad>']] = 0
         self.loss = nn.CrossEntropyLoss(weight=vocab_mask, reduce=False)
@@ -227,7 +227,7 @@ class VarLSTMDecoder(LSTMDecoder):
                     sents_len: long tensor of sentence lengths
             z: (batch_size, n_sample, nz)
         Returns:
-            loss: (batch_size, n_sample). Loss 
+            loss: (batch_size, n_sample). Loss
             across different sentence and z
         """
 
@@ -268,7 +268,7 @@ class VarLSTMDecoder(LSTMDecoder):
                     sents_len: long tensor of sentence lengths
             z: (batch_size, n_sample, nz)
         Returns:
-            log_p(x|z): (batch_size, n_sample). 
+            log_p(x|z): (batch_size, n_sample).
         """
 
         return -self.reconstruct_error(x, z)
