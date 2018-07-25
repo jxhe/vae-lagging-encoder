@@ -10,7 +10,8 @@ from torch import nn, optim
 from data import MonoTextData
 
 from modules import LSTMEncoder, LSTMDecoder
-from modules import VAE
+from modules import VAE, VisPlotter
+from modules import generate_grid
 
 
 def init_config():
@@ -50,6 +51,15 @@ def init_config():
     # select mode
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
     parser.add_argument('--load_model', type=str, default='')
+
+    # plot parameters
+    parser.add_argument('--zmin', type=float, default=-2.0)
+    parser.add_argument('--zmax', type=float, default=2.0)
+    parser.add_argument('--dz', type=float, default=0.1)
+    parser.add_argument('--nplot', type=int, default=10,
+                         help='number of sampled points to be ploted')
+    parser.add_argument('--plot_niter', type=int, default=1)
+    parser.add_argument('--stop_niter', type=int, default=-1)
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -108,6 +118,23 @@ def test(model, test_data, args):
 
     return test_loss, nll, kl, ppl
 
+def plot_vae(plotter, model, plot_data, zrange, 
+             log_prior, iter_, num_slice):
+
+    plot_data, sents_len = plot_data
+    loss_kl = model.KL(plot_data)
+    posterior = model.eval_true_posterior_dist(plot_data, zrange, log_prior)
+    inference = model.eval_inference_dist(plot_data, zrange)
+
+    for i, posterior_ in enumerate(posterior):
+        posterior_v = posterior_.view(num_slice, num_slice)
+        inference_v = inference[i].view(num_slice, num_slice)
+        name = "iter %d, posterior of sample %d, KL: %.4f" % \
+                (iter_, i, loss_kl[i].item())
+        win_name = "iter %d, sample%d" % (iter_, i)
+        plotter.plot_contour([posterior_v, inference_v], win=win_name, name=name)
+
+
 
 def main(args):
 
@@ -151,7 +178,7 @@ def main(args):
 
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
-    vae = VAE(encoder, decoder).to(device)
+    vae = VAE(encoder, decoder, args).to(device)
 
     # if args.eval:
     #     print('begin evaluation')
@@ -177,6 +204,12 @@ def main(args):
     # anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
 
     # calc_nll(hae, test_data, args)
+    layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
+    plotter = VisPlotter(contour_layout=layout)
+    plot_data = train_data.data_sample(nsample=args.nplot, device=device, batch_first=True)
+    zrange, num_slice = generate_grid(args.zmin, args.zmax, args.dz)
+    zrange = zrange.to(device)
+    log_prior = vae.eval_prior_dist(zrange)
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
@@ -233,7 +266,17 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
+
+            if iter_ % args.plot_niter == 0:
+                with torch.no_grad():
+                    plot_vae(plotter, vae, plot_data, zrange, 
+                             log_prior, iter_, num_slice)
+                # return 
+
             iter_ += 1
+
+            if iter_ >= args.stop_niter and args.stop_niter > 0:
+                return
 
         # if epoch % args.nepoch == 0:
         #     print('kl weight %.4f' % kl_weight)

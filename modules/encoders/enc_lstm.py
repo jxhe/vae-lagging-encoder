@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
+from ..utils import log_sum_exp
 
 class LSTMEncoder(nn.Module):
     """Gaussian LSTM Encoder with constant-length input"""
@@ -94,6 +95,27 @@ class LSTMEncoder(nn.Module):
         KL = 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
 
         return z, KL
+
+    def eval_inference_dist(self, x, zrange):
+        """
+        Args:
+            zrange: tensor
+                different z points that will be evaluated, with 
+                shape (k^2, nz), where k=(zmax - zmin)/space
+        """
+        # (batch_size, nz)
+        mu, logvar = self.forward(x)
+        std = logvar.mul(0.5).exp()
+
+        batch_size = mu.size(0)
+        zrange = zrange.unsqueeze(1).expand(zrange.size(0), batch_size, self.nz)
+
+        infer_dist = torch.distributions.normal.Normal(mu, std)
+
+        # (batch_size, k^2)
+        log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
+
+        return (log_prob - log_sum_exp(log_prob, dim=1, keepdim=True)).exp() 
 
 
 class VarLSTMEncoder(LSTMEncoder):

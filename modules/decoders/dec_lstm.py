@@ -158,6 +158,7 @@ class VarLSTMDecoder(LSTMDecoder):
     def __init__(self, args, vocab, model_init, emb_init):
         super(VarLSTMDecoder, self).__init__(args, vocab, model_init, emb_init)
 
+        self.embed = nn.Embedding(vocab_size, args.ni, padding_idx=vocab['<pad>'])
         vocab_mask = torch.ones(len(vocab))
         vocab_mask[vocab['<pad>']] = 0
         self.loss = nn.CrossEntropyLoss(weight=vocab_mask, reduce=False)

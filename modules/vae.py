@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 
+from .utils import log_sum_exp
+
 
 class VAE(nn.Module):
-    """docstring for VAE"""
+    """VAE with normal prior"""
     def __init__(self, encoder, decoder, args):
         super(VAE, self).__init__()
         self.encoder = encoder
@@ -11,8 +13,8 @@ class VAE(nn.Module):
 
         self.nz = args.nz
 
-        loc = torch.zeros(nz)
-        scale = torch.ones(nz)
+        loc = torch.zeros(self.nz, device=args.device)
+        scale = torch.ones(self.nz, device=args.device)
 
         self.prior = torch.distributions.normal.Normal(loc, scale)
 
@@ -61,26 +63,62 @@ class VAE(nn.Module):
 
         return reconstruct_err.mean(dim=1), KL
 
+    def KL(self, x):
+        _, KL = self.encode(x, 1)
 
-    def true_posterior_dist(self, x, zrange):
+        return KL
+
+    def eval_prior_dist(self, zrange):
         """perform grid search to calculate the true posterior
         Args:
             zrange: tensor
                 different z points that will be evaluated, with 
-                shape (nsample, nz)
+                shape (k^2, nz), where k=(zmax - zmin)/space
+        """
+
+        # (k^2)
+        return self.prior.log_prob(zrange).sum(dim=1)
+
+
+
+    def eval_true_posterior_dist(self, x, zrange, log_prior):
+        """perform grid search to calculate the true posterior
+        Args:
+            zrange: tensor
+                different z points that will be evaluated, with 
+                shape (k^2, nz), where k=(zmax - zmin)/space
+            log_prior: tenor
+                the prior log density with shape (k^2) 
+
+        Returns: Tensor
+            Tensor: the posterior density tensor with 
+                shape (batch_size, k^2)
         """
         try:
             batch_size = x.size(0)
         except:
             batch_size = x[0].size(0)
 
-        # (batch_size, nsample, nz)
-        zrange = zrange.repeat(batch_size)
+        # (batch_size, k^2, nz)
+        zrange = zrange.repeat(batch_size, 1, 1)
 
-        # (batch_size, nsample)
+        # (batch_size, k^2)
         log_gen = self.decoder.log_probability(x, zrange)
 
-    def inference_dist(self, x, zrange)
-        return self.encoder.inference_dist(self, x, zrange)
+
+        # (batch_size, k^2)
+        log_post = log_gen + log_prior
+
+        # (batch_size, k^2)
+        return (log_post - log_sum_exp(log_post, dim=1, keepdim=True)).exp()
+
+
+    def eval_inference_dist(self, x, zrange):
+        """
+        Returns: Tensor
+            Tensor: the posterior density tensor with 
+                shape (batch_size, k^2)
+        """
+        return self.encoder.eval_inference_dist(x, zrange)
 
         

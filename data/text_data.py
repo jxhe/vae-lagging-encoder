@@ -127,7 +127,7 @@ class MonoTextData(object):
 
     def data_iter(self, batch_size, device, batch_first=False, shuffle=True):
         """pad data with start and stop symbol, and pad to the same length
-        Return:
+        Returns:
             batch_data: LongTensor with shape (seq_len, batch_size)
             sents_len: list of data length, this is the data length
                        after counting start and stop symbols
@@ -148,3 +148,25 @@ class MonoTextData(object):
             batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
 
             yield batch_data, sents_len
+
+    def data_sample(self, nsample, device, batch_first=False, shuffle=True):
+        """sample a subset of data (like data_iter)
+        Returns:
+            batch_data: LongTensor with shape (seq_len, batch_size)
+            sents_len: list of data length, this is the data length
+                       after counting start and stop symbols
+        """
+        index_arr = np.arange(len(self.data))
+
+        if shuffle:
+            np.random.shuffle(index_arr)
+
+        batch_ids = index_arr[: nsample]
+        batch_data = [self.data[index] for index in batch_ids]
+
+        # uncomment this line if the dataset has variable length
+        batch_data.sort(key=lambda e: -len(e))
+
+        batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
+
+        return batch_data, sents_len
