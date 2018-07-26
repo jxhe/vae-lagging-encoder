@@ -171,7 +171,7 @@ def main(args):
     print('finish reading datasets, vocab size is %d' % len(vocab))
     sys.stdout.flush()
 
-    model_init = uniform_initializer(0.1)
+    model_init = xavier_normal_initializer()
     emb_init = uniform_initializer(0.1)
 
     encoder = VarLSTMEncoder(args, vocab_size, model_init, emb_init)

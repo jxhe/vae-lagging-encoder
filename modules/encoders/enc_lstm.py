@@ -31,9 +31,11 @@ class LSTMEncoder(nn.Module):
             # self.initializer(param)
             if 'bias' in name:
                 nn.init.constant_(param, 0.0)
+                # model_init(param)
             elif 'weight' in name:
                 model_init(param)
 
+        model_init(self.linear.weight)
         emb_init(self.embed.weight)
 
     def reparameterize(self, mu, logvar, nsamples=1):
@@ -100,7 +102,7 @@ class LSTMEncoder(nn.Module):
         """
         Args:
             zrange: tensor
-                different z points that will be evaluated, with 
+                different z points that will be evaluated, with
                 shape (k^2, nz), where k=(zmax - zmin)/space
         """
         # (batch_size, nz)
@@ -115,7 +117,7 @@ class LSTMEncoder(nn.Module):
         # (batch_size, k^2)
         log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
 
-        return (log_prob - log_sum_exp(log_prob, dim=1, keepdim=True)).exp() 
+        return (log_prob - log_sum_exp(log_prob, dim=1, keepdim=True)).exp()
 
 
 class VarLSTMEncoder(LSTMEncoder):

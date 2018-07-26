@@ -50,9 +50,12 @@ class LSTMDecoder(nn.Module):
             # self.initializer(param)
             if 'bias' in name:
                 nn.init.constant_(param, 0.0)
+                # model_init(param)
             elif 'weight' in name:
                 model_init(param)
 
+        model_init(self.trans_linear.weight)
+        model_init(self.pred_linear.weight)
         emb_init(self.embed.weight)
 
 
