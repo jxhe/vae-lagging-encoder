@@ -179,7 +179,7 @@ class VarLSTMDecoder(LSTMDecoder):
         input, sents_len = input
 
         # not predicting start symbol
-        sents_len -= 1
+        sents_len = sents_len - 1
 
         batch_size, n_sample, _ = z.size()
         seq_len = input.size(1)
