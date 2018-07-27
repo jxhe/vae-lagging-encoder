@@ -103,7 +103,7 @@ def test(model, test_data, args):
         report_num_words += (sents_len - 1).sum().item()
 
 
-        loss_rc, loss_kl = model.loss(batch_data, nsamples=1)
+        loss_rc, loss_kl = model.loss((batch_data, sents_len), nsamples=1)
 
         assert(not loss_rc.requires_grad)
 
@@ -215,7 +215,7 @@ def main(args):
         kl_weight = args.kl_start
     else:
         kl_weight = 1.0
-    
+
     anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
 
     # calc_nll(hae, test_data, args)
