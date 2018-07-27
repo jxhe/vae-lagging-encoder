@@ -62,6 +62,14 @@ def init_config():
     parser.add_argument('--stop_niter', type=int, default=-1)
     parser.add_argument('--server', type=str, default='http://localhost')
 
+
+    # annealing paramters
+    parser.add_argument('--warm_up', type=int, default=10)
+    parser.add_argument('--kl_start', type=float, default=0.1)
+    parser.add_argument('--anneal', action='store_true', default=False,
+                         help='if perform annealing')
+
+
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
     parser.add_argument('--save_path', type=str, default='', help='valid every nepoch epochs')
@@ -190,6 +198,8 @@ def main(args):
     #     return
 
     if args.optim == 'sgd':
+
+
         optimizer = optim.SGD(vae.parameters(), lr=lr_)
     else:
         optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
@@ -201,8 +211,12 @@ def main(args):
     vae.train()
     start = time.time()
 
-    # kl_weight = args.kl_start
-    # anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
+    if args.anneal:
+        kl_weight = args.kl_start
+    else:
+        kl_weight = 1.0
+    
+    anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
 
     # calc_nll(hae, test_data, args)
     # layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
@@ -241,8 +255,8 @@ def main(args):
             loss_rc = loss_rc.sum()
             loss_kl = loss_kl.sum()
 
-            # kl_weight = min(1.0, kl_weight + anneal_rate)
-            kl_weight = 1.0
+            kl_weight = min(1.0, kl_weight + anneal_rate)
+            # kl_weight = 1.0
 
             loss = (loss_rc + kl_weight * loss_kl) / batch_size
 
@@ -279,23 +293,23 @@ def main(args):
             # if iter_ >= args.stop_niter and args.stop_niter > 0:
             #     return
 
-        # if epoch % args.nepoch == 0:
-        #     print('kl weight %.4f' % kl_weight)
-        #     print('epoch: %d, testing' % epoch)
-        #     vae.eval()
+        if epoch % args.nepoch == 0:
+            print('kl weight %.4f' % kl_weight)
+            print('epoch: %d, testing' % epoch)
+            vae.eval()
 
-        #     with torch.no_grad():
-        #         loss, nll, kl, ppl = test(vae, test_data, args)
+            with torch.no_grad():
+                loss, nll, kl, ppl = test(vae, test_data, args)
 
-            # if loss < best_loss:
-            #     print('update best loss')
-            #     best_loss = loss
-            #     best_nll = nll
-            #     best_kl = kl
-            #     best_ppl = ppl
-            #     torch.save(vae.state_dict(), args.save_path)
+            if loss < best_loss:
+                print('update best loss')
+                best_loss = loss
+                best_nll = nll
+                best_kl = kl
+                best_ppl = ppl
+                torch.save(vae.state_dict(), args.save_path)
 
-            # vae.train()
+            vae.train()
 
         if (epoch + 1) % schedule == 0:
             print('update lr, old lr: %f' % lr_)
