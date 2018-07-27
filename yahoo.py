@@ -69,6 +69,11 @@ def init_config():
     parser.add_argument('--anneal', action='store_true', default=False,
                          help='if perform annealing')
 
+    # inference parameters
+    parser.add_argument('--multi_infer', action='store_true', default=False,
+                         help='if perform multiple steps of inference')
+    parser.add_argument('--infer_steps', type=int, default=1,
+                         help='number of inference steps performed each iteration')
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -198,11 +203,14 @@ def main(args):
     #     return
 
     if args.optim == 'sgd':
-
-
-        optimizer = optim.SGD(vae.parameters(), lr=lr_)
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
+        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
     else:
-        optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
+        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+
+    if not args.multi_infer:
+        args.infer_steps = 1
 
     iter_ = 0
     decay_cnt = 0
@@ -242,32 +250,33 @@ def main(args):
 
             report_num_sents += batch_size
 
-            optimizer.zero_grad()
-
-            loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
-            #print('-----------------')
-            #print(loss_bce.mean().data)
-            #print(loss_kl.mean().data)
-            #print(hlg.mean().data)
-            # assert (loss_bce == loss_bce).all()
-            # assert (loss_kl == loss_kl).all()
-            # assert (hlg == hlg).all()
-            loss_rc = loss_rc.sum()
-            loss_kl = loss_kl.sum()
-
-            kl_weight = min(1.0, kl_weight + anneal_rate)
             # kl_weight = 1.0
+            kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            loss = (loss_rc + kl_weight * loss_kl) / batch_size
+            for _ in range(args.infer_steps):
 
-            # assert (loss == loss).all()
+                enc_optimizer.zero_grad()
+                dec_optimizer.zero_grad()
+
+                loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
+          
+                loss_rc = loss_rc.sum()
+                loss_kl = loss_kl.sum()
+
+            
+
+                loss = (loss_rc + kl_weight * loss_kl) / batch_size
+
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
+
+                enc_optimizer.step()
+                # assert (loss == loss).all()
+
+            dec_optimizer.step()
 
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
-
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
-            optimizer.step()
 
             if iter_ % args.niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
@@ -316,9 +325,11 @@ def main(args):
             lr_ = lr_ * args.lr_decay
             print('new lr: %f' % lr_)
             if args.optim == 'sgd':
-                optimizer = optim.SGD(vae.parameters(), lr=lr_)
+                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
+                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
             else:
-                optimizer = optim.Adam(vae.parameters(), lr=lr_, betas=(0.5, 0.999))
+                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
 
     print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_kl, best_nll, best_ppl))
