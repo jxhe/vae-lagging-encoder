@@ -87,8 +87,8 @@ class MonoTextData(object):
         """pad a list of sequences, and transform them to tensors
         Args:
             batch_data: a batch of sentences (list) that are composed of
-                word ids. 
-            batch_first: If true, the returned tensor shape is 
+                word ids.
+            batch_first: If true, the returned tensor shape is
                 (batch, seq_len), otherwise (seq_len, batch)
             device: torch.device
 
@@ -116,7 +116,7 @@ class MonoTextData(object):
                                for sent in batch_data])
 
 
-        sents_ts = torch.tensor(sents_new, dtype=torch.long, 
+        sents_ts = torch.tensor(sents_new, dtype=torch.long,
                                  requires_grad=False, device=device)
 
         if batch_first:
@@ -149,6 +149,16 @@ class MonoTextData(object):
 
             yield batch_data, sents_len
 
+    # def data_iter_same_length(self, batch_size, device, batch_first=False, shuffle=True):
+    #     """pad data with start and stop symbol, batching is performerd w.r.t.
+    #     the sentence length, so that each returned batch has the same length,
+    #     no further pack sequence function (e.g. pad_packed_sequence) is required
+    #     Returns:
+    #         batch_data: LongTensor with shape (seq_len, batch_size)
+    #         sents_len: list of data length, this is the data length
+    #                    after counting start and stop symbols
+    #     """
+
     def data_sample(self, nsample, device, batch_first=False, shuffle=True):
         """sample a subset of data (like data_iter)
         Returns:
@@ -156,6 +166,7 @@ class MonoTextData(object):
             sents_len: list of data length, this is the data length
                        after counting start and stop symbols
         """
+
         index_arr = np.arange(len(self.data))
 
         if shuffle:

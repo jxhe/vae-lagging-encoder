@@ -211,10 +211,10 @@ class VarLSTMDecoder(LSTMDecoder):
         packed_embed = pack_padded_sequence(word_embed, sents_len.tolist(), batch_first=True)
 
         z = z.view(batch_size * n_sample, self.nz)
-        h_init = self.trans_linear(z).unsqueeze(0)
-        c_init = h_init.new_zeros(h_init.size())
-        # c_init = self.trans_linear(z).unsqueeze(0)
-        # h_init = torch.tanh(c_init)
+        # h_init = self.trans_linear(z).unsqueeze(0)
+        # c_init = h_init.new_zeros(h_init.size())
+        c_init = self.trans_linear(z).unsqueeze(0)
+        h_init = torch.tanh(c_init)
         output, _ = self.lstm(packed_embed, (h_init, c_init))
         output, _ = pad_packed_sequence(output, batch_first=True)
 
