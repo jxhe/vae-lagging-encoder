@@ -27,15 +27,18 @@ class LSTMEncoder(nn.Module):
         self.reset_parameters(model_init, emb_init)
 
     def reset_parameters(self, model_init, emb_init):
-        for name, param in self.lstm.named_parameters():
-            # self.initializer(param)
-            if 'bias' in name:
-                nn.init.constant_(param, 0.0)
-                # model_init(param)
-            elif 'weight' in name:
-                model_init(param)
+        # for name, param in self.lstm.named_parameters():
+        #     # self.initializer(param)
+        #     if 'bias' in name:
+        #         nn.init.constant_(param, 0.0)
+        #         # model_init(param)
+        #     elif 'weight' in name:
+        #         model_init(param)
 
-        model_init(self.linear.weight)
+        # model_init(self.linear.weight)
+        # emb_init(self.embed.weight)
+        for param in self.parameters():
+            model_init(param)
         emb_init(self.embed.weight)
 
     def reparameterize(self, mu, logvar, nsamples=1):

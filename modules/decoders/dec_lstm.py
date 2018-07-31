@@ -46,16 +46,18 @@ class LSTMDecoder(nn.Module):
         self.reset_parameters(model_init, emb_init)
 
     def reset_parameters(self, model_init, emb_init):
-        for name, param in self.lstm.named_parameters():
-            # self.initializer(param)
-            if 'bias' in name:
-                nn.init.constant_(param, 0.0)
-                # model_init(param)
-            elif 'weight' in name:
-                model_init(param)
+        # for name, param in self.lstm.named_parameters():
+        #     # self.initializer(param)
+        #     if 'bias' in name:
+        #         nn.init.constant_(param, 0.0)
+        #         # model_init(param)
+        #     elif 'weight' in name:
+        #         model_init(param)
 
-        model_init(self.trans_linear.weight)
-        model_init(self.pred_linear.weight)
+        # model_init(self.trans_linear.weight)
+        # model_init(self.pred_linear.weight)
+        for param in self.parameters():
+            model_init(param)
         emb_init(self.embed.weight)
 
 
@@ -166,6 +168,7 @@ class VarLSTMDecoder(LSTMDecoder):
         vocab_mask[vocab['<pad>']] = 0
         self.loss = nn.CrossEntropyLoss(weight=vocab_mask, reduce=False)
 
+        self.reset_parameters(model_init, emb_init)
 
     def decode(self, input, z):
         """
@@ -208,10 +211,10 @@ class VarLSTMDecoder(LSTMDecoder):
         packed_embed = pack_padded_sequence(word_embed, sents_len.tolist(), batch_first=True)
 
         z = z.view(batch_size * n_sample, self.nz)
+        h_init = self.trans_linear(z).unsqueeze(0)
+        c_init = h_init.new_zeros(h_init.size())
         # c_init = self.trans_linear(z).unsqueeze(0)
         # h_init = torch.tanh(c_init)
-        c_init = self.trans_linear(z).unsqueeze(0)
-        h_init = torch.tanh(c_init)
         output, _ = self.lstm(packed_embed, (h_init, c_init))
         output, _ = pad_packed_sequence(output, batch_first=True)
 

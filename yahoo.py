@@ -259,11 +259,11 @@ def main(args):
                 dec_optimizer.zero_grad()
 
                 loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
-          
+
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
 
-            
+
 
                 loss = (loss_rc + kl_weight * loss_kl) / batch_size
 
