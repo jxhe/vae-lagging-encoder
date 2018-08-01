@@ -4,6 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.distributions as dist
 
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
@@ -33,7 +34,18 @@ class LM(nn.Module):
 
         # prediction layer
         self.out_linear1 = nn.Linear(args.nh, self.vocab_size, bias=False)
-        # self.out_linear2 = nn.Linear(args.nz, self.vocab_size, bias=False)
+        self.out_linear2 = nn.Linear(args.nz, self.vocab_size, bias=False)
+
+
+        self.cat_dist = dist.categorical.Categorical(
+            probs=torch.ones(4, device=args.device))
+
+        scale = torch.ones(2, device=args.device)
+
+        self.gauss_dist = [dist.normal.Normal(torch.tensor([-2.0, -2.0], device=args.device), scale), 
+                           dist.normal.Normal(torch.tensor([2.0, 2.0], device=args.device), scale),
+                           dist.normal.Normal(torch.tensor([-2.0, 2.0], device=args.device), scale),
+                           dist.normal.Normal(torch.tensor([2.0, -2.0], device=args.device), scale)]
 
         self.reset_parameters(model_init, mlp_init)
 
@@ -42,7 +54,7 @@ class LM(nn.Module):
             # self.initializer(param)
             model_init(param)
 
-        # mlp_init(self.out_linear2.weight)
+        mlp_init(self.out_linear2.weight)
 
 
     def forward(self, input, z, h_c_init):
@@ -66,7 +78,7 @@ class LM(nn.Module):
         output, h_c_last = self.lstm(word_embed, h_c_init)
 
         # (batch_size, 1, vocab_size)
-        output_logits = self.out_linear1(output)
+        output_logits = self.out_linear1(output) + self.out_linear2(z_)
 
         return output_logits, h_c_last
 
@@ -83,8 +95,13 @@ class LM(nn.Module):
         input = torch.rand(nsample, 1, device=self.device) \
                      .mul(self.vocab_size).long()
 
-        z = torch.normal(mean=torch.zeros(nsample, self.nz), 
-                         std=torch.ones(nsample, self.nz)).to(self.device)
+        z_cat = self.cat_dist.sample((nsample, 1)).squeeze()
+        z = []
+        for index in z_cat:
+            z.append(self.gauss_dist[index.item()].sample().unsqueeze(0))
+
+        # (batch_size, nz)
+        z = torch.cat(z, dim=0)
 
         # (1, batch_size, nh)
         c_init = self.trans_linear(z).unsqueeze(0)
@@ -108,4 +125,3 @@ class LM(nn.Module):
         samples = torch.tensor(samples)
         return samples.permute(1, 0)
         
-
