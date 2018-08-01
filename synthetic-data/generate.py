@@ -51,7 +51,7 @@ def main(args):
             nn.init.uniform_(tensor, -self.stdv, self.stdv)
 
     model_initializer = uniform_initializer(1.0)
-    mlp_initializer = uniform_initializer(3.0)
+    mlp_initializer = uniform_initializer(5.0)
     fout = open(args.outpath, 'w')
     model = LM(args, model_initializer, mlp_initializer)
     model.to(args.device)
