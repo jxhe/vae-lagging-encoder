@@ -9,7 +9,7 @@ from torch import nn, optim
 
 from data import MonoTextData
 
-from modules import VarLSTMEncoder, VarLSTMDecoder
+from modules import LSTMEncoder, LSTMDecoder
 from modules import VAE, VisPlotter
 from modules import generate_grid
 
@@ -89,26 +89,21 @@ def init_config():
 
     return args
 
-def test(model, test_data, args):
+def test(model, test_data_batch, args):
 
     report_kl_loss = report_rec_loss = 0
     report_num_words = report_num_sents = 0
-    for batch_data, sents_len in test_data.data_iter(batch_size=args.batch_size,
-                                                     device=args.device,
-                                                     batch_first=True):
+    for i in np.random.permutation(len(test_data_batch)):
+        batch_data = test_data_batch[i]
+        batch_size, sent_len = batch_data.size()
 
-        batch_size = len(batch_data)
+        # not predict start symbol
+        report_num_words += (sent_len - 1) * batch_size
 
         report_num_sents += batch_size
 
-        # sents_len counts both the start and end symbols
-        sents_len = torch.LongTensor(sents_len)
 
-        # not predict start symbol
-        report_num_words += (sents_len - 1).sum().item()
-
-
-        loss_rc, loss_kl = model.loss((batch_data, sents_len), nsamples=1)
+        loss_rc, loss_kl = model.loss(batch_data, nsamples=1)
 
         assert(not loss_rc.requires_grad)
 
@@ -178,17 +173,18 @@ def main(args):
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    test_data = MonoTextData(args.test_data, vocab)
+    test_data = MonoTextData(args.test_data, vocab=vocab)
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
+    print('dropped sentences: %d' % train_data.dropped)
     sys.stdout.flush()
 
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
-    encoder = VarLSTMEncoder(args, vocab_size, model_init, emb_init)
-    decoder = VarLSTMDecoder(args, vocab, model_init, emb_init)
+    encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
+    decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
@@ -234,19 +230,21 @@ def main(args):
     # zrange = zrange.to(device)
     # log_prior = vae.eval_prior_dist(zrange)
 
+    train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
+                                                    device=device,
+                                                    batch_first=True)
+    test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
+                                                  device=device,
+                                                  batch_first=True)
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
-        for batch_data, sents_len in train_data.data_iter(batch_size=args.batch_size,
-                                                          device=device,
-                                                          batch_first=True):
-
-            batch_size = len(batch_data)
-            # sents_len counts both the start and end symbols
-            sents_len = torch.LongTensor(sents_len)
+        for i in np.random.permutation(len(train_data_batch)):
+            batch_data = train_data_batch[i]
+            batch_size, sent_len = batch_data.size()
 
             # not predict start symbol
-            report_num_words += (sents_len - 1).sum().item()
+            report_num_words += (sent_len - 1) * batch_size
 
             report_num_sents += batch_size
 
@@ -258,7 +256,7 @@ def main(args):
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
-                loss_rc, loss_kl = vae.loss((batch_data, sents_len), nsamples=1)
+                loss_rc, loss_kl = vae.loss(batch_data, nsamples=1)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
@@ -287,8 +285,8 @@ def main(args):
                        report_rec_loss / report_num_sents, time.time() - start))
                 sys.stdout.flush()
 
-                report_rec_loss = report_kl_loss = 0
-                report_num_words = report_num_sents = 0
+                # report_rec_loss = report_kl_loss = 0
+                # report_num_words = report_num_sents = 0
 
 
             # if iter_ % args.plot_niter == 0:
@@ -308,7 +306,7 @@ def main(args):
             vae.eval()
 
             with torch.no_grad():
-                loss, nll, kl, ppl = test(vae, test_data, args)
+                loss, nll, kl, ppl = test(vae, test_data_batch, args)
 
             if loss < best_loss:
                 print('update best loss')

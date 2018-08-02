@@ -57,16 +57,17 @@ class VocabEntry(object):
 
 class MonoTextData(object):
     """docstring for MonoTextData"""
-    def __init__(self, fname, vocab=None):
+    def __init__(self, fname, max_length=None, vocab=None):
         super(MonoTextData, self).__init__()
 
-        self.data, self.vocab = self._read_corpus(fname, vocab)
+        self.data, self.vocab, self.dropped = self._read_corpus(fname, max_length, vocab)
 
     def __len__(self):
         return len(self.data)
 
-    def _read_corpus(self, fname, vocab):
+    def _read_corpus(self, fname, max_length, vocab):
         data = []
+        dropped = 0
         if not vocab:
             vocab = defaultdict(lambda: len(vocab))
             vocab['<pad>'] = 0
@@ -76,12 +77,23 @@ class MonoTextData(object):
 
         with open(fname) as fin:
             for line in fin:
+                split_line = line.split()
+                if len(split_line) < 1:
+                    dropped += 1
+                    continue
+
+                if max_length:
+                    if len(split_line) > max_length:
+                        dropped += 1
+                        continue
+
+                
                 data.append([vocab[word] for word in line.split()])
 
         if isinstance(vocab, VocabEntry):
-            return data, vocab
+            return data, vocab, dropped
 
-        return data, VocabEntry(vocab)
+        return data, VocabEntry(vocab), dropped
 
     def _to_tensor(self, batch_data, batch_first, device):
         """pad a list of sequences, and transform them to tensors
@@ -141,7 +153,7 @@ class MonoTextData(object):
         for i in range(batch_num):
             batch_ids = index_arr[i * batch_size : (i+1) * batch_size]
             batch_data = [self.data[index] for index in batch_ids]
-
+ 
             # uncomment this line if the dataset has variable length
             batch_data.sort(key=lambda e: -len(e))
 
@@ -149,15 +161,44 @@ class MonoTextData(object):
 
             yield batch_data, sents_len
 
-    # def data_iter_same_length(self, batch_size, device, batch_first=False, shuffle=True):
-    #     """pad data with start and stop symbol, batching is performerd w.r.t.
-    #     the sentence length, so that each returned batch has the same length,
-    #     no further pack sequence function (e.g. pad_packed_sequence) is required
-    #     Returns:
-    #         batch_data: LongTensor with shape (seq_len, batch_size)
-    #         sents_len: list of data length, this is the data length
-    #                    after counting start and stop symbols
-    #     """
+    def create_data_batch(self, batch_size, device, batch_first=False):
+        """pad data with start and stop symbol, batching is performerd w.r.t.
+        the sentence length, so that each returned batch has the same length,
+        no further pack sequence function (e.g. pad_packed_sequence) is required
+        Returns: List
+            List: a list of batched data, each element is a tensor with shape
+                (seq_len, batch_size)
+        """
+        sents_len = np.array([len(sent) for sent in self.data])
+        sort_idx = np.argsort(sents_len)
+        sort_len = sents_len[sort_idx]
+
+        # record the locations where length changes
+        change_loc = []
+        for i in range(1, len(sort_len)):
+            if sort_len[i] != sort_len[i-1]:
+                change_loc.append(i)
+        change_loc.append(len(sort_len))
+
+        batch_data_list = []
+        total = 0
+        curr = 0
+        for idx in change_loc:
+            while curr < idx:
+                batch_data = []
+                next = min(curr + batch_size, idx)
+                for id_ in range(curr, next):
+                    batch_data.append(self.data[sort_idx[id_]])
+                curr = next
+                batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
+                batch_data_list.append(batch_data)
+
+                total += batch_data.size(0)
+                assert(sents_len == ([sents_len[0]] * len(sents_len)))
+
+        assert(total == len(self.data))
+        return batch_data_list
+
 
     def data_sample(self, nsample, device, batch_first=False, shuffle=True):
         """sample a subset of data (like data_iter)
