@@ -61,6 +61,7 @@ def init_config():
     parser.add_argument('--plot_niter', type=int, default=1)
     parser.add_argument('--stop_niter', type=int, default=-1)
     parser.add_argument('--server', type=str, default='http://localhost')
+    parser.add_argument('--env', type=str, default='main')
 
 
     # annealing paramters
@@ -221,7 +222,7 @@ def main(args):
     anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
 
     layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
-    plotter = VisPlotter(server=args.server, contour_layout=layout)
+    plotter = VisPlotter(server=args.server, env=args.env, contour_layout=layout)
     plot_data = train_data.data_sample(nsample=args.nplot, device=device, batch_first=True)
     zrange, num_slice = generate_grid(args.zmin, args.zmax, args.dz)
     zrange = zrange.to(device)

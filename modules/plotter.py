@@ -6,8 +6,7 @@ class VisPlotter(object):
     """A plotter class based on visdom"""
     def __init__(self, server='http://localhost', env='main', contour_layout=None):
         super(VisPlotter, self).__init__()
-        self.vis = visdom.Visdom(server=server)
-        self.env = env
+        self.vis = visdom.Visdom(server=server, env=env)
 
         self.color_list = ['Jet', 'RdBu']
 
