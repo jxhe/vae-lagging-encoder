@@ -83,16 +83,18 @@ class VAE(nn.Module):
 
     def eval_true_posterior_dist(self, x, zrange, log_prior):
         """perform grid search to calculate the true posterior
+         (actually the complete likelihood), this function computes 
+         the complete likelihood over a popultation, i.e. P(Z, X)
         Args:
             zrange: tensor
                 different z points that will be evaluated, with 
-                shape (k^2, nz), where k=(zmax - zmin)/space
+                shape (k^2, nz), where k=(zmax - zmin)/pace
             log_prior: tenor
                 the prior log density with shape (k^2) 
 
         Returns: Tensor
             Tensor: the posterior density tensor with 
-                shape (batch_size, k^2)
+                shape (k^2)
         """
         try:
             batch_size = x.size(0)
@@ -107,10 +109,13 @@ class VAE(nn.Module):
 
 
         # (batch_size, k^2)
-        log_post = log_gen + log_prior
+        log_comp = log_gen + log_prior
 
-        # (batch_size, k^2)
-        return (log_post - log_sum_exp(log_post, dim=1, keepdim=True)).exp()
+        # (k^2)
+        log_comp = log_comp.sum(dim=0)
+
+        # (k^2)
+        return (log_comp - log_sum_exp(log_comp)).exp()
 
 
     def eval_inference_dist(self, x, zrange):
@@ -120,5 +125,13 @@ class VAE(nn.Module):
                 shape (batch_size, k^2)
         """
         return self.encoder.eval_inference_dist(x, zrange)
+
+    # def eval_inference_mode(self, x):
+    #     """compute the mode points in the inference distribution
+    #     (in Gaussian case)
+    #     Returns: Tensor
+    #         Tensor: the posterior mode points with shape (*, nz)
+    #     """
+    #     return self.encoder.eval_inference_mode(x)
 
         

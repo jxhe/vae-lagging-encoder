@@ -9,6 +9,8 @@ class VisPlotter(object):
         self.vis = visdom.Visdom(server=server)
         self.env = env
 
+        self.color_list = ['Jet', 'RdBu']
+
         if contour_layout:
             self.contour_confg = dict(colorscale='Jet',
                                       type=u'contour',
@@ -30,8 +32,9 @@ class VisPlotter(object):
 
         traces = []
 
-        for dt in data:
+        for dt, color in zip(data, self.color_list):
             dt = dt.tolist()
+            self.contour_confg['colorscale'] = color
             dt_dict = dict(z=dt, title=win, **self.contour_confg)
             traces.append(dt_dict)
 

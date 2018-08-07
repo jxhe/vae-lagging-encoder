@@ -102,7 +102,8 @@ class LSTMEncoder(nn.Module):
         return z, KL
 
     def eval_inference_dist(self, x, zrange):
-        """
+        """this function computes the inference posterior 
+        over a popultation, i.e. P(Z | X)
         Args:
             zrange: tensor
                 different z points that will be evaluated, with
@@ -120,7 +121,21 @@ class LSTMEncoder(nn.Module):
         # (batch_size, k^2)
         log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
 
-        return (log_prob - log_sum_exp(log_prob, dim=1, keepdim=True)).exp()
+
+        # (K^2)
+        log_prob = log_prob.sum(dim=0)
+
+        return (log_prob - log_sum_exp(log_prob)).exp()
+
+    # def eval_inference_mode(self, x):
+    #     """compute the mode points in the inference distribution
+    #     (in Gaussian case)
+    #     Returns: Tensor
+    #         Tensor: the posterior mode points with shape (*, nz)
+    #     """
+
+    #     # (batch_size, nz)
+    #     mu, logvar = self.forward(x)
 
 
 class VarLSTMEncoder(LSTMEncoder):
