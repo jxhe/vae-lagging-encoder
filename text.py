@@ -9,7 +9,7 @@ from torch import nn, optim
 
 from data import MonoTextData
 
-from modules import LSTMEncoder, LSTMDecoder
+from modules import LSTMEncoder, LSTMDecoder, MixLSTMEncoder
 from modules import VAE, VisPlotter
 from modules import generate_grid
 
@@ -20,9 +20,18 @@ def init_config():
     # model hyperparameters
     parser.add_argument('--nz', type=int, default=32, help='latent z size')
     parser.add_argument('--ni', type=int, default=512, help='word embedding size')
-    parser.add_argument('--nh', type=int, default=1024, help='LSTM hidden state size')
+    parser.add_argument('--enc_nh', type=int, default=1024, help='LSTM hidden state size')
+    parser.add_argument('--dec_nh', type=int, default=1024, help='LSTM hidden state size')
     parser.add_argument('--dec_dropout_in', type=float, default=0.5, help='LSTM decoder dropout')
     parser.add_argument('--dec_dropout_out', type=float, default=0.5, help='LSTM decoder dropout')
+    parser.add_argument('--enc_type', type=str, default='lstm')
+
+    # mix encoder parameters
+    parser.add_argument('--kernel_num', type=int, help='number of each kind of kernel')
+    parser.add_argument('--kernel_sizes', type=str, default='3,4,5', 
+        help='number of each kind of kernel')
+    parser.add_argument('--mix_num', type=int, help='number of classes')
+    parser.add_argument('--cnn_dropout', type=float, default=0.5)
 
     # optimization parameters
     parser.add_argument('--lr', type=float, default=1.0, help='Learning rate')
@@ -53,10 +62,11 @@ def init_config():
     parser.add_argument('--load_model', type=str, default='')
 
     # plot parameters
+    parser.add_argument('--plot', action='store_true', default=False)
     parser.add_argument('--zmin', type=float, default=-2.0)
     parser.add_argument('--zmax', type=float, default=2.0)
     parser.add_argument('--dz', type=float, default=0.1)
-    parser.add_argument('--nplot', type=int, default=10,
+    parser.add_argument('--num_plot', type=int, default=10,
                          help='number of sampled points to be ploted')
     parser.add_argument('--plot_niter', type=int, default=1)
     parser.add_argument('--stop_niter', type=int, default=-1)
@@ -87,6 +97,8 @@ def init_config():
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
+
+    args.kernel_sizes = [int(s) for s in args.kernel_sizes.split(',')]
 
     return args
 
@@ -182,7 +194,14 @@ def main(args):
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
-    encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
+    if args.enc_type == 'lstm':
+        encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
+        args.enc_nh = args.dec_nh
+    elif args.enc_type == 'mix':
+        encoder = MixLSTMEncoder(args, vocab_size, model_init, emb_init)
+    else:
+        raise ValueError("the specified encoder type is not supported")
+
     decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
     device = torch.device("cuda" if args.cuda else "cpu")
@@ -221,12 +240,13 @@ def main(args):
 
     anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
 
-    layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
-    plotter = VisPlotter(server=args.server, env=args.env, contour_layout=layout)
-    plot_data = train_data.data_sample(nsample=args.nplot, device=device, batch_first=True)
-    zrange, num_slice = generate_grid(args.zmin, args.zmax, args.dz)
-    zrange = zrange.to(device)
-    log_prior = vae.eval_prior_dist(zrange)
+    if args.plot:
+        layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
+        plotter = VisPlotter(server=args.server, env=args.env, contour_layout=layout)
+        plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
+        zrange, num_slice = generate_grid(args.zmin, args.zmax, args.dz)
+        zrange = zrange.to(device)
+        log_prior = vae.eval_prior_dist(zrange)
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -286,11 +306,11 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
-
-            if iter_ % args.plot_niter == 0:
-                with torch.no_grad():
-                    plot_vae(plotter, vae, plot_data, zrange,
-                             log_prior, iter_, num_slice)
+            if args.plot:
+                if iter_ % args.plot_niter == 0:
+                    with torch.no_grad():
+                        plot_vae(plotter, vae, plot_data, zrange,
+                                 log_prior, iter_, num_slice)
                 # return
 
             iter_ += 1

@@ -30,17 +30,15 @@ class CNNClassifier(nn.Module):
             Tensor1: the logits for the mixture prob, shape (batch_size, mix_num)
         """
 
-        seq_length = x.size(1)
-
         # TODO: support static vectors
 
         x = x.unsqueeze(1)
 
         # [(batch_size, kernel_num, seq_length)] * len(args.kernel_sizes)
-        x = [F.relu(conv(x).squeeze(3) for conv in self.convs)]
+        x = [F.relu(conv(x)).squeeze(3) for conv in self.convs]
 
         # [(batch_size, kernel_num)] * len(args.kernel_sizes)
-        x = [F.max_pool1d(e, seq_length).squeeze(2) for e in x]
+        x = [F.max_pool1d(e, e.size(2)).squeeze(2) for e in x]
 
         x = torch.cat(x, 1)
 
@@ -55,7 +53,7 @@ class CNNClassifier(nn.Module):
 class MixLSTMEncoder(nn.Module):
     """Mixture of Gaussian LSTM Encoder with constant-length input"""
     def __init__(self, args, vocab_size, model_init, emb_init):
-        super(LSTMEncoder, self).__init__()
+        super(MixLSTMEncoder, self).__init__()
         self.ni = args.ni
         self.nh = args.enc_nh
         self.nz = args.nz
@@ -66,11 +64,11 @@ class MixLSTMEncoder(nn.Module):
 
         self.lstm_lists = nn.ModuleList([nn.LSTM(input_size=args.ni,
             hidden_size=self.nh, num_layers=1, 
-            batch_first=True, dropout=0)] for _ in range(args.mix_num))
+            batch_first=True, dropout=0) for _ in range(args.mix_num)])
 
         # dimension transformation to z (mean and logvar)
         self.linear_lists = nn.ModuleList([nn.Linear(self.nh, 
-            2 * args.nz, bias=False)] for _ in range(args.mix_num))
+            2 * args.nz, bias=False) for _ in range(args.mix_num)])
 
         self.reset_parameters(model_init, emb_init)
 
@@ -107,7 +105,7 @@ class MixLSTMEncoder(nn.Module):
         Returns: Tensor
             Sampled z with shape (batch_size, nsamples, nz)
         """
-        mix_num, batch_size, nz = mu.size()
+        batch_size, mix_num, nz = mu.size()
         std = logvar.mul(0.5).exp()
 
         mu_expd = mu.unsqueeze(2).expand(batch_size, mix_num, nsamples, nz)
@@ -144,8 +142,8 @@ class MixLSTMEncoder(nn.Module):
             mean_list.append(mean)
             logvar_list.append(logvar)
 
-        return torch.cat(mean_list, dim=2).squeenze(0), \
-               torch.cat(logvar_list, dim=2).squeenze(0)
+        return torch.cat(mean_list, dim=2).squeeze(0), \
+               torch.cat(logvar_list, dim=2).squeeze(0)
 
     def encode(self, input, nsamples):
         """perform the encoding and compute the KL term
@@ -174,11 +172,11 @@ class MixLSTMEncoder(nn.Module):
         z = self.reparameterize(mu, logvar, mix_prob, nsamples)
 
         # compute KL with MC, (batch_size)
-        KL = (log_posterior(z, mu, logvar, log_mix_weights) - log_prior(z)).mean(-1)
+        KL = (self.log_posterior(z, mu, logvar, log_mix_weights) - self.log_prior(z)).mean(-1)
 
         return z, KL
 
-    def log_prior(z):
+    def log_prior(self, z):
         """evaluate the log density of prior at z
         Args:
             z: Tensor

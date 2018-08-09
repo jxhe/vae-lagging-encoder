@@ -16,7 +16,7 @@ class LSTMDecoder(nn.Module):
     def __init__(self, args, vocab, model_init, emb_init):
         super(LSTMDecoder, self).__init__()
         self.ni = args.ni
-        self.nh = args.nh
+        self.nh = args.dec_nh
         self.nz = args.nz
 
         self.vocab = vocab
@@ -28,16 +28,16 @@ class LSTMDecoder(nn.Module):
         self.dropout_out = nn.Dropout(args.dec_dropout_out)
 
         # for initializing hidden state and cell
-        self.trans_linear = nn.Linear(args.nz, args.nh, bias=False)
+        self.trans_linear = nn.Linear(args.nz, args.dec_nh, bias=False)
 
         # concatenate z with input
         self.lstm = nn.LSTM(input_size=args.ni + args.nz,
-                            hidden_size=args.nh,
+                            hidden_size=args.dec_nh,
                             num_layers=1,
                             batch_first=True)
 
         # prediction layer
-        self.pred_linear = nn.Linear(args.nh, len(vocab), bias=False)
+        self.pred_linear = nn.Linear(args.dec_nh, len(vocab), bias=False)
 
         vocab_mask = torch.ones(len(vocab))
         # vocab_mask[vocab['<pad>']] = 0

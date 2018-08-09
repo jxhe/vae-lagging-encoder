@@ -10,19 +10,19 @@ class LSTMEncoder(nn.Module):
     def __init__(self, args, vocab_size, model_init, emb_init):
         super(LSTMEncoder, self).__init__()
         self.ni = args.ni
-        self.nh = args.nh
+        self.nh = args.enc_nh
         self.nz = args.nz
 
         self.embed = nn.Embedding(vocab_size, args.ni)
 
         self.lstm = nn.LSTM(input_size=args.ni,
-                            hidden_size=args.nh,
+                            hidden_size=args.enc_nh,
                             num_layers=1,
                             batch_first=True,
                             dropout=0)
 
         # dimension transformation to z (mean and logvar)
-        self.linear = nn.Linear(args.nh, 2 * args.nz, bias=False)
+        self.linear = nn.Linear(args.enc_nh, 2 * args.nz, bias=False)
 
         self.reset_parameters(model_init, emb_init)
 
