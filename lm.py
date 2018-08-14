@@ -207,8 +207,8 @@ def main(args):
             else:
                 optimizer = optim.Adam(lm.parameters(), lr=lr_, betas=(0.5, 0.999))
 
-    print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
-          % (best_loss, best_kl, best_nll, best_ppl))
+    print('best_loss: %.4f, nll: %.4f, ppl: %.4f' \
+          % (best_loss, best_nll, best_ppl))
     sys.stdout.flush()
 
     # vae.eval()
