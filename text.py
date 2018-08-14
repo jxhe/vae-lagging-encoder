@@ -42,6 +42,7 @@ def init_config():
     parser.add_argument('--epochs', type=int, default=40,
                         help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+    parser.add_argument('--nsamples', type=int, default=3, help='number of samples')
 
 
     # KL annealing parameters
@@ -117,7 +118,7 @@ def test(model, test_data_batch, args):
         report_num_sents += batch_size
 
 
-        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=1)
+        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
 
         assert(not loss_rc.requires_grad)
 
@@ -276,7 +277,7 @@ def main(args):
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=1)
+                loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
