@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from .utils import log_sum_exp
+from .lm import LSTM_LM
 
 
 class VAE(nn.Module):
@@ -16,7 +17,7 @@ class VAE(nn.Module):
         self.nz = args.nz
 
         if args.enc_type == 'mix':
-            self.baseline = None
+            self.baseline = torch.load(args.baseline_path)
 
         loc = torch.zeros(self.nz, device=args.device)
         scale = torch.ones(self.nz, device=args.device)
@@ -75,7 +76,7 @@ class VAE(nn.Module):
 
             # this is actually the negative learning signal
             learning_signal = (reconstruct_err + kl_weight * KL - 
-                               self.baseline.log_prob(x)).detach()
+                               self.baseline.log_probability(x).unsqueeze(1)).detach()
 
             encoder_loss = (learning_signal * log_posterior).mean(dim=1)
             decoder_loss = reconstruct_err.mean(dim=1)

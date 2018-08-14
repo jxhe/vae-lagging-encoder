@@ -28,10 +28,11 @@ def init_config():
 
     # mix encoder parameters
     parser.add_argument('--kernel_num', type=int, help='number of each kind of kernel')
-    parser.add_argument('--kernel_sizes', type=str, default='3,4,5', 
+    parser.add_argument('--kernel_sizes', type=str, default='3,4,5',
         help='number of each kind of kernel')
     parser.add_argument('--mix_num', type=int, help='number of classes')
     parser.add_argument('--cnn_dropout', type=float, default=0.5)
+    parser.add_argument('--baseline_path', type=str, help='path to load baseline model')
 
     # optimization parameters
     parser.add_argument('--lr', type=float, default=1.0, help='Learning rate')
