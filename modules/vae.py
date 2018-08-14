@@ -11,7 +11,12 @@ class VAE(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
+        self.args = args
+
         self.nz = args.nz
+
+        if args.enc_type == 'mix':
+            self.baseline = None
 
         loc = torch.zeros(self.nz, device=args.device)
         scale = torch.ones(self.nz, device=args.device)
@@ -45,23 +50,46 @@ class VAE(nn.Module):
         """
         
 
-    def loss(self, x, nsamples=1):
+    def loss(self, x, kl_weight, nsamples=1):
         """
         Args:
             x: if the data is constant-length, x is the data tensor with
                 shape (batch, *). Otherwise x is a tuple that contains 
                 the data tensor and length list
 
-        Returns: Tensor1, Tensor2
-            Tensor1: reconstruction loss shape [batch]
-            Tensor2: KL loss shape [batch]
+        Returns: Tensor1, Tensor2, Tensor3
+            Tensor1: total loss [batch]
+            Tensor2: reconstruction loss shape [batch]
+            Tensor3: KL loss shape [batch]
         """
-        z, KL = self.encode(x, nsamples)
+        if self.args.enc_type == 'mix':
+            # reinforce loss
 
-        # (batch, nsamples)
-        reconstruct_err = self.decoder.reconstruct_error(x, z)
+            # z: (batch, nsamples, nz)
+            # KL: (batch, nsamples)
+            # log_posterior: (batch, nsamples)
+            z, (KL, log_posterior) = self.encode(x, nsamples)
 
-        return reconstruct_err.mean(dim=1), KL
+            # (batch, nsamples)
+            reconstruct_err = self.decoder.reconstruct_error(x, z)
+
+            # this is actually the negative learning signal
+            learning_signal = (reconstruct_err + kl_weight * KL - 
+                               self.baseline.log_prob(x)).detach()
+
+            encoder_loss = (learning_signal * log_posterior).mean(dim=1)
+            decoder_loss = reconstruct_err.mean(dim=1)
+
+            return encoder_loss + decoder_loss, reconstruct_err.mean(dim=1), KL.mean(dim=1)
+
+        else:
+            z, KL = self.encode(x, nsamples)
+
+            # (batch)
+            reconstruct_err = self.decoder.reconstruct_error(x, z).mean(dim=1)
+
+
+            return reconstruct_err + kl_weight * KL, reconstruct_err, KL
 
     def KL(self, x):
         _, KL = self.encode(x, 1)

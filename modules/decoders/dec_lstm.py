@@ -19,8 +19,6 @@ class LSTMDecoder(nn.Module):
         self.nh = args.dec_nh
         self.nz = args.nz
 
-        self.vocab = vocab
-
         # no padding when setting padding_idx to -1
         self.embed = nn.Embedding(len(vocab), args.ni, padding_idx=-1)
 

@@ -116,7 +116,7 @@ def test(model, test_data_batch, args):
         report_num_sents += batch_size
 
 
-        loss_rc, loss_kl = model.loss(batch_data, nsamples=1)
+        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=1)
 
         assert(not loss_rc.requires_grad)
 
@@ -274,14 +274,13 @@ def main(args):
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
-                loss_rc, loss_kl = vae.loss(batch_data, nsamples=1)
+
+                loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=1)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
 
-
-
-                loss = (loss_rc + kl_weight * loss_kl) / batch_size
+                loss = loss.mean(dim=-1)
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
@@ -332,7 +331,7 @@ def main(args):
                 best_nll = nll
                 best_kl = kl
                 best_ppl = ppl
-                torch.save(vae.state_dict(), args.save_path)
+                torch.save(vae, args.save_path)
 
             vae.train()
 

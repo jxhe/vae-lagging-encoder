@@ -3,6 +3,7 @@ import math
 from itertools import chain
 import torch
 import torch.nn as nn
+import torch.distributions as dist
 import torch.nn.functional as F
 
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
@@ -87,7 +88,7 @@ class MixLSTMEncoder(nn.Module):
             model_init(param)
         emb_init(self.embed.weight)
 
-    def reparameterize(self, mu, logvar, mix_prob, nsamples=1):
+    def sample(self, mu, logvar, mix_prob, nsamples=1):
         """sample from posterior Gaussian family
         Args:
             mu: Tensor
@@ -105,20 +106,19 @@ class MixLSTMEncoder(nn.Module):
         Returns: Tensor
             Sampled z with shape (batch_size, nsamples, nz)
         """
-        batch_size, mix_num, nz = mu.size()
-        std = logvar.mul(0.5).exp()
 
-        mu_expd = mu.unsqueeze(2).expand(batch_size, mix_num, nsamples, nz)
-        std_expd = std.unsqueeze(2).expand(batch_size, mix_num, nsamples, nz)
+        batch_size, = mix_prob.size(0)
+        # (batch_size, nsamples, nz)
+        classes = torch.multinomial(mix_prob, nsamples, replacement=True) \
+                       .unsqueeze(2).expand(batch_size, nsamples, self.nz)
 
-        eps = torch.zeros_like(std_expd).normal_()
+        # (batch_size, nsamples, nz)
+        mu_ = torch.gather(mu, dim=1, index=classes)
+        logvar_ = torch.gather(logvar, dim=1, index=classes)
 
-        # (batch_size, mix_num, nsamples, nz)
-        samples = mu_expd + torch.mul(eps, std_expd)
+        std = (0.5 * logvar_).exp()
 
-        samples = samples.mul(mix_prob.view(batch_size, mix_num, 1, 1))
-
-        return torch.sum(samples, dim=1)
+        return torch.normal(mu_, std)
 
     def forward(self, input):
         """
@@ -150,9 +150,11 @@ class MixLSTMEncoder(nn.Module):
         Args:
             input: (batch_size, seq_len)
 
-        Returns: Tensor1, Tensor2
+        Returns: Tensor1, Tuple
             Tensor1: the tensor latent z with shape [batch, nsamples, nz]
-            Tensor2: the tenor of KL for each x with shape [batch]
+            Tuple: containes two tensors:
+                1. the tensor of KL for each x with shape [batch, nsamples]
+                2. the tensor of log q(z | x) with shape [batch, nsamples]
 
         """
 
@@ -169,12 +171,13 @@ class MixLSTMEncoder(nn.Module):
         mu, logvar = self.forward(embed)
 
         # (batch, nsamples, nz)
-        z = self.reparameterize(mu, logvar, mix_prob, nsamples)
+        z = self.sample(mu, logvar, mix_prob, nsamples)
 
-        # compute KL with MC, (batch_size)
-        KL = (self.log_posterior(z, mu, logvar, log_mix_weights) - self.log_prior(z)).mean(-1)
+        # compute KL with MC, (batch_size, nsamples)
+        log_posterior = self.log_posterior(z, mu, logvar, log_mix_weights)
+        KL = (log_posterior - self.log_prior(z))
 
-        return z, KL
+        return z, (KL, log_posterior)
 
     def log_prior(self, z):
         """evaluate the log density of prior at z
