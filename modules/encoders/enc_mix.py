@@ -174,7 +174,7 @@ class MixLSTMEncoder(nn.Module):
         z = self.sample(mu, logvar, mix_prob, nsamples)
 
         # compute KL with MC, (batch_size, nsamples)
-        log_posterior = self.log_posterior(z, mu, logvar, log_mix_weights)
+        log_posterior = self.log_posterior(z, mu, logvar, mix_prob)
         KL = (log_posterior - self.log_prior(z))
 
         return z, (KL, log_posterior)
@@ -192,7 +192,7 @@ class MixLSTMEncoder(nn.Module):
         
         return -0.5 * (z ** 2).sum(-1) - 0.5 * self.nz * math.log(2 * math.pi)
 
-    def log_posterior(self, z, mu, logvar, log_mix_weights):
+    def log_posterior(self, z, mu, logvar, mix_prob):
         """evaluate the log density of approximate 
         posterior at z
 
@@ -209,8 +209,8 @@ class MixLSTMEncoder(nn.Module):
                 logvar tensors of mixed gaussian distibution,
                  with shape (batch_size, mix_num, nz)
 
-            log_mix_weights: Tensor
-                the mixture weights (the logits), 
+            mix_prob: Tensor
+                the mixture probability weights, 
                 with shape (batch_size, mix_num)
 
         Returns: Tensor1
@@ -230,7 +230,7 @@ class MixLSTMEncoder(nn.Module):
             0.5 * (self.nz * math.log(2 * math.pi) + logvar.sum(-1))
 
         # (batch_size, mix_num, nsamples)
-        log_density = log_density + log_mix_weights.unsqueeze(2)
+        log_density = log_density + mix_prob.log().unsqueeze(2)
 
         return log_sum_exp(log_density, dim=1)
 
