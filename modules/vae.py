@@ -75,7 +75,7 @@ class VAE(nn.Module):
             reconstruct_err = self.decoder.reconstruct_error(x, z)
 
             # this is actually the negative learning signal
-            learning_signal = (reconstruct_err + kl_weight * KL - 
+            learning_signal = (reconstruct_err + kl_weight * KL + 
                                self.baseline.log_probability(x).unsqueeze(1)).detach()
 
             encoder_loss = (learning_signal * log_posterior).mean(dim=1)

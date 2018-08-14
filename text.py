@@ -332,7 +332,7 @@ def main(args):
                 best_nll = nll
                 best_kl = kl
                 best_ppl = ppl
-                torch.save(vae, args.save_path)
+                torch.save(vae.state_dict(), args.save_path)
 
             vae.train()
 

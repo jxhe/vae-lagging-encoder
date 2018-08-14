@@ -107,7 +107,7 @@ class MixLSTMEncoder(nn.Module):
             Sampled z with shape (batch_size, nsamples, nz)
         """
 
-        batch_size, = mix_prob.size(0)
+        batch_size = mix_prob.size(0)
         # (batch_size, nsamples, nz)
         classes = torch.multinomial(mix_prob, nsamples, replacement=True) \
                        .unsqueeze(2).expand(batch_size, nsamples, self.nz)
