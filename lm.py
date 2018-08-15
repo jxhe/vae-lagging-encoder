@@ -167,7 +167,6 @@ def main(args):
             loss.backward()
             torch.nn.utils.clip_grad_norm_(lm.parameters(), args.clip_grad)
 
-                
             optimizer.step()
 
             if iter_ % args.niter == 0:
