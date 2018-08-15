@@ -27,9 +27,9 @@ class VAE(nn.Module):
     def sample_from_posterior(self, x, nsamples=1):
         """sample from posterior
         Args:
-            x: Tensor 
+            x: Tensor
                 shape (batch, seq_len, ni)
-            nsamples: int. 
+            nsamples: int.
                 Number of samples for each data instance
 
         Returns: Tensor
@@ -49,13 +49,13 @@ class VAE(nn.Module):
     def decode(self, z):
         """generate samples from z (perhaps beam search ?)
         """
-        
+
 
     def loss(self, x, kl_weight, nsamples=1):
         """
         Args:
             x: if the data is constant-length, x is the data tensor with
-                shape (batch, *). Otherwise x is a tuple that contains 
+                shape (batch, *). Otherwise x is a tuple that contains
                 the data tensor and length list
 
         Returns: Tensor1, Tensor2, Tensor3
@@ -76,7 +76,7 @@ class VAE(nn.Module):
             reconstruct_err = self.decoder.reconstruct_error(x, z)
 
             # this is actually the negative learning signal
-            learning_signal = (reconstruct_err + kl_weight * KL + 
+            learning_signal = (reconstruct_err + kl_weight * KL +
                                self.baseline.log_probability(x).unsqueeze(1)).detach()
 
             encoder_loss = (learning_signal * log_posterior).mean(dim=1)
@@ -91,7 +91,7 @@ class VAE(nn.Module):
             reconstruct_err = self.decoder.reconstruct_error(x, z).mean(dim=1)
 
 
-            return reconstruct_err + kl_weight * KL, reconstruct_err, KL
+            return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
 
     def KL(self, x):
         _, KL = self.encode(x, 1)
@@ -102,7 +102,7 @@ class VAE(nn.Module):
         """perform grid search to calculate the true posterior
         Args:
             zrange: tensor
-                different z points that will be evaluated, with 
+                different z points that will be evaluated, with
                 shape (k^2, nz), where k=(zmax - zmin)/space
         """
 
@@ -113,17 +113,17 @@ class VAE(nn.Module):
 
     def eval_true_posterior_dist(self, x, zrange, log_prior):
         """perform grid search to calculate the true posterior
-         (actually the complete likelihood), this function computes 
+         (actually the complete likelihood), this function computes
          the complete likelihood over a popultation, i.e. P(Z, X)
         Args:
             zrange: tensor
-                different z points that will be evaluated, with 
+                different z points that will be evaluated, with
                 shape (k^2, nz), where k=(zmax - zmin)/pace
             log_prior: tenor
-                the prior log density with shape (k^2) 
+                the prior log density with shape (k^2)
 
         Returns: Tensor
-            Tensor: the posterior density tensor with 
+            Tensor: the posterior density tensor with
                 shape (k^2)
         """
         try:
@@ -151,7 +151,7 @@ class VAE(nn.Module):
     def eval_inference_dist(self, x, zrange):
         """
         Returns: Tensor
-            Tensor: the posterior density tensor with 
+            Tensor: the posterior density tensor with
                 shape (batch_size, k^2)
         """
         return self.encoder.eval_inference_dist(x, zrange)
@@ -164,4 +164,4 @@ class VAE(nn.Module):
     #     """
     #     return self.encoder.eval_inference_mode(x)
 
-        
+
