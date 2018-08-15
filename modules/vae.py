@@ -69,7 +69,8 @@ class VAE(nn.Module):
             # z: (batch, nsamples, nz)
             # KL: (batch, nsamples)
             # log_posterior: (batch, nsamples)
-            z, (KL, log_posterior) = self.encode(x, nsamples)
+            # mix_prob: (batch, nsamples)
+            z, (KL, log_posterior, mix_prob) = self.encode(x, nsamples)
 
             # (batch, nsamples)
             reconstruct_err = self.decoder.reconstruct_error(x, z)
@@ -81,7 +82,7 @@ class VAE(nn.Module):
             encoder_loss = (learning_signal * log_posterior).mean(dim=1)
             decoder_loss = reconstruct_err.mean(dim=1)
 
-            return encoder_loss + decoder_loss, reconstruct_err.mean(dim=1), KL.mean(dim=1)
+            return encoder_loss + decoder_loss, reconstruct_err.mean(dim=1), KL.mean(dim=1), mix_prob
 
         else:
             z, KL = self.encode(x, nsamples)

@@ -118,7 +118,8 @@ def test(model, test_data_batch, args):
         report_num_sents += batch_size
 
 
-        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
+        loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
+        # print(mix_prob)
 
         assert(not loss_rc.requires_grad)
 

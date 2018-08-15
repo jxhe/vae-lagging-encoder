@@ -177,7 +177,7 @@ class MixLSTMEncoder(nn.Module):
         log_posterior = self.log_posterior(z, mu, logvar, mix_prob)
         KL = (log_posterior - self.log_prior(z))
 
-        return z, (KL, log_posterior)
+        return z, (KL, log_posterior, mix_prob)
 
     def log_prior(self, z):
         """evaluate the log density of prior at z
