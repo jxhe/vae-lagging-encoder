@@ -258,6 +258,7 @@ def main(args):
                                                   device=device,
                                                   batch_first=True)
     for epoch in range(args.epochs):
+        iter_ = 0
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
         for i in np.random.permutation(len(train_data_batch)):
@@ -272,25 +273,67 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            for _ in range(args.infer_steps):
+            enc_optimizer.zero_grad()
 
-                enc_optimizer.zero_grad()
-                dec_optimizer.zero_grad()
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                # print(mix_prob[0])
 
+            loss_rc = loss_rc.sum()
+            loss_kl = loss_kl.sum()
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
-                print(mix_prob[0])
+            loss = loss.mean(dim=-1)
 
-                loss_rc = loss_rc.sum()
-                loss_kl = loss_kl.sum()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.encoder.parameters(), args.clip_grad)
 
-                loss = loss.mean(dim=-1)
+            enc_optimizer.step()
 
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
+            report_rec_loss += loss_rc.item()
+            report_kl_loss += loss_kl.item()
 
-                enc_optimizer.step()
-                # assert (loss == loss).all()
+            if iter_ % args.niter == 0:
+                train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
+
+                print('ENCODER epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                       'time elapsed %.2fs' %
+                       (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
+                       report_rec_loss / report_num_sents, time.time() - start))
+                sys.stdout.flush()
+
+                report_rec_loss = report_kl_loss = 0
+                report_num_words = report_num_sents = 0
+
+                # return
+
+            iter_ += 1
+
+        report_kl_loss = report_rec_loss = 0
+        report_num_words = report_num_sents = 0
+        iter_ = 0
+        for i in np.random.permutation(len(train_data_batch)):
+            batch_data = train_data_batch[i]
+            batch_size, sent_len = batch_data.size()
+
+            # not predict start symbol
+            report_num_words += (sent_len - 1) * batch_size
+
+            report_num_sents += batch_size
+
+            # kl_weight = 1.0
+            kl_weight = min(1.0, kl_weight + anneal_rate)
+
+            dec_optimizer.zero_grad()
+
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                # print(mix_prob[0])
+
+            loss_rc = loss_rc.sum()
+            loss_kl = loss_kl.sum()
+
+            loss = loss.mean(dim=-1)
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.decoder.parameters(), args.clip_grad)
 
             dec_optimizer.step()
 
@@ -300,7 +343,7 @@ def main(args):
             if iter_ % args.niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                print('DECODER epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                        'time elapsed %.2fs' %
                        (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
                        report_rec_loss / report_num_sents, time.time() - start))
@@ -309,14 +352,10 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
-            if args.plot:
-                if iter_ % args.plot_niter == 0:
-                    with torch.no_grad():
-                        plot_vae(plotter, vae, plot_data, zrange,
-                                 log_prior, iter_, num_slice)
                 # return
 
             iter_ += 1
+
 
             # if iter_ >= args.stop_niter and args.stop_niter > 0:
             #     return
