@@ -279,7 +279,7 @@ def main(args):
 
 
                 loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
-                print(mix_prob[0])
+                # print(mix_prob[0])
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
