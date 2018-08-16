@@ -278,7 +278,8 @@ def main(args):
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl, _ = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                print(mix_prob[0])
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
