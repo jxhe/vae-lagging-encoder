@@ -87,6 +87,8 @@ def init_config():
                          help='if perform multiple steps of inference')
     parser.add_argument('--infer_steps', type=int, default=1,
                          help='number of inference steps performed each iteration')
+    parser.add_argument('--burn', type=int, default=-1,
+                         help='number of inference steps performed each iteration')
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -271,6 +273,9 @@ def main(args):
 
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
+
+            if iter_ > args.burn and args.burn > 0:
+                args.infer_steps = 1
 
             for _ in range(args.infer_steps):
 
