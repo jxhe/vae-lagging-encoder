@@ -101,31 +101,31 @@ class LSTMEncoder(nn.Module):
 
         return z, KL
 
-    def eval_inference_dist(self, x, zrange):
+    def eval_inference_dist(self, x):
         """this function computes the inference posterior 
         over a popultation, i.e. P(Z | X)
-        Args:
-            zrange: tensor
-                different z points that will be evaluated, with
-                shape (k^2, nz), where k=(zmax - zmin)/space
+        
+        Returns: Tensor
+            Tensor: the mode locations, shape [batch_size, nz]
+
         """
         # (batch_size, nz)
         mu, logvar = self.forward(x)
-        std = logvar.mul(0.5).exp()
+        # std = logvar.mul(0.5).exp()
 
-        batch_size = mu.size(0)
-        zrange = zrange.unsqueeze(1).expand(zrange.size(0), batch_size, self.nz)
+        # batch_size = mu.size(0)
+        # zrange = zrange.unsqueeze(1).expand(zrange.size(0), batch_size, self.nz)
 
-        infer_dist = torch.distributions.normal.Normal(mu, std)
+        # infer_dist = torch.distributions.normal.Normal(mu, std)
 
-        # (batch_size, k^2)
-        log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
+        # # (batch_size, k^2)
+        # log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
 
 
-        # (K^2)
-        log_prob = log_prob.sum(dim=0)
+        # # (K^2)
+        # log_prob = log_prob.sum(dim=0)
 
-        return (log_prob - log_sum_exp(log_prob)).exp()
+        return mu
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution

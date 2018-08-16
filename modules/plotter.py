@@ -43,6 +43,24 @@ class VisPlotter(object):
         self.vis._send({'data': traces, 'layout': layout,
                         'win': win, 'opts': opts})
 
+    def plot_scatter(self, data, labels, legend, zmin, zmax, dz, win, name):
+        """
+        """
+        self.vis.scatter(X=np.array(data),
+                         Y=np.array(labels).astype(int),
+                         win=win,
+                         opts=dict(
+                            title=name,
+                            legend=legend,
+                            xtickmin=zmin,
+                            xtickmax=zmax,
+                            xtickstep=dz * 5, 
+                            ytickmin=zmin,
+                            ytickmax=zmax,
+                            ytickstep=dz * 5,
+                            markersymbol='cross-thin-open'))
+
+
     def plot_text(self):
         self.vis.text('Hello, world!')
 

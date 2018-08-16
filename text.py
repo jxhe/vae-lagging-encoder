@@ -148,14 +148,24 @@ def plot_vae(plotter, model, plot_data, zrange,
 
     plot_data, sents_len = plot_data
     loss_kl = model.KL(plot_data).sum() / plot_data.size(0)
-    posterior = model.eval_true_posterior_dist(plot_data, zrange, log_prior)
-    inference = model.eval_inference_dist(plot_data, zrange)
 
-    posterior_v = posterior.view(num_slice, num_slice)
-    inference_v = inference.view(num_slice, num_slice)
+    # [batch_size]
+    posterior_loc = model.eval_true_posterior_dist(plot_data, zrange, log_prior)
+
+    # [batch_size, nz]
+    posterior = torch.index_select(zrange, dim=0, index=posterior_loc)
+
+    # [batch_size, nz]
+    inference = model.eval_inference_dist(plot_data)
+
+    batch_size = posterior.size(0)
+
+    labels = [1] * batch_size + [2] * batch_size
+    legend = ["model posterior", "inference"]
     name = "iter %d, KL: %.4f" % (iter_, loss_kl.item())
     win_name = "iter %d" % iter_
-    plotter.plot_contour([posterior_v, inference_v], win=win_name, name=name)
+    plotter.plot_scatter(torch.cat([posterior, inference], 0), labels, 
+        legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
 
 
@@ -279,7 +289,6 @@ def main(args):
 
 
                 loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
-                print(mix_prob[0])
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()

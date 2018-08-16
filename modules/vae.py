@@ -123,8 +123,7 @@ class VAE(nn.Module):
                 the prior log density with shape (k^2)
 
         Returns: Tensor
-            Tensor: the posterior density tensor with
-                shape (k^2)
+            Tensor: the most significant mode, shape [batch_size]
         """
         try:
             batch_size = x.size(0)
@@ -141,20 +140,20 @@ class VAE(nn.Module):
         # (batch_size, k^2)
         log_comp = log_gen + log_prior
 
-        # (k^2)
-        log_comp = log_comp.sum(dim=0)
+        # (batch_size)
+        _, loc = log_comp.max(dim=1)
 
-        # (k^2)
-        return (log_comp - log_sum_exp(log_comp)).exp()
+        # (batch_size)
+        return loc
 
 
-    def eval_inference_dist(self, x, zrange):
+    def eval_inference_dist(self, x):
         """
         Returns: Tensor
             Tensor: the posterior density tensor with
                 shape (batch_size, k^2)
         """
-        return self.encoder.eval_inference_dist(x, zrange)
+        return self.encoder.eval_inference_dist(x)
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution
