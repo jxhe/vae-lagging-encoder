@@ -274,7 +274,7 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            if iter_ > args.burn and args.burn > 0:
+            if epoch >= args.burn and args.burn > 0:
                 args.infer_steps = 1
 
             for _ in range(args.infer_steps):
