@@ -24,6 +24,7 @@ def init_config():
     # optimization parameters
     parser.add_argument('--lr', type=float, default=1.0, help='Learning rate')
     parser.add_argument('--lr_decay', type=float, default=0.5, help='Learning rate')
+    parser.add_argument('--decay_epoch', type=int, default=5)
     parser.add_argument('--clip_grad', type=float, default=5.0, help='')
     parser.add_argument('--optim', type=str, default='adam', help='')
     parser.add_argument('--epochs', type=int, default=40,
@@ -105,8 +106,7 @@ def main(args):
 
     print(args)
 
-    schedule = args.epochs / 5
-    lr_ = args.lr
+    opt_dict = {"not_improved": 0, "lr": args.lr, "best_loss": 1e4}
 
     train_data = MonoTextData(args.train_data)
 
@@ -128,9 +128,9 @@ def main(args):
     lm = LSTM_LM(args, vocab, model_init, emb_init).to(device)
 
     if args.optim == 'sgd':
-        optimizer = optim.SGD(lm.parameters(), lr=lr_)
+        optimizer = optim.SGD(lm.parameters(), lr=opt_dict["lr"])
     else:
-        optimizer = optim.Adam(lm.parameters(), lr=lr_, betas=(0.5, 0.999))
+        optimizer = optim.Adam(lm.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
     iter_ = 0
     best_loss = 1e4
@@ -195,16 +195,22 @@ def main(args):
                 best_ppl = ppl
                 torch.save(lm, args.save_path)
 
-            lm.train()
-
-        if (epoch + 1) % schedule == 0:
-            print('update lr, old lr: %f' % lr_)
-            lr_ = lr_ * args.lr_decay
-            print('new lr: %f' % lr_)
-            if args.optim == 'sgd':
-                optimizer = optim.SGD(lm.parameters(), lr=lr_)
+            if nll > opt_dict["best_loss"]:
+                opt_dict["not_improved"] += 1
+                if opt_dict["not_improved"] >= args.decay_epoch:
+                    opt_dict["best_loss"] = loss
+                    opt_dict["not_improved"] = 0
+                    opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
+                    print('new lr: %f' % opt_dict["lr"])
+                    if args.optim == 'sgd':
+                        optimizer = optim.SGD(lm.parameters(), lr=opt_dict["lr"])
+                    else:
+                        optimizer = optim.Adam(lm.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
             else:
-                optimizer = optim.Adam(lm.parameters(), lr=lr_, betas=(0.5, 0.999))
+                opt_dict["not_improved"] = 0
+                opt_dict["best_loss"] = nll
+
+            lm.train()
 
     print('best_loss: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_nll, best_ppl))
