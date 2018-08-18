@@ -238,13 +238,13 @@ def main(args):
     args.device = device
     vae = VAE(encoder, decoder, args).to(device)
 
-    # if args.eval:
-    #     print('begin evaluation')
-    #     vae.load_state_dict(torch.load(args.load_model))
-    #     vae.eval()
-    #     calc_nll(hae, test_data, args)
+    if args.eval:
+        print('begin evaluation')
+        vae.load_state_dict(torch.load(args.load_model))
+        vae.eval()
+        calc_iwnll(vae, test_data_batch, args)
 
-    #     return
+        return
 
     if args.optim == 'sgd':
         enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
@@ -392,8 +392,11 @@ def main(args):
 
     sys.stdout.flush()
 
+
+    # compute importance weighted estimate of log p(x)
+    vae.load_state_dict(torch.load(args.save_path))
     vae.eval()
-    test_data_batch = test_data.create_data_batch(batch_size=2,
+    test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)
     with torch.no_grad():
