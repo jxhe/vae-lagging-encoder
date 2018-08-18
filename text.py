@@ -300,7 +300,7 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            if epoch >= args.burn and args.burn > 0:
+            if epoch >= args.burn or args.burn < 0:
                 args.infer_steps = 1
 
             for _ in range(args.infer_steps):
@@ -390,7 +390,7 @@ def main(args):
     vae.eval()
     test_data_batch = test_data.create_data_batch(batch_size=2,
                                                   device=device,
-                                                  batch_first=True)    
+                                                  batch_first=True)
     with torch.no_grad():
         calc_iwnll(vae, test_data_batch, args)
 
