@@ -58,7 +58,7 @@ class VisPlotter(object):
                             ytickmin=zmin,
                             ytickmax=zmax,
                             ytickstep=dz * 5,
-                            markersymbol='cross-thin-open'))
+                            markersize=2))
 
 
     def plot_text(self):

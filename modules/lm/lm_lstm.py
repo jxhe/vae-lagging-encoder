@@ -68,6 +68,7 @@ class LSTM_LM(nn.Module):
 
         # (batch_size, seq_len, ni)
         word_embed = self.embed(input)
+        word_embed = self.dropout_in(word_embed)
         
         c_init = word_embed.new_zeros((1, batch_size, self.nh))
         h_init = word_embed.new_zeros((1, batch_size, self.nh))

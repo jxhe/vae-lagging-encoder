@@ -150,6 +150,8 @@ def plot_vae(plotter, model, plot_data, zrange,
 
     plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size)) 
 
+    posterior = []
+    inference = []
     for data in plot_data_list:
         loss_kl = model.KL(data).sum() / data.size(0)
 
@@ -157,11 +159,16 @@ def plot_vae(plotter, model, plot_data, zrange,
         posterior_loc = model.eval_true_posterior_dist(data, zrange, log_prior)
 
         # [batch_size, nz]
-        posterior = torch.index_select(zrange, dim=0, index=posterior_loc)
+        posterior_ = torch.index_select(zrange, dim=0, index=posterior_loc)
 
         # [batch_size, nz]
-        inference = model.eval_inference_dist(plot_data)
+        inference_ = model.eval_inference_dist(data)
 
+        posterior.append(posterior_)
+        inference.append(inference_)
+
+    posterior = torch.cat(posterior, 0)
+    inference = torch.cat(inference, 0)
     batch_size = posterior.size(0)
 
     labels = [1] * batch_size + [2] * batch_size
