@@ -150,7 +150,7 @@ def calc_iwnll(model, test_data_batch, args):
 
     report_nll_loss = 0
     report_num_words = report_num_sents = 0
-    for i in np.random.permutation(len(test_data_batch)):
+    for id_, i in enumerate(np.random.permutation(len(test_data_batch))):
         batch_data = test_data_batch[i]
         batch_size, sent_len = batch_data.size()
 
@@ -158,6 +158,8 @@ def calc_iwnll(model, test_data_batch, args):
         report_num_words += (sent_len - 1) * batch_size
 
         report_num_sents += batch_size
+        if id_ % (round(len(test_data_batch) / 10)) == 0:
+            print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
 
         loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples)
 
@@ -283,13 +285,6 @@ def main(args):
                                                   device=device,
                                                   batch_first=True)
 
-    test_data_batch = test_data.create_data_batch(batch_size=2,
-                                              device=device,
-                                              batch_first=True)    
-    with torch.no_grad():
-        calc_iwnll(vae, test_data_batch, args)
-        return
-        
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
