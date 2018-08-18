@@ -144,19 +144,23 @@ def test(model, test_data_batch, args):
     return test_loss, nll, kl, ppl
 
 def plot_vae(plotter, model, plot_data, zrange,
-             log_prior, iter_, num_slice):
+             log_prior, iter_, num_slice, args):
 
     plot_data, sents_len = plot_data
-    loss_kl = model.KL(plot_data).sum() / plot_data.size(0)
 
-    # [batch_size]
-    posterior_loc = model.eval_true_posterior_dist(plot_data, zrange, log_prior)
+    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size)) 
 
-    # [batch_size, nz]
-    posterior = torch.index_select(zrange, dim=0, index=posterior_loc)
+    for data in plot_data_list:
+        loss_kl = model.KL(data).sum() / data.size(0)
 
-    # [batch_size, nz]
-    inference = model.eval_inference_dist(plot_data)
+        # [batch_size]
+        posterior_loc = model.eval_true_posterior_dist(data, zrange, log_prior)
+
+        # [batch_size, nz]
+        posterior = torch.index_select(zrange, dim=0, index=posterior_loc)
+
+        # [batch_size, nz]
+        inference = model.eval_inference_dist(plot_data)
 
     batch_size = posterior.size(0)
 
@@ -322,7 +326,7 @@ def main(args):
                 if iter_ % args.plot_niter == 0:
                     with torch.no_grad():
                         plot_vae(plotter, vae, plot_data, zrange,
-                                 log_prior, iter_, num_slice)
+                                 log_prior, iter_, num_slice, args)
                 # return
 
             iter_ += 1
