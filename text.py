@@ -37,13 +37,14 @@ def init_config():
     # optimization parameters
     parser.add_argument('--lr', type=float, default=1.0, help='Learning rate')
     parser.add_argument('--lr_decay', type=float, default=0.5, help='Learning rate')
+    parser.add_argument('--decay_epoch', type=int, default=5)
     parser.add_argument('--clip_grad', type=float, default=5.0, help='')
     parser.add_argument('--optim', type=str, default='adam', help='')
     parser.add_argument('--epochs', type=int, default=40,
                         help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
     parser.add_argument('--nsamples', type=int, default=3, help='number of samples')
-
+    parser.add_argument('--iw_nsamples', type=int, default=10, help='number of samples')
 
     # KL annealing parameters
     # parser.add_argument('--warm_up', type=int, default=5, help='')
@@ -145,6 +146,29 @@ def test(model, test_data_batch, args):
 
     return test_loss, nll, kl, ppl
 
+def calc_iwnll(model, test_data_batch, args):
+
+    report_nll_loss = 0
+    report_num_words = report_num_sents = 0
+    for i in np.random.permutation(len(test_data_batch)):
+        batch_data = test_data_batch[i]
+        batch_size, sent_len = batch_data.size()
+
+        # not predict start symbol
+        report_num_words += (sent_len - 1) * batch_size
+
+        report_num_sents += batch_size
+
+        loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples)
+
+        report_nll_loss += loss.sum().item()
+
+    nll = report_nll_loss / report_num_sents
+    ppl = np.exp(nll * report_num_sents / report_num_words)
+
+    print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
+    sys.stdout.flush()
+
 def plot_vae(plotter, model, plot_data, zrange,
              log_prior, iter_, num_slice):
 
@@ -181,8 +205,7 @@ def main(args):
 
     print(args)
 
-    schedule = args.epochs / 5
-    lr_ = args.lr
+    opt_dict = {"not_improved": 0, "lr": args.lr}
 
     train_data = MonoTextData(args.train_data)
 
@@ -222,11 +245,11 @@ def main(args):
     #     return
 
     if args.optim == 'sgd':
-        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
-        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
     else:
-        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
-        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
     if not args.multi_infer:
         args.infer_steps = 1
@@ -259,6 +282,14 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
+
+    test_data_batch = test_data.create_data_batch(batch_size=2,
+                                              device=device,
+                                              batch_first=True)    
+    with torch.no_grad():
+        calc_iwnll(vae, test_data_batch, args)
+        return
+        
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
@@ -341,25 +372,33 @@ def main(args):
                 best_kl = kl
                 best_ppl = ppl
                 torch.save(vae.state_dict(), args.save_path)
+            else:
+                opt_dict["not_improved"] += 1
+                if opt_dict["not_improved"] >= args.decay_epoch:
+                    opt_dict["not_improved"] = 0
+                    opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
+                    print('new lr: %f' % opt_dict["lr"])
+                    if args.optim == 'sgd':
+                        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+                        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                    else:
+                        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
             vae.train()
 
-        if (epoch + 1) % schedule == 0:
-            print('update lr, old lr: %f' % lr_)
-            lr_ = lr_ * args.lr_decay
-            print('new lr: %f' % lr_)
-            if args.optim == 'sgd':
-                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
-                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
-            else:
-                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
-                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
-
     print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_kl, best_nll, best_ppl))
+
     sys.stdout.flush()
 
-    # vae.eval()
+    vae.eval()
+    test_data_batch = test_data.create_data_batch(batch_size=2,
+                                                  device=device,
+                                                  batch_first=True)    
+    with torch.no_grad():
+        calc_iwnll(vae, test_data_batch, args)
+
     # calc_nll(vae, test_data, args)
 
 if __name__ == '__main__':

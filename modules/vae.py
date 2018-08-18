@@ -1,3 +1,5 @@
+
+import math
 import torch
 import torch.nn as nn
 
@@ -49,6 +51,7 @@ class VAE(nn.Module):
     def decode(self, z):
         """generate samples from z (perhaps beam search ?)
         """
+        pass
 
 
     def loss(self, x, kl_weight, nsamples=1):
@@ -93,6 +96,34 @@ class VAE(nn.Module):
 
             return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
 
+    def nll_iw(self, x, nsamples):
+        """compute the importance weighting estimate of the log-likelihood
+        Args:
+            x: if the data is constant-length, x is the data tensor with
+                shape (batch, *). Otherwise x is a tuple that contains
+                the data tensor and length list
+
+            nsamples: Int
+                the number of samples required to estimate marginal data likelihood
+
+        Returns: Tensor1
+            Tensor1: the estimate of log p(x), shape [batch]
+        """
+
+        # [batch, nsamples, nz]
+        # param is the parameters required to evaluate q(z|x)
+        z, param = self.encoder.sample(x, nsamples)
+
+        # [batch, nsamples]
+        log_comp_ll = self.eval_complete_ll(x, z)
+        log_infer_ll = self.eval_inference_dist(x, z, param)
+
+        ll_iw = log_sum_exp(log_comp_ll - log_infer_ll, dim=-1) - math.log(nsamples)
+
+        return -ll_iw
+
+        
+
     def KL(self, x):
         _, KL = self.encode(x, 1)
 
@@ -107,8 +138,31 @@ class VAE(nn.Module):
         """
 
         # (k^2)
-        return self.prior.log_prob(zrange).sum(dim=1)
+        return self.prior.log_prob(zrange).sum(dim=-1)
 
+    def eval_complete_ll(self, x, z):
+        """compute log p(z,x)
+        Args:
+            x: Tensor
+                input with shape [batch, seq_len]
+            z: Tensor
+                evaluation points with shape [batch, nsamples, nz]
+
+        Returns: Tensor1
+            Tensor1: log p(z,x) Tensor with shape [batch, nsamples]
+        """
+
+        # [batch, nsamples]
+        log_prior = self.eval_prior_dist(z)
+        log_gen = self.eval_cond_ll(x, z)
+
+        return log_prior + log_gen
+
+    def eval_cond_ll(self, x, z):
+        """compute log p(x|z)
+        """
+
+        return self.decoder.log_probability(x, z)
 
 
     def eval_true_posterior_dist(self, x, zrange, log_prior):
@@ -148,13 +202,13 @@ class VAE(nn.Module):
         return (log_comp - log_sum_exp(log_comp)).exp()
 
 
-    def eval_inference_dist(self, x, zrange):
+    def eval_inference_dist(self, x, z, param=None):
         """
         Returns: Tensor
             Tensor: the posterior density tensor with
-                shape (batch_size, k^2)
+                shape (batch_size, nsamples)
         """
-        return self.encoder.eval_inference_dist(x, zrange)
+        return self.encoder.eval_inference_dist(x, z, param)
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution

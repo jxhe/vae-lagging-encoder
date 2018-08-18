@@ -1,3 +1,5 @@
+
+import math
 from itertools import chain
 import torch
 import torch.nn as nn
@@ -82,6 +84,24 @@ class LSTMEncoder(nn.Module):
 
         return mean.squeeze(0), logvar.squeeze(0)
 
+    def sample(self, input, nsamples):
+        """sampling from the encoder
+
+        Returns: Tensor1, Tuple
+            Tensor1: the tensor latent z with shape [batch, nsamples, nz]
+            Tuple: contains the tensor mu [batch, nz] and 
+                logvar[batch, nz]
+        """
+
+        # (batch_size, nz)
+        mu, logvar = self.forward(input)
+
+        # (batch, nsamples, nz)
+        z = self.reparameterize(mu, logvar, nsamples)        
+
+        return z, (mu, logvar)
+
+
     def encode(self, input, nsamples):
         """perform the encoding and compute the KL term
 
@@ -101,31 +121,33 @@ class LSTMEncoder(nn.Module):
 
         return z, KL
 
-    def eval_inference_dist(self, x, zrange):
-        """this function computes the inference posterior 
-        over a popultation, i.e. P(Z | X)
+    def eval_inference_dist(self, x, z, param=None):
+        """this function computes q(z | x)
         Args:
-            zrange: tensor
+            z: tensor
                 different z points that will be evaluated, with
-                shape (k^2, nz), where k=(zmax - zmin)/space
+                shape [batch, nsamples, nz]
+
+        Returns: Tensor1
+            Tensor1: q(z|x) with shape [batch, nsamples]
         """
-        # (batch_size, nz)
-        mu, logvar = self.forward(x)
-        std = logvar.mul(0.5).exp()
+        if not param:
+            mu, logvar = self.forward(x)
+        else:
+            mu, logvar = param
 
-        batch_size = mu.size(0)
-        zrange = zrange.unsqueeze(1).expand(zrange.size(0), batch_size, self.nz)
+        # (batch_size, 1, nz)
+        mu, logvar = mu.unsqueeze(1), logvar.unsqueeze(1)
+        var = logvar.exp()
 
-        infer_dist = torch.distributions.normal.Normal(mu, std)
+        # (batch_size, nsamples, nz)
+        dev = z - mu
 
-        # (batch_size, k^2)
-        log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
+        # (batch_size, nsamples)
+        log_density = -0.5 * ((dev ** 2) / var).sum(dim=-1) - \
+            0.5 * (self.nz * math.log(2 * math.pi) + logvar.sum(-1))
 
-
-        # (K^2)
-        log_prob = log_prob.sum(dim=0)
-
-        return (log_prob - log_sum_exp(log_prob)).exp()
+        return log_density
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution
