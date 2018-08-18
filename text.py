@@ -62,7 +62,7 @@ def init_config():
 
     # select mode
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
-    parser.add_argument('--load_model', type=str, default='')
+    parser.add_argument('--load_path', type=str, default='')
 
     # plot parameters
     parser.add_argument('--plot', action='store_true', default=False)
@@ -240,9 +240,13 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        vae.load_state_dict(torch.load(args.load_model))
+        test_data_batch = test_data.create_data_batch(batch_size=1,
+                                                      device=device,
+                                                      batch_first=True)
+        vae.load_state_dict(torch.load(args.load_path))
         vae.eval()
-        calc_iwnll(vae, test_data_batch, args)
+        with torch.no_grad():
+            calc_iwnll(vae, test_data_batch, args)
 
         return
 
