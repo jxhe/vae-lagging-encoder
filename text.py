@@ -207,7 +207,7 @@ def main(args):
 
     print(args)
 
-    opt_dict = {"not_improved": 0, "lr": args.lr}
+    opt_dict = {"not_improved": 0, "lr": args.lr, "best_loss": 1e4}
 
     train_data = MonoTextData(args.train_data)
 
@@ -367,9 +367,11 @@ def main(args):
                 best_kl = kl
                 best_ppl = ppl
                 torch.save(vae.state_dict(), args.save_path)
-            else:
+
+            if loss > opt_dict["best_loss"]:
                 opt_dict["not_improved"] += 1
                 if opt_dict["not_improved"] >= args.decay_epoch:
+                    opt_dict["best_loss"] = loss
                     opt_dict["not_improved"] = 0
                     opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
                     print('new lr: %f' % opt_dict["lr"])
@@ -379,6 +381,9 @@ def main(args):
                     else:
                         enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
                         dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+            else:
+                opt_dict["not_improved"] = 0
+                opt_dict["best_loss"] = loss
 
             vae.train()
 
