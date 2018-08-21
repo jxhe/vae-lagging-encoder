@@ -87,6 +87,7 @@ def init_config():
                          help='if perform multiple steps of inference')
     parser.add_argument('--infer_steps', type=int, default=1,
                          help='number of inference steps performed each iteration')
+    parser.add_argument('--burn', type=int, default=-1)
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -148,7 +149,7 @@ def plot_vae(plotter, model, plot_data, zrange,
 
     plot_data, sents_len = plot_data
 
-    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size)) 
+    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size))
 
     posterior = []
     inference = []
@@ -175,7 +176,7 @@ def plot_vae(plotter, model, plot_data, zrange,
     legend = ["model posterior", "inference"]
     name = "iter %d, KL: %.4f" % (iter_, loss_kl.item())
     win_name = "iter %d" % iter_
-    plotter.plot_scatter(torch.cat([posterior, inference], 0), labels, 
+    plotter.plot_scatter(torch.cat([posterior, inference], 0), labels,
         legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
 
@@ -293,13 +294,16 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
+            if epoch >= args.burn or args.burn < 0:
+                args.infer_steps = 1
+
             for _ in range(args.infer_steps):
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, 0.1, nsamples=args.nsamples)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()

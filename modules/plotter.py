@@ -58,7 +58,7 @@ class VisPlotter(object):
                             ytickmin=zmin,
                             ytickmax=zmax,
                             ytickstep=dz * 5,
-                            markersize=2))
+                            markersize=3))
 
 
     def plot_text(self):
