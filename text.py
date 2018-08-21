@@ -378,6 +378,7 @@ def main(args):
                     opt_dict["best_loss"] = loss
                     opt_dict["not_improved"] = 0
                     opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
+                    vae.load_state_dict(torch.load(args.save_path))
                     print('new lr: %f' % opt_dict["lr"])
                     if args.optim == 'sgd':
                         enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
