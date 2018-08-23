@@ -101,12 +101,12 @@ class LSTMEncoder(nn.Module):
 
         return z, KL
 
-    def eval_inference_dist(self, x):
-        """this function computes the inference posterior 
-        over a popultation, i.e. P(Z | X)
+    def sample_from_inference(self, x, nsamples=1):
+        """this function samples from q(Z | X), for the Gaussian family we use
+        mode locations as samples
         
         Returns: Tensor
-            Tensor: the mode locations, shape [batch_size, nz]
+            Tensor: the mode locations, shape [batch_size, nsamples, nz]
 
         """
         # (batch_size, nz)
@@ -124,8 +124,9 @@ class LSTMEncoder(nn.Module):
 
         # # (K^2)
         # log_prob = log_prob.sum(dim=0)
+        batch_size, nz = mu.size()
 
-        return mu
+        return mu.unsqueeze(1).expand(batch_size, nsamples, nz) 
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution

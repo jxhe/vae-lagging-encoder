@@ -37,6 +37,7 @@ def init_config():
     # optimization parameters
     parser.add_argument('--lr', type=float, default=1.0, help='Learning rate')
     parser.add_argument('--lr_decay', type=float, default=0.5, help='Learning rate')
+    parser.add_argument('--decay_epoch', type=int, default=5)
     parser.add_argument('--clip_grad', type=float, default=5.0, help='')
     parser.add_argument('--optim', type=str, default='adam', help='')
     parser.add_argument('--epochs', type=int, default=40,
@@ -162,17 +163,19 @@ def plot_vae(plotter, model, plot_data, zrange,
         # [batch_size, nz]
         posterior_ = torch.index_select(zrange, dim=0, index=posterior_loc)
 
-        # [batch_size, nz]
-        inference_ = model.eval_inference_dist(data)
+        # [batch_size, nsamples, nz]
+        inference_ = model.sample_from_inference(data, nsamples=1)
 
         posterior.append(posterior_)
         inference.append(inference_)
 
-    posterior = torch.cat(posterior, 0)
-    inference = torch.cat(inference, 0)
-    batch_size = posterior.size(0)
+    # [batch_size * nsamples, nz]
+    posterior = torch.cat(posterior, 0).view(-1, args.nz)
+    inference = torch.cat(inference, 0).view(-1, args.nz)
 
-    labels = [1] * batch_size + [2] * batch_size
+    num_points = posterior.size(0)
+
+    labels = [1] * num_points + [2] * num_points
     legend = ["model posterior", "inference"]
     name = "iter %d, KL: %.4f" % (iter_, loss_kl.item())
     win_name = "iter %d" % iter_
@@ -201,8 +204,7 @@ def main(args):
 
     print(args)
 
-    schedule = args.epochs / 5
-    lr_ = args.lr
+    opt_dict = {"not_improved": 0, "lr": args.lr, "best_loss": 1e4}
 
     train_data = MonoTextData(args.train_data)
 
@@ -242,11 +244,11 @@ def main(args):
     #     return
 
     if args.optim == 'sgd':
-        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
-        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
     else:
-        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
-        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
     if not args.multi_infer:
         args.infer_steps = 1
@@ -303,7 +305,7 @@ def main(args):
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, 0.1, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
@@ -361,18 +363,25 @@ def main(args):
                 best_ppl = ppl
                 torch.save(vae.state_dict(), args.save_path)
 
-            vae.train()
-
-        if (epoch + 1) % schedule == 0:
-            print('update lr, old lr: %f' % lr_)
-            lr_ = lr_ * args.lr_decay
-            print('new lr: %f' % lr_)
-            if args.optim == 'sgd':
-                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=lr_)
-                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=lr_)
+            if loss > opt_dict["best_loss"]:
+                opt_dict["not_improved"] += 1
+                if opt_dict["not_improved"] >= args.decay_epoch:
+                    opt_dict["best_loss"] = loss
+                    opt_dict["not_improved"] = 0
+                    opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
+                    vae.load_state_dict(torch.load(args.save_path))
+                    print('new lr: %f' % opt_dict["lr"])
+                    if args.optim == 'sgd':
+                        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+                        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                    else:
+                        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
             else:
-                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=lr_, betas=(0.5, 0.999))
-                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=lr_, betas=(0.5, 0.999))
+                opt_dict["not_improved"] = 0
+                opt_dict["best_loss"] = loss
+
+            vae.train()
 
     print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_kl, best_nll, best_ppl))
