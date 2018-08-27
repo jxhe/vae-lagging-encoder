@@ -1,4 +1,5 @@
 from itertools import chain
+import math
 import torch
 import torch.nn as nn
 
@@ -82,6 +83,22 @@ class LSTMEncoder(nn.Module):
 
         return mean.squeeze(0), logvar.squeeze(0)
 
+    def sample(self, input, nsamples):
+        """sampling from the encoder
+        Returns: Tensor1, Tuple
+            Tensor1: the tensor latent z with shape [batch, nsamples, nz]
+            Tuple: contains the tensor mu [batch, nz] and 
+                logvar[batch, nz]
+        """
+
+        # (batch_size, nz)
+        mu, logvar = self.forward(input)
+
+        # (batch, nsamples, nz)
+        z = self.reparameterize(mu, logvar, nsamples)        
+
+        return z, (mu, logvar)
+
     def encode(self, input, nsamples):
         """perform the encoding and compute the KL term
 
@@ -127,6 +144,33 @@ class LSTMEncoder(nn.Module):
         batch_size, nz = mu.size()
 
         return mu.unsqueeze(1).expand(batch_size, nsamples, nz) 
+
+    def eval_inference_dist(self, x, z, param=None):
+        """this function computes q(z | x)
+        Args:
+            z: tensor
+                different z points that will be evaluated, with
+                shape [batch, nsamples, nz]
+        Returns: Tensor1
+            Tensor1: q(z|x) with shape [batch, nsamples]
+        """
+        if not param:
+            mu, logvar = self.forward(x)
+        else:
+            mu, logvar = param
+
+        # (batch_size, 1, nz)
+        mu, logvar = mu.unsqueeze(1), logvar.unsqueeze(1)
+        var = logvar.exp()
+
+        # (batch_size, nsamples, nz)
+        dev = z - mu
+
+        # (batch_size, nsamples)
+        log_density = -0.5 * ((dev ** 2) / var).sum(dim=-1) - \
+            0.5 * (self.nz * math.log(2 * math.pi) + logvar.sum(-1))
+
+        return log_density
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution

@@ -299,13 +299,16 @@ def main(args):
             if epoch >= args.burn or args.burn < 0:
                 args.infer_steps = 1
 
-            for _ in range(args.infer_steps):
+            infer_batch_id = np.random.choice(len(train_data_batch), args.infer_steps-1, replace=False)
+            infer_batchs = [train_data_batch[id_] for id_ in infer_batch_id]
+            infer_batchs.append(batch_data)
+            for infer_batch_data in infer_batchs:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(infer_batch_data, kl_weight, nsamples=args.nsamples)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()

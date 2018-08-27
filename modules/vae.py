@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -203,7 +204,7 @@ class VAE(nn.Module):
         for iter_ in range(total_iter):
             next = torch.normal(mean=cur, 
                 std=cur.new_full(size=cur.size(), fill_value=self.args.mh_std))
-            # [batch_size, nsamples]
+            # [batch_size, 1]
             next_ll = self.eval_complete_ll(x, next)
             ratio = next_ll - cur_ll
             
@@ -211,19 +212,27 @@ class VAE(nn.Module):
 
             uniform_t = accept_prob.new_empty(accept_prob.size()).uniform_()
 
-            # [batch_size, nsamples]
+            # [batch_size, 1]
             mask = (uniform_t < accept_prob).float()
 
             mask_ = mask.unsqueeze(2)
 
             cur = mask_ * next + (1 - mask_) * cur
-            cur_ll = mask * next + (1 - mask) * cur
+            cur_ll = mask * next_ll + (1 - mask) * cur_ll
 
-            if iter_ > self.args.mh_burn_in and (iter_ - self.args.mh_burn_in) % self.args.mh_thin == 0:
+            if iter_ >= self.args.mh_burn_in and (iter_ - self.args.mh_burn_in) % self.args.mh_thin == 0:
                 samples.append(cur.unsqueeze(1))
 
 
         return torch.cat(samples, dim=1)
+
+    def eval_inference_dist(self, x, z, param=None):
+        """
+        Returns: Tensor
+            Tensor: the posterior density tensor with
+                shape (batch_size, nsamples)
+        """
+        return self.encoder.eval_inference_dist(x, z, param)
 
 
     # def eval_inference_mode(self, x):
