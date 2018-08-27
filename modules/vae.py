@@ -1,4 +1,3 @@
-
 import math
 import torch
 import torch.nn as nn
@@ -26,20 +25,6 @@ class VAE(nn.Module):
 
         self.prior = torch.distributions.normal.Normal(loc, scale)
 
-    def sample_from_posterior(self, x, nsamples=1):
-        """sample from posterior
-        Args:
-            x: Tensor
-                shape (batch, seq_len, ni)
-            nsamples: int.
-                Number of samples for each data instance
-
-        Returns: Tensor
-                shape (batch, nsamples, nz)
-        """
-
-        return self.encoder.sample_from_posterior(x, nsamples)
-
     def encode(self, x, nsamples=1):
         """
         Returns: Tensor1, Tensor2
@@ -51,7 +36,6 @@ class VAE(nn.Module):
     def decode(self, z):
         """generate samples from z (perhaps beam search ?)
         """
-        pass
 
 
     def loss(self, x, kl_weight, nsamples=1):
@@ -102,10 +86,8 @@ class VAE(nn.Module):
             x: if the data is constant-length, x is the data tensor with
                 shape (batch, *). Otherwise x is a tuple that contains
                 the data tensor and length list
-
             nsamples: Int
                 the number of samples required to estimate marginal data likelihood
-
         Returns: Tensor1
             Tensor1: the estimate of log p(x), shape [batch]
         """
@@ -121,8 +103,6 @@ class VAE(nn.Module):
         ll_iw = log_sum_exp(log_comp_ll - log_infer_ll, dim=-1) - math.log(nsamples)
 
         return -ll_iw
-
-        
 
     def KL(self, x):
         _, KL = self.encode(x, 1)
@@ -147,7 +127,6 @@ class VAE(nn.Module):
                 input with shape [batch, seq_len]
             z: Tensor
                 evaluation points with shape [batch, nsamples, nz]
-
         Returns: Tensor1
             Tensor1: log p(z,x) Tensor with shape [batch, nsamples]
         """
@@ -164,7 +143,6 @@ class VAE(nn.Module):
 
         return self.decoder.log_probability(x, z)
 
-
     def eval_true_posterior_dist(self, x, zrange, log_prior):
         """perform grid search to calculate the true posterior
          (actually the complete likelihood), this function computes
@@ -177,8 +155,7 @@ class VAE(nn.Module):
                 the prior log density with shape (k^2)
 
         Returns: Tensor
-            Tensor: the posterior density tensor with
-                shape (k^2)
+            Tensor: the most significant mode, shape [batch_size]
         """
         try:
             batch_size = x.size(0)
@@ -195,12 +172,59 @@ class VAE(nn.Module):
         # (batch_size, k^2)
         log_comp = log_gen + log_prior
 
-        # (k^2)
-        log_comp = log_comp.sum(dim=0)
+        # (batch_size)
+        _, loc = log_comp.max(dim=1)
 
-        # (k^2)
-        return (log_comp - log_sum_exp(log_comp)).exp()
+        # (batch_size)
+        return loc
 
+
+    def sample_from_inference(self, x, nsamples=1):
+        """perform sampling from inference net
+        Returns: Tensor
+            Tensor: samples from infernece nets with
+                shape (batch_size, nsamples, nz)
+        """
+        return self.encoder.sample_from_inference(x, nsamples)
+
+
+    def sample_from_posterior(self, x, nsamples):
+        """perform MH sampling from model posterior
+        Returns: Tensor
+            Tensor: samples from model posterior with
+                shape (batch_size, nsamples, nz)
+        """
+
+        # use the samples from inference net as initial points
+        # for MCMC sampling. [batch_size, nsamples, nz]
+        cur = self.encoder.sample_from_inference(x, 1)
+        cur_ll = self.eval_complete_ll(x, cur)
+        total_iter = self.args.mh_burn_in + nsamples * self.args.mh_thin
+        samples = []
+        for iter_ in range(total_iter):
+            next = torch.normal(mean=cur, 
+                std=cur.new_full(size=cur.size(), fill_value=self.args.mh_std))
+            # [batch_size, 1]
+            next_ll = self.eval_complete_ll(x, next)
+            ratio = next_ll - cur_ll
+            
+            accept_prob = torch.min(ratio.exp(), ratio.new_ones(ratio.size()))
+
+            uniform_t = accept_prob.new_empty(accept_prob.size()).uniform_()
+
+            # [batch_size, 1]
+            mask = (uniform_t < accept_prob).float()
+
+            mask_ = mask.unsqueeze(2)
+
+            cur = mask_ * next + (1 - mask_) * cur
+            cur_ll = mask * next_ll + (1 - mask) * cur_ll
+
+            if iter_ >= self.args.mh_burn_in and (iter_ - self.args.mh_burn_in) % self.args.mh_thin == 0:
+                samples.append(cur.unsqueeze(1))
+
+
+        return torch.cat(samples, dim=1)
 
     def eval_inference_dist(self, x, z, param=None):
         """
@@ -209,6 +233,7 @@ class VAE(nn.Module):
                 shape (batch_size, nsamples)
         """
         return self.encoder.eval_inference_dist(x, z, param)
+
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution
