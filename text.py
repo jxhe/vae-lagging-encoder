@@ -44,6 +44,7 @@ def init_config():
                         help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
     parser.add_argument('--nsamples', type=int, default=3, help='number of samples')
+    parser.add_argument('--iw_nsamples', type=int, default=10, help='number of samples')
 
 
     # KL annealing parameters
@@ -62,7 +63,7 @@ def init_config():
 
     # select mode
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
-    parser.add_argument('--load_model', type=str, default='')
+    parser.add_argument('--load_path', type=str, default='')
 
     # plot parameters
     parser.add_argument('--plot', action='store_true', default=False)
@@ -75,6 +76,11 @@ def init_config():
     parser.add_argument('--stop_niter', type=int, default=-1)
     parser.add_argument('--server', type=str, default='http://localhost')
     parser.add_argument('--env', type=str, default='main')
+
+    # mh sampling parameters for plotting
+    parser.add_argument('--mh_burn_in', type=int, default=100)
+    parser.add_argument('--mh_thin', type=int, default=1)
+    parser.add_argument('--mh_std', type=float, default=1.0)
 
 
     # annealing paramters
@@ -145,6 +151,33 @@ def test(model, test_data_batch, args):
 
     return test_loss, nll, kl, ppl
 
+
+def calc_iwnll(model, test_data_batch, args):
+
+    report_nll_loss = 0
+    report_num_words = report_num_sents = 0
+    for id_, i in enumerate(np.random.permutation(len(test_data_batch))):
+        batch_data = test_data_batch[i]
+        batch_size, sent_len = batch_data.size()
+
+        # not predict start symbol
+        report_num_words += (sent_len - 1) * batch_size
+
+        report_num_sents += batch_size
+        if id_ % (round(len(test_data_batch) / 10)) == 0:
+            print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
+
+        loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples)
+
+        report_nll_loss += loss.sum().item()
+
+    nll = report_nll_loss / report_num_sents
+    ppl = np.exp(nll * report_num_sents / report_num_words)
+
+    print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
+    sys.stdout.flush()
+
+
 def plot_vae(plotter, model, plot_data, zrange,
              log_prior, iter_, num_slice, args):
 
@@ -158,10 +191,11 @@ def plot_vae(plotter, model, plot_data, zrange,
         loss_kl = model.KL(data).sum() / data.size(0)
 
         # [batch_size]
-        posterior_loc = model.eval_true_posterior_dist(data, zrange, log_prior)
+        # posterior_loc = model.eval_true_posterior_dist(data, zrange, log_prior)
 
         # [batch_size, nz]
-        posterior_ = torch.index_select(zrange, dim=0, index=posterior_loc)
+        # posterior_ = torch.index_select(zrange, dim=0, index=posterior_loc)
+        posterior_ = model.sample_from_posterior(data, nsamples=1)
 
         # [batch_size, nsamples, nz]
         inference_ = model.sample_from_inference(data, nsamples=1)
@@ -169,10 +203,8 @@ def plot_vae(plotter, model, plot_data, zrange,
         posterior.append(posterior_)
         inference.append(inference_)
 
-    # [batch_size * nsamples, nz]
     posterior = torch.cat(posterior, 0).view(-1, args.nz)
     inference = torch.cat(inference, 0).view(-1, args.nz)
-
     num_points = posterior.size(0)
 
     labels = [1] * num_points + [2] * num_points
@@ -235,19 +267,27 @@ def main(args):
     args.device = device
     vae = VAE(encoder, decoder, args).to(device)
 
-    # if args.eval:
-    #     print('begin evaluation')
-    #     vae.load_state_dict(torch.load(args.load_model))
-    #     vae.eval()
-    #     calc_nll(hae, test_data, args)
+    if args.eval:
+        print('begin evaluation')
+        test_data_batch = test_data.create_data_batch(batch_size=1,
+                                                      device=device,
+                                                      batch_first=True)
+        vae.load_state_dict(torch.load(args.load_path))
+        vae.eval()
+        with torch.no_grad():
+            calc_iwnll(vae, test_data_batch, args)
 
-    #     return
+        return
+
+    # enc_optimizer_burn = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.5, 0.999))
 
     if args.optim == 'sgd':
         enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
         dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
     else:
         enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+        # dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0)
+        # dec_optimizer2 = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
         dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
     if not args.multi_infer:
@@ -303,12 +343,13 @@ def main(args):
             infer_batchs = [train_data_batch[id_] for id_ in infer_batch_id]
             infer_batchs.append(batch_data)
             for infer_batch_data in infer_batchs:
+            # for _ in range(args.infer_steps):
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(infer_batch_data, kl_weight, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
                 loss_rc = loss_rc.sum()
                 loss_kl = loss_kl.sum()
@@ -319,9 +360,17 @@ def main(args):
                 torch.nn.utils.clip_grad_norm_(vae.parameters(), args.clip_grad)
 
                 enc_optimizer.step()
+
+                # id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+
+                # batch_data = train_data_batch[id_]
                 # assert (loss == loss).all()
 
             dec_optimizer.step()
+            # if epoch < args.burn:
+            #     dec_optimizer.step()
+            # else:
+            #     dec_optimizer2.step()
 
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
@@ -338,7 +387,7 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
-            if args.plot:
+            if args.plot and epoch < args.burn:
                 if iter_ % args.plot_niter == 0:
                     with torch.no_grad():
                         plot_vae(plotter, vae, plot_data, zrange,
@@ -349,6 +398,10 @@ def main(args):
 
             # if iter_ >= args.stop_niter and args.stop_niter > 0:
             #     return
+        if args.plot:
+            with torch.no_grad():
+                plot_vae(plotter, vae, plot_data, zrange,
+                         log_prior, iter_, num_slice, args)
 
         if epoch % args.nepoch == 0:
             print('kl weight %.4f' % kl_weight)
@@ -390,8 +443,14 @@ def main(args):
           % (best_loss, best_kl, best_nll, best_ppl))
     sys.stdout.flush()
 
-    # vae.eval()
-    # calc_nll(vae, test_data, args)
+    # compute importance weighted estimate of log p(x)
+    vae.load_state_dict(torch.load(args.save_path))
+    vae.eval()
+    test_data_batch = test_data.create_data_batch(batch_size=1,
+                                                  device=device,
+                                                  batch_first=True)
+    with torch.no_grad():
+        calc_iwnll(vae, test_data_batch, args)
 
 if __name__ == '__main__':
     args = init_config()
