@@ -265,16 +265,3 @@ class VarLSTMDecoder(LSTMDecoder):
         # (batch_size, n_sample)
         return loss.view(batch_size, n_sample, -1).sum(-1)
 
-    def log_probability(self, x, z):
-        """Cross Entropy in the language case
-        Args:
-            x: tuple which contains x_ and sents_len
-                    x_: (batch_size, seq_len)
-                    sents_len: long tensor of sentence lengths
-            z: (batch_size, n_sample, nz)
-        Returns:
-            log_p(x|z): (batch_size, n_sample).
-        """
-
-        return -self.reconstruct_error(x, z)
-

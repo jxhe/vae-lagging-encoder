@@ -202,7 +202,7 @@ class VarLSTMEncoder(LSTMEncoder):
         """
 
         input, sents_len = input
-        # (batch_size, seq_len-1, args.ni)
+        # (batch_size, seq_len, args.ni)
         word_embed = self.embed(input)
 
         packed_embed = pack_padded_sequence(word_embed, sents_len.tolist(), batch_first=True)
