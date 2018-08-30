@@ -28,10 +28,10 @@ def init_config():
 
     # optimization parameters
     parser.add_argument('--optim', type=str, default='sgd', help='')
-    parser.add_argument('--threshold', type=float, default=0.0001, 
-                         help='threshold to determine convergence of inference net, only used when burning is turned on')
+    parser.add_argument('--conv_nstep', type=int, default=20,
+                         help='number of steps of not improving loss to determine convergence, only used when burning is turned on')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
-    parser.add_argument('--iw_nsamples', type=int, default=500, 
+    parser.add_argument('--iw_nsamples', type=int, default=500,
                          help='number of samples to compute importance weighted estimate')
 
     # plotting parameters
@@ -78,8 +78,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_optim%s_burn%s_threshold%.7f_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.optim, args.burn, args.threshold, args.nsamples, 
+    id_ = "%s_optim%s_burn%s_convs%.7f_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -325,7 +325,7 @@ def main(args):
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
-            while burn_flag and sub_iter <= 20:
+            while True:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
@@ -340,31 +340,31 @@ def main(args):
 
                 enc_optimizer.step()
 
+                if not burn_flag:
+                    break
+
                 id_ = np.random.random_integers(0, len(train_data_batch) - 1)
 
                 batch_data_enc = train_data_batch[id_]
 
                 if loss.item() < sub_best_loss:
                     sub_best_loss = loss.item()
+                    stuck_cnt = 0
                 else:
                     stuck_cnt += 1
                 sub_iter += 1
 
+                if stuck_cnt > args.conv_nstep:
+                    break
+                # if sub_iter >= 30:
+                #     break
+
             # print(sub_iter)
 
-            # normal vae step
-            enc_optimizer.zero_grad()
-            dec_optimizer.zero_grad()
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
-            loss = loss.mean(dim=-1)
 
             loss_rc = loss_rc.sum()
             loss_kl = loss_kl.sum()
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(vae.parameters(), clip_grad)
-
-            enc_optimizer.step()
             dec_optimizer.step()
 
             report_rec_loss += loss_rc.item()
@@ -431,7 +431,7 @@ def main(args):
 
         if epoch % args.test_nepoch == 0:
             with torch.no_grad():
-                loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args) 
+                loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
 
         vae.train()
 
