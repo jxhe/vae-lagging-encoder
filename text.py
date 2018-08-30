@@ -325,7 +325,7 @@ def main(args):
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
-            while True:
+            while burn_flag and stuck_cnt <= args.conv_nstep:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
@@ -340,9 +340,6 @@ def main(args):
 
                 enc_optimizer.step()
 
-                if not burn_flag:
-                    break
-
                 id_ = np.random.random_integers(0, len(train_data_batch) - 1)
 
                 batch_data_enc = train_data_batch[id_]
@@ -354,16 +351,27 @@ def main(args):
                     stuck_cnt += 1
                 sub_iter += 1
 
-                if stuck_cnt > args.conv_nstep:
-                    break
                 # if sub_iter >= 30:
                 #     break
 
             # print(sub_iter)
 
+            enc_optimizer.zero_grad()
+            dec_optimizer.zero_grad()
+
+
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+
+            loss = loss.mean(dim=-1)
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.parameters(), clip_grad)
 
             loss_rc = loss_rc.sum()
             loss_kl = loss_kl.sum()
+
+            if not burn_flag:
+                enc_optimizer.step()
 
             dec_optimizer.step()
 
