@@ -92,15 +92,21 @@ class VAE(nn.Module):
             Tensor1: the estimate of log p(x), shape [batch]
         """
 
-        # [batch, nsamples, nz]
-        # param is the parameters required to evaluate q(z|x)
-        z, param = self.encoder.sample(x, nsamples)
+        # compute iw every ns samples to address the memory issue
+        ns = 5
+        tmp = []
+        for _ in range(nsamples / ns):
+            # [batch, ns, nz]
+            # param is the parameters required to evaluate q(z|x)
+            z, param = self.encoder.sample(x, ns)
 
-        # [batch, nsamples]
-        log_comp_ll = self.eval_complete_ll(x, z)
-        log_infer_ll = self.eval_inference_dist(x, z, param)
+            # [batch, ns]
+            log_comp_ll = self.eval_complete_ll(x, z)
+            log_infer_ll = self.eval_inference_dist(x, z, param)
 
-        ll_iw = log_sum_exp(log_comp_ll - log_infer_ll, dim=-1) - math.log(nsamples)
+            tmp.append(log_comp_ll - log_infer_ll)
+
+        ll_iw = log_sum_exp(torch.cat(tmp, dim=-1), dim=-1) - math.log(nsamples)
 
         return -ll_iw
 
