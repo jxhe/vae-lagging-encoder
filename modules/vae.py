@@ -93,9 +93,9 @@ class VAE(nn.Module):
         """
 
         # compute iw every ns samples to address the memory issue
-        ns = 5
+        ns = 100
         tmp = []
-        for _ in range(nsamples / ns):
+        for _ in range(int(nsamples / ns)):
             # [batch, ns, nz]
             # param is the parameters required to evaluate q(z|x)
             z, param = self.encoder.sample(x, ns)
@@ -208,12 +208,12 @@ class VAE(nn.Module):
         total_iter = self.args.mh_burn_in + nsamples * self.args.mh_thin
         samples = []
         for iter_ in range(total_iter):
-            next = torch.normal(mean=cur, 
+            next = torch.normal(mean=cur,
                 std=cur.new_full(size=cur.size(), fill_value=self.args.mh_std))
             # [batch_size, 1]
             next_ll = self.eval_complete_ll(x, next)
             ratio = next_ll - cur_ll
-            
+
             accept_prob = torch.min(ratio.exp(), ratio.new_ones(ratio.size()))
 
             uniform_t = accept_prob.new_empty(accept_prob.size()).uniform_()
