@@ -28,6 +28,7 @@ def init_config():
 
     # optimization parameters
     parser.add_argument('--optim', type=str, default='sgd', help='')
+    parser.add_argument('--momentum', type=float, default=0, help='sgd momentum')
     parser.add_argument('--conv_nstep', type=int, default=20,
                          help='number of steps of not improving loss to determine convergence, only used when burning is turned on')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
@@ -210,8 +211,8 @@ def main(args):
         return
 
     if args.optim == 'sgd':
-        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0)
-        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0)
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0, momentum=args.momentum)
+        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0, momentum=args.momentum)
         opt_dict['lr'] = 1.0
     else:
         enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.5, 0.999))
@@ -354,8 +355,8 @@ def main(args):
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
                 if args.optim == 'sgd':
-                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
-                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
                 else:
                     enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
                     dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
