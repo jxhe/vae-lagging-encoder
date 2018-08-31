@@ -359,18 +359,13 @@ def main(args):
 
         vae.train()
 
-    print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
-          % (best_loss, best_kl, best_nll, best_ppl))
-
-    sys.stdout.flush()
-
-
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
     vae.eval()
-    test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                  device=device,
-                                                  batch_first=True)
+
+    with torch.no_grad():
+        loss, nll, kl, ppl = test(vae, test_data, "TEST", args)
+
     with torch.no_grad():
         calc_iwnll(vae, test_data, args)
 
