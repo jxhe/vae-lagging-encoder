@@ -137,6 +137,7 @@ def calc_iwnll(model, test_data_batch, args):
         report_num_sents += batch_size
         if id_ % (round(len(test_data_batch) / 10)) == 0:
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
+            sys.stdout.flush()
 
         loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples)
 
@@ -348,7 +349,7 @@ def main(args):
 
         if loss > opt_dict["best_loss"]:
             opt_dict["not_improved"] += 1
-            if opt_dict["not_improved"] >= decay_epoch:
+            if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
                 opt_dict["best_loss"] = loss
                 opt_dict["not_improved"] = 0
                 opt_dict["lr"] = opt_dict["lr"] * lr_decay

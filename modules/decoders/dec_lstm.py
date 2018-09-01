@@ -93,10 +93,10 @@ class LSTMDecoder(nn.Module):
         word_embed = torch.cat((word_embed, z_), -1)
 
         z = z.view(batch_size * n_sample, self.nz)
-        # c_init = self.trans_linear(z).unsqueeze(0)
-        # h_init = torch.tanh(c_init)
         c_init = self.trans_linear(z).unsqueeze(0)
         h_init = torch.tanh(c_init)
+        # h_init = self.trans_linear(z).unsqueeze(0)
+        # c_init = h_init.new_zeros(h_init.size())
         output, _ = self.lstm(word_embed, (h_init, c_init))
 
         output = self.dropout_out(output)
