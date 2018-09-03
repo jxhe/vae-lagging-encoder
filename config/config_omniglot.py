@@ -8,7 +8,7 @@ params={
     'latent_feature_map': 4,
     'batch_size': 50,
     'epochs': 1000,
-    'log_niter': 100,
+    'log_niter': 1,
     'test_nepoch': 5,
     'data_file': 'omniglot_data/omniglot.pt'
 }

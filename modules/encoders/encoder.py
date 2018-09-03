@@ -4,7 +4,7 @@ import torch.nn as nn
 class GaussianEncoderBase(nn.Module):
     """docstring for EncoderBase"""
     def __init__(self):
-        super(EncoderBase, self).__init__()
+        super(GaussianEncoderBase, self).__init__()
         
     def forward(self, x):
         """
