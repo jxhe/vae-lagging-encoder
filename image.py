@@ -17,8 +17,6 @@ clip_grad = 5.0
 decay_epoch = 20
 lr_decay = 0.5
 max_decay = 5
-decay_cnt = 0
-
 
 def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
@@ -111,8 +109,8 @@ def test(model, test_loader, mode, args):
     kl = report_kl_loss / report_num_examples
 
     print('%s --- avg_loss: %.4f, kl: %.4f, recon: %.4f, nll: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_sents,
-            report_rec_loss / report_num_sents, nll))
+           (mode, test_loss, report_kl_loss / report_num_examples,
+            report_rec_loss / report_num_examples, nll))
     sys.stdout.flush()
 
     return test_loss, nll, kl
@@ -158,18 +156,18 @@ def main(args):
     x_train = x_train.to(device)
     x_val = x_val.to(device)
     x_test = x_test.to(device)
-    y_size = 1 
+    y_size = 1
     y_train = x_train.new_zeros(x_train.size(0), y_size)
     y_val = x_train.new_zeros(x_val.size(0), y_size)
     y_test = x_train.new_zeros(x_test.size(0), y_size)
     print(torch.__version__)
-    train = torch.utils.data.TensorDataset(x_train, y_train)
-    val = torch.utils.data.TensorDataset(x_val, y_val)
-    test = torch.utils.data.TensorDataset(x_test, y_test)
+    train_data = torch.utils.data.TensorDataset(x_train, y_train)
+    val_data = torch.utils.data.TensorDataset(x_val, y_val)
+    test_data = torch.utils.data.TensorDataset(x_test, y_test)
 
-    train_loader = torch.utils.data.DataLoader(train, batch_size=args.batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val, batch_size=args.batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=args.batch_size, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
     print('Train data: %d batches' % len(train_loader))
     print('Val data: %d batches' % len(val_loader))
     print('Test data: %d batches' % len(test_loader))
@@ -202,12 +200,13 @@ def main(args):
     iter_ = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
+    decay_cnt = 0
     burn_flag = False
     vae.train()
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = 1.0 / (args.warm_up * (len(train_loader) / args.batch_size))
+    anneal_rate = 1.0 / (args.warm_up * len(train_loader))
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
@@ -341,10 +340,10 @@ def main(args):
     with torch.no_grad():
         loss, nll, kl = test(vae, test_data_batch, "TEST", args)
 
-    test_loader = torch.utils.data.DataLoader(test, batch_size=1, shuffle=True)
+    # test_loader = torch.utils.data.DataLoader(test, batch_size=1, shuffle=True)
 
-    with torch.no_grad():
-        calc_iwnll(vae, test_loader, args)
+    # with torch.no_grad():
+    #     calc_iwnll(vae, test_loader, args)
 
 if __name__ == '__main__':
     args = init_config()
