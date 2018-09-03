@@ -13,13 +13,13 @@ class GatedMaskedConv2d(nn.Module):
     def __init__(self, in_dim, out_dim=None, kernel_size = 3, mask = 'B'):
         super(GatedMaskedConv2d, self).__init__()
         if out_dim is None:
-            out_dim = in_dim    
+            out_dim = in_dim
         self.dim = out_dim
         self.size = kernel_size
         self.mask = mask
         pad = self.size // 2
 
-        #vertical stack    
+        #vertical stack
         self.v_conv = nn.Conv2d(in_dim, 2*self.dim, kernel_size=(pad+1, self.size))
         self.v_pad1 = nn.ConstantPad2d((pad, pad, pad, 0), 0)
         self.v_pad2 = nn.ConstantPad2d((0, 0, 1, 0), 0)
@@ -35,11 +35,11 @@ class GatedMaskedConv2d(nn.Module):
         v_out = self.v_pad2(self.v_conv(self.v_pad1(v_map)))[:, :, :-1, :]
         v_map_out = F.tanh(v_out[:, :self.dim])*F.sigmoid(v_out[:, self.dim:])
         vh = self.vh_conv(v_out)
-        
+
         h_out = self.h_conv(self.h_pad1(h_map))
         if self.mask == 'A':
             h_out = self.h_pad2(h_out)[:, :, :, :-1]
-        h_out = h_out + vh    
+        h_out = h_out + vh
         h_out = F.tanh(h_out[:, :self.dim])*F.sigmoid(h_out[:, self.dim:])
         h_map_out = self.h_conv_res(h_out)
         if self.mask == 'B':
@@ -47,7 +47,7 @@ class GatedMaskedConv2d(nn.Module):
         return v_map_out, h_map_out
 
 class StackedGatedMaskedConv2d(nn.Module):
-    def __init__(self, 
+    def __init__(self,
                  img_size = [1, 28, 28], layers = [64,64,64],
                  kernel_size = [7,7,7], latent_dim=64, latent_feature_map = 1):
         super(StackedGatedMaskedConv2d, self).__init__()
@@ -55,16 +55,16 @@ class StackedGatedMaskedConv2d(nn.Module):
         self.conv_layers = []
         if latent_feature_map > 0:
             self.latent_feature_map = latent_feature_map
-            self.z_linear = nn.Linear(latent_dim, latent_feature_map*28*28)    
+            self.z_linear = nn.Linear(latent_dim, latent_feature_map*28*28)
         for i in range(len(kernel_size)):
             if i == 0:
                 self.conv_layers.append(GatedMaskedConv2d(input_dim+latent_feature_map,
                                                       layers[i],  kernel_size[i], 'A'))
             else:
                 self.conv_layers.append(GatedMaskedConv2d(layers[i-1], layers[i],  kernel_size[i]))
-            
+
         self.modules = nn.ModuleList(self.conv_layers)
-    
+
     def forward(self, img, q_z=None):
         """
         Args:
@@ -74,7 +74,7 @@ class StackedGatedMaskedConv2d(nn.Module):
 
         batch_size, nsamples, _ = q_z.size()
         if q_z is not None:
-            z_img = self.z_linear(q_z) 
+            z_img = self.z_linear(q_z)
             z_img = z_img.view(img.size(0), nsamples, self.latent_feature_map, img.size(2), img.size(3))
 
             # (batch, nsamples, nc, H, W)
@@ -130,7 +130,7 @@ class PixelCNNDecoder(DecoderBase):
         prob = torch.clamp(pred.view(pred.size(0), -1), min=1e-5, max=1.-1e-5)
 
         # (batch, nsamples, nc, H, W) --> (batch * nsamples, nc, H, W)
-        x = x.unsqueeze(1).expand(batch_size, nsamples, *x.size()[1:])
+        x = x.unsqueeze(1).expand(batch_size, nsamples, *x.size()[1:]).contiguous()
         tgt_vec = x.view(-1, *x.size()[2:])
 
         # (batch * nsamples, *)
@@ -139,7 +139,7 @@ class PixelCNNDecoder(DecoderBase):
         log_bernoulli = tgt_vec * torch.log(prob) + (1. - tgt_vec)*torch.log(1. - prob)
 
         log_bernoulli = log_bernoulli.view(batch_size, nsamples, -1)
-        
+
         return -torch.sum(log_bernoulli, 2)
 
 
@@ -154,5 +154,5 @@ class PixelCNNDecoder(DecoderBase):
         """
 
         return -self.reconstruct_error(x, z)
-        
-        
+
+

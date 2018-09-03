@@ -1,3 +1,5 @@
+
+import math
 import torch
 import torch.nn as nn
 
@@ -5,7 +7,7 @@ class GaussianEncoderBase(nn.Module):
     """docstring for EncoderBase"""
     def __init__(self):
         super(GaussianEncoderBase, self).__init__()
-        
+
     def forward(self, x):
         """
         Args:
@@ -22,7 +24,7 @@ class GaussianEncoderBase(nn.Module):
         """sampling from the encoder
         Returns: Tensor1, Tuple
             Tensor1: the tensor latent z with shape [batch, nsamples, nz]
-            Tuple: contains the tensor mu [batch, nz] and 
+            Tuple: contains the tensor mu [batch, nz] and
                 logvar[batch, nz]
         """
 
@@ -30,7 +32,7 @@ class GaussianEncoderBase(nn.Module):
         mu, logvar = self.forward(input)
 
         # (batch, nsamples, nz)
-        z = self.reparameterize(mu, logvar, nsamples)        
+        z = self.reparameterize(mu, logvar, nsamples)
 
         return z, (mu, logvar)
 
@@ -78,7 +80,7 @@ class GaussianEncoderBase(nn.Module):
     def sample_from_inference(self, x, nsamples=1):
         """this function samples from q(Z | X), for the Gaussian family we use
         mode locations as samples
-        
+
         Returns: Tensor
             Tensor: the mode locations, shape [batch_size, nsamples, nz]
 
@@ -100,7 +102,7 @@ class GaussianEncoderBase(nn.Module):
         # log_prob = log_prob.sum(dim=0)
         batch_size, nz = mu.size()
 
-        return mu.unsqueeze(1).expand(batch_size, nsamples, nz) 
+        return mu.unsqueeze(1).expand(batch_size, nsamples, nz)
 
     def eval_inference_dist(self, x, z, param=None):
         """this function computes q(z | x)
@@ -111,6 +113,9 @@ class GaussianEncoderBase(nn.Module):
         Returns: Tensor1
             Tensor1: q(z|x) with shape [batch, nsamples]
         """
+
+        nz = z.size(2)
+
         if not param:
             mu, logvar = self.forward(x)
         else:
@@ -125,7 +130,7 @@ class GaussianEncoderBase(nn.Module):
 
         # (batch_size, nsamples)
         log_density = -0.5 * ((dev ** 2) / var).sum(dim=-1) - \
-            0.5 * (self.nz * math.log(2 * math.pi) + logvar.sum(-1))
+            0.5 * (nz * math.log(2 * math.pi) + logvar.sum(-1))
 
         return log_density
-        
+
