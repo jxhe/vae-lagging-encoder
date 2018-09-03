@@ -183,7 +183,7 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        test_loader = torch.utils.data.DataLoader(test, batch_size=50, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
         vae.eval()
         with torch.no_grad():
@@ -339,7 +339,7 @@ def main(args):
     with torch.no_grad():
         loss, nll, kl = test(vae, test_loader, "TEST", args)
 
-    test_loader = torch.utils.data.DataLoader(test, batch_size=50, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 
     with torch.no_grad():
         calc_iwnll(vae, test_loader, args)
