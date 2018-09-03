@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from .encoder import GaussianEncoderBase
+
 def he_init(m):
     s = np.sqrt(2./ m.in_features)
     m.weight.data.normal_(0, s)
@@ -95,44 +97,3 @@ class ResNetEncoder(nn.Module):
         mean = self.latent_linear_mean(img_code)
         logvar = self.latent_linear_logvar(img_code)
         return mean, logvar
-
-    def reparameterize(self, mu, logvar, nsamples=1):
-        """sample from posterior Gaussian family
-        Args:
-            mu: Tensor
-                Mean of gaussian distribution with shape (batch, nz)
-
-            logvar: Tensor
-                logvar of gaussian distibution with shape (batch, nz)
-
-        Returns: Tensor
-            Sampled z with shape (batch, nsamples, nz)
-        """
-        batch_size, nz = mu.size()
-        std = logvar.mul(0.5).exp()
-
-        mu_expd = mu.unsqueeze(1).expand(batch_size, nsamples, nz)
-        std_expd = std.unsqueeze(1).expand(batch_size, nsamples, nz)
-
-        eps = torch.zeros_like(std_expd).normal_()
-
-        return mu_expd + torch.mul(eps, std_expd)
-        
-    def encode(self, input, nsamples):
-        """perform the encoding and compute the KL term
-
-        Returns: Tensor1, Tensor2
-            Tensor1: the tensor latent z with shape [batch, nsamples, nz]
-            Tensor2: the tenor of KL for each x with shape [batch]
-
-        """
-
-        # (batch_size, nz)
-        mu, logvar = self.forward(input)
-
-        # (batch, nsamples, nz)
-        z = self.reparameterize(mu, logvar, nsamples)
-
-        KL = 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
-
-        return z, KL

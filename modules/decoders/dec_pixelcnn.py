@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from .decoder import DecoderBase
+
 def he_init(m):
     s = np.sqrt(2./ m.in_features)
     m.weight.data.normal_(0, s)
@@ -90,7 +92,7 @@ class StackedGatedMaskedConv2d(nn.Module):
             v_map, h_map = self.conv_layers[i](v_map, h_map)
         return h_map
 
-class PixelCNNDecoder(nn.Module):
+class PixelCNNDecoder(DecoderBase):
     """docstring for PixelCNNDecoder"""
     def __init__(self, args):
         super(PixelCNNDecoder, self).__init__()

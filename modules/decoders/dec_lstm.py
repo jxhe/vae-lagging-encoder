@@ -11,7 +11,9 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 import numpy as np
 
-class LSTMDecoder(nn.Module):
+from .decoder import Decoder
+
+class LSTMDecoder(Decoder):
     """LSTM decoder with constant-length data"""
     def __init__(self, args, vocab, model_init, emb_init):
         super(LSTMDecoder, self).__init__()
