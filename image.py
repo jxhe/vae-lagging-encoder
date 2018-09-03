@@ -183,13 +183,12 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                      device=device,
-                                                      batch_first=True)
+        test_loader = torch.utils.data.DataLoader(test, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
         vae.eval()
         with torch.no_grad():
-            calc_iwnll(vae, test_data_batch, args)
+            test(vae, test_loader, "TEST", args)
+            calc_iwnll(vae, test_loader, args)
 
         return
 
@@ -338,12 +337,12 @@ def main(args):
     vae.load_state_dict(torch.load(args.save_path))
     vae.eval()
     with torch.no_grad():
-        loss, nll, kl = test(vae, test_data_batch, "TEST", args)
+        loss, nll, kl = test(vae, test_loader, "TEST", args)
 
-    # test_loader = torch.utils.data.DataLoader(test, batch_size=1, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=50, shuffle=True)
 
-    # with torch.no_grad():
-    #     calc_iwnll(vae, test_loader, args)
+    with torch.no_grad():
+        calc_iwnll(vae, test_loader, args)
 
 if __name__ == '__main__':
     args = init_config()

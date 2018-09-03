@@ -62,16 +62,28 @@ class StackedGatedMaskedConv2d(nn.Module):
                 self.conv_layers.append(GatedMaskedConv2d(layers[i-1], layers[i],  kernel_size[i]))
             
         self.modules = nn.ModuleList(self.conv_layers)
-      
+    
     def forward(self, img, q_z=None):
+        """
+        Args:
+            img: (batch, nc, H, W)
+            q_z: (batch, nsamples, nz)
+        """
+
+        batch_size, nsamples, _ = q_z.size()
         if q_z is not None:
             z_img = self.z_linear(q_z) 
-            z_img = z_img.view(img.size(0), self.latent_feature_map, img.size(2), img.size(3))
-        
+            z_img = z_img.view(img.size(0), nsamples, self.latent_feature_map, img.size(2), img.size(3))
+
+            # (batch, nsamples, nc, H, W)
+            img = img.unsqueeze(1).expand(batch_size, nsamples, *img.size()[1:])
+
         for i in range(len(self.conv_layers)):
             if i == 0:
                 if q_z is not None:
-                    v_map = torch.cat([img, z_img], 1)
+                    # (batch, nsamples, nc + fm, H, W) --> (batch * nsamples, nc + fm, H, W)
+                    v_map = torch.cat([img, z_img], 2)
+                    v_map = v_map.view(-1, *v_map.size()[2:])
                 else:
                     v_map = img
                 h_map = v_map
@@ -103,26 +115,36 @@ class PixelCNNDecoder(nn.Module):
     def reconstruct_error(self, x, z):
         """Cross Entropy in the language case
         Args:
-            x: (batch_size, seq_len)
+            x: (batch_size, nc, H, W)
             z: (batch_size, n_sample, nz)
         Returns:
             loss: (batch_size, n_sample). Loss
             across different sentence and z
         """
-        z = z.squeeze(1)
 
+        batch_size, nsamples, _ = z.size()
+        # (batch * nsamples, nc, H, W)
         pred = self.decode(x, z)
         prob = torch.clamp(pred.view(pred.size(0), -1), min=1e-5, max=1.-1e-5)
-        tgt_vec = x.view(x.size(0), -1)
+
+        # (batch, nsamples, nc, H, W) --> (batch * nsamples, nc, H, W)
+        x = x.unsqueeze(1).expand(batch_size, nsamples, *x.size()[1:])
+        tgt_vec = x.view(-1, *x.size()[2:])
+
+        # (batch * nsamples, *)
+        tgt_vec = tgt_vec.view(tgt_vec.size(0), -1)
+
         log_bernoulli = tgt_vec * torch.log(prob) + (1. - tgt_vec)*torch.log(1. - prob)
+
+        log_bernoulli = log_bernoulli.view(batch_size, nsamples, -1)
         
-        return -torch.sum(log_bernoulli, 1).unsqueeze(1)
+        return -torch.sum(log_bernoulli, 2)
 
 
     def log_probability(self, x, z):
         """Cross Entropy in the language case
         Args:
-            x: (batch_size, seq_len)
+            x: (batch_size, nc, H, W)
             z: (batch_size, n_sample, nz)
         Returns:
             log_p: (batch_size, n_sample).
