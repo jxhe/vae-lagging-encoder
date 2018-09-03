@@ -200,7 +200,7 @@ def main(args):
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
     decay_cnt = 0
-    burn_flag = False
+    burn_flag = True
     vae.train()
     start = time.time()
 
@@ -220,41 +220,38 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            # if epoch >= args.burn:
-            #     burn_flag = False
+            if epoch >= args.burn:
+                burn_flag = False
 
-            # stuck_cnt = 0
-            # sub_best_loss = 1e3
-            # sub_iter = 0
-            # batch_data_enc = batch_data
-            # while burn_flag and stuck_cnt <= args.conv_nstep:
+            stuck_cnt = 0
+            sub_best_loss = 1e3
+            sub_iter = 0
+            batch_data_enc = batch_data
+            while burn_flag and sub_iter <= args.conv_nstep:
 
-            #     enc_optimizer.zero_grad()
-            #     dec_optimizer.zero_grad()
+                enc_optimizer.zero_grad()
+                dec_optimizer.zero_grad()
 
-            #     loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
-            #     # print(mix_prob[0])
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
+                # print(mix_prob[0])
 
-            #     loss = loss.mean(dim=-1)
+                loss = loss.mean(dim=-1)
 
-            #     loss.backward()
-            #     torch.nn.utils.clip_grad_norm_(vae.parameters(), clip_grad)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(vae.parameters(), clip_grad)
 
-            #     enc_optimizer.step()
+                enc_optimizer.step()
 
-            #     id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+                id_ = np.random.choice(x_train.size(0), args.batch_size, replace=False)
 
-            #     batch_data_enc = train_data_batch[id_]
+                batch_data_enc = x_train[id_]
 
-            #     if loss.item() < sub_best_loss:
-            #         sub_best_loss = loss.item()
-            #         stuck_cnt = 0
-            #     else:
-            #         stuck_cnt += 1
-            #     sub_iter += 1
-
-                # if sub_iter >= 30:
-                #     break
+                # if loss.item() < sub_best_loss:
+                #     sub_best_loss = loss.item()
+                #     stuck_cnt = 0
+                # else:
+                #     stuck_cnt += 1
+                sub_iter += 1
 
             # print(sub_iter)
 
