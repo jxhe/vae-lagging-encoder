@@ -16,7 +16,7 @@ from modules import VAE, VisPlotter
 from modules import generate_grid
 
 clip_grad = 5.0
-decay_epoch = 5
+decay_epoch = 2
 lr_decay = 0.5
 
 
@@ -264,7 +264,7 @@ def main(args):
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
-            while burn_flag and stuck_cnt <= args.conv_nstep:
+            while burn_flag and sub_iter <= args.conv_nstep:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
