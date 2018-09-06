@@ -49,9 +49,14 @@ def vanilla(sub_exp=None):
     config.multi_infer=False
     config.stop_niter=None
     config.burn = -1
-    config.iw_nsamples = 10
 
-    config.epochs=50
+    config.iw_nsamples = 500
+    config.eval_batches = 10
+    config.ais_prior = 'normal'
+    config.ais_T = 100
+    config.ais_K = 5
+
+    config.epochs=2
 
     return BaseExperiment(config)
 

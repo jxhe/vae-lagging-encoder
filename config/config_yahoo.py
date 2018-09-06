@@ -14,5 +14,9 @@ params={
     'test_nepoch': 5,
     'train_data': 'yahoo_data/yahoo.train.txt',
     'val_data': 'yahoo_data/yahoo.valid.txt',
-    'test_data': 'yahoo_data/yahoo.test.txt'
+    'test_data': 'yahoo_data/yahoo.test.txt',
+    'small_test_data': 'yahoo_data/yahoo_10percent.test.txt',
+    'ais_prior': 'normal',
+    'ais_T': 500,
+    'ais_K': 3
 }

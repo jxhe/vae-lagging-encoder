@@ -77,7 +77,7 @@ class VAE(nn.Module):
 
         return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
 
-    def nll_iw(self, x, nsamples):
+    def nll_iw(self, x, nsamples, ns=100):
         """compute the importance weighting estimate of the log-likelihood
         Args:
             x: if the data is constant-length, x is the data tensor with
@@ -90,7 +90,8 @@ class VAE(nn.Module):
         """
 
         # compute iw every ns samples to address the memory issue
-        ns = 100
+        # nsamples = 500, ns = 100
+        # nsamples = 500, ns = 10
         tmp = []
         for _ in range(int(nsamples / ns)):
             # [batch, ns, nz]

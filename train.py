@@ -1,11 +1,14 @@
 import argparse
 import torch
 import numpy as np
-from experiments.reproduce import *
+# from experiments.reproduce import *
+from experiments.omniglot import *
 # from my_paths import paths
 # from saver.model_saver import ModelSaver
 # from loggers.logger import TrainLogger
-from text import main
+# from text import main
+# from image import main
+from image_v import main
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -49,5 +52,8 @@ def setup(cluster, configs):
             print(f"Task: {i} Done")
 
 if __name__ == "__main__":
+    # to run a Basic experiment
+    # python train.py --num-resources 1 --resource-id 1 --exp-name 'vanilla|'
+    # python train.py --num-resources 1 --resource-id 1 --exp-name 'best|'
     job_config = parse_args()
     run(job_config)

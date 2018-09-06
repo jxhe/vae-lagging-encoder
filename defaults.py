@@ -19,20 +19,22 @@ def yahoo_default(config):
     config.ni=512
     config.nz=32
 
-    config.train_data='datasets/yahoo/data_yahoo_release/train.txt'
-    config.test_data='datasets/yahoo/data_yahoo_release/valid.txt'
-    # config.test_data='datasets/yahoo/data_yahoo_release/test.txt'
+    config.train_data='yahoo_data/yahoo.train.txt'
+    config.val_data='yahoo_data/yahoo.valid.txt'
+    config.test_data='yahoo_data/yahoo.test.txt'
     config.save_path='test'
 
-    pass
+    config.log_niter = 100
+    config.test_nepoch = 1
+
 
 def ptb_default(config):
     config.enc_nh = 256
     config.dec_nh = 256
     config.ni=256
     config.nz=32
-    config.train_data='datasets/yahoo/data_yahoo_release/train.txt'
-    config.test_data='datasets/yahoo/data_yahoo_release/valid.txt'
+    # config.train_data='datasets/yahoo/data_yahoo_release/train.txt'
+    # config.test_data='datasets/yahoo/data_yahoo_release/valid.txt'
     # config.test_data='datasets/yahoo/data_yahoo_release/test.txt'
 
 
@@ -41,6 +43,7 @@ def vae_default(config):
     config.optim='sgd'
     config.clip_grad=5.0
     config.lr=1.0
+    config.momentum = 0
     config.lr_decay=0.5
     config.decay_epoch = 5
     pass
