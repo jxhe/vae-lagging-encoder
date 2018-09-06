@@ -77,6 +77,7 @@ def init_config():
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
 
     return args
 

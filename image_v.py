@@ -58,9 +58,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_%d_%d" % \
+    id_ = "%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_%d" % \
             (args.dataset, args.burn, args.conv_nstep, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid)
+             args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
@@ -76,7 +76,7 @@ def init_config():
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
-
+        torch.backends.cudnn.deterministic = True
     return args
 
 def test(model, test_loader, mode, args):
@@ -168,17 +168,24 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%s_from%d_convs%d_ns%d_kls%.1f_warm%d_%d_%d" % \
+    id_ = "%s_burn%s_from%d_convs%d_ns%d_kls%.1f_warm%d_seed_%d" % \
         (args.dataset, args.burn, args.burn_from, args.conv_nstep, args.nsamples,
-         args.kl_start, args.warm_up, args.jobid, args.taskid)
+         args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
     args.save_path = save_path
 
+def seed(args):
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if args.cuda:
+        torch.cuda.manual_seed(args.seed)
+
 def main(args):
     if args.save_path == '':
         make_savepath(args)
+        seed(args)
 
     if args.cuda:
         print('using cuda')
