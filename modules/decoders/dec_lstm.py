@@ -11,7 +11,9 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 import numpy as np
 
-class LSTMDecoder(nn.Module):
+from .decoder import DecoderBase
+
+class LSTMDecoder(DecoderBase):
     """LSTM decoder with constant-length data"""
     def __init__(self, args, vocab, model_init, emb_init):
         super(LSTMDecoder, self).__init__()
@@ -93,10 +95,10 @@ class LSTMDecoder(nn.Module):
         word_embed = torch.cat((word_embed, z_), -1)
 
         z = z.view(batch_size * n_sample, self.nz)
-        # c_init = self.trans_linear(z).unsqueeze(0)
-        # h_init = torch.tanh(c_init)
         c_init = self.trans_linear(z).unsqueeze(0)
         h_init = torch.tanh(c_init)
+        # h_init = self.trans_linear(z).unsqueeze(0)
+        # c_init = h_init.new_zeros(h_init.size())
         output, _ = self.lstm(word_embed, (h_init, c_init))
 
         output = self.dropout_out(output)
@@ -264,17 +266,4 @@ class VarLSTMDecoder(LSTMDecoder):
 
         # (batch_size, n_sample)
         return loss.view(batch_size, n_sample, -1).sum(-1)
-
-    def log_probability(self, x, z):
-        """Cross Entropy in the language case
-        Args:
-            x: tuple which contains x_ and sents_len
-                    x_: (batch_size, seq_len)
-                    sents_len: long tensor of sentence lengths
-            z: (batch_size, n_sample, nz)
-        Returns:
-            log_p(x|z): (batch_size, n_sample).
-        """
-
-        return -self.reconstruct_error(x, z)
 

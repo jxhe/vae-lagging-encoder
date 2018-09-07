@@ -163,6 +163,16 @@ def calc_iwnll(model, test_data_batch, args):
     print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
     sys.stdout.flush()
 
+def calc_mi(model, test_data_batch):
+    model.eval()
+    mi = []
+    for batch_data in test_data_batch:
+        mutual_info = model.calc_mi_q(batch_data)
+        mi.append(mutual_info)
+
+    model.train()
+
+    return np.mean(mi)
 
 def plot_vae(plotter, model, plot_data, zrange,
              log_prior, iter_, num_slice, args):
@@ -325,7 +335,7 @@ def main(args):
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
-            while burn_flag and stuck_cnt <= args.conv_nstep:
+            while burn_flag and sub_iter <= args.conv_nstep:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
@@ -360,7 +370,7 @@ def main(args):
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, 0., nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -379,11 +389,14 @@ def main(args):
             report_kl_loss += loss_kl.item()
 
             if iter_ % args.log_niter == 0:
+                with torch.no_grad():
+                    mutual_info = calc_mi(vae, val_data_batch)
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+
+                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
                        'time elapsed %.2fs' %
-                       (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
+                       (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mutual_info,
                        report_rec_loss / report_num_sents, time.time() - start))
                 sys.stdout.flush()
 
