@@ -10,11 +10,9 @@ import torch
 from torch import nn, optim
 
 from data import MonoTextData
-from loggers.logger import TrainLogger
-from my_paths import paths
-from modules import LSTMEncoder, LSTMDecoder, MixLSTMEncoder
 # from modules import VAE, VisPlotter
 from modules import VAE
+from modules import LSTMEncoder, LSTMDecoder
 from modules import generate_grid
 from eval_ais.ais import ais_trajectory
 
@@ -150,7 +148,7 @@ def test(model, test_data_batch, mode, args):
     nll = (report_kl_loss + report_rec_loss) / report_num_sents
     kl = report_kl_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
-    print("SENTS, WORDS", report_num_sents, report_num_words)
+    # print("SENTS, WORDS", report_num_sents, report_num_words)
     print('%s --- avg_loss: %.4f, kl: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
            (mode, test_loss, report_kl_loss / report_num_sents,
             report_rec_loss / report_num_sents, nll, ppl))
@@ -231,7 +229,6 @@ def main(args):
 
     val_data = MonoTextData(args.val_data, vocab=vocab)
     test_data = MonoTextData(args.test_data, vocab=vocab)
-    small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
@@ -256,6 +253,7 @@ def main(args):
     vae = VAE(encoder, decoder, args).to(device)
 
     if args.eval:
+        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
@@ -300,9 +298,6 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-    train_data_batch = train_data_batch[:13]
-    val_data_batch = val_data_batch[:13]
-    test_data_batch = test_data_batch[:13]
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
@@ -394,9 +389,6 @@ def main(args):
             iter_ += 1
 
         print('kl weight %.4f' % kl_weight)
-        print('epoch: %d, VAL' % epoch)
-
-
 
         vae.eval()
         with torch.no_grad():
