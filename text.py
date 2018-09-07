@@ -125,14 +125,16 @@ def test(model, test_data_batch, mode, args):
         report_rec_loss += loss_rc.item()
         report_kl_loss += loss_kl.item()
 
+    mutual_info = calc_mi(model, test_data_batch)
+
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
     nll = (report_kl_loss + report_rec_loss) / report_num_sents
     kl = report_kl_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
 
-    print('%s --- avg_loss: %.4f, kl: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_sents,
+    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
+           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info, 
             report_rec_loss / report_num_sents, nll, ppl))
     sys.stdout.flush()
 
@@ -370,7 +372,7 @@ def main(args):
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, 0., nsamples=args.nsamples)
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -391,6 +393,7 @@ def main(args):
             if iter_ % args.log_niter == 0:
                 with torch.no_grad():
                     mutual_info = calc_mi(vae, val_data_batch)
+                # mutual_info = 0
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
 
