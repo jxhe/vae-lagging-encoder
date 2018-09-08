@@ -10,11 +10,10 @@ import torch
 from torch import nn, optim
 
 from data import MonoTextData
-# from modules import VAE, VisPlotter
 from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
 from modules import generate_grid
-from eval_ais.ais import ais_trajectory
+# from eval_ais.ais import ais_trajectory
 
 clip_grad = 5.0
 decay_epoch = 2
@@ -143,14 +142,15 @@ def test(model, test_data_batch, mode, args):
         report_rec_loss += loss_rc.item()
         report_kl_loss += loss_kl.item()
 
+    mutual_info = calc_mi(model, test_data_batch)
+
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
     nll = (report_kl_loss + report_rec_loss) / report_num_sents
     kl = report_kl_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
-    # print("SENTS, WORDS", report_num_sents, report_num_words)
-    print('%s --- avg_loss: %.4f, kl: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_sents,
+    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
+           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
             report_rec_loss / report_num_sents, nll, ppl))
     sys.stdout.flush()
 
@@ -177,11 +177,19 @@ def calc_iwnll(model, test_data_batch, args, ns=100):
 
     nll = report_nll_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
-    print("SENTS, WORDS", report_num_sents, report_num_words)
 
     print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
     sys.stdout.flush()
     return nll, ppl
+
+def calc_mi(model, test_data_batch):
+    mi = []
+    for batch_data in test_data_batch:
+        mutual_info = model.calc_mi_q(batch_data)
+        mi.append(mutual_info)
+
+
+    return np.mean(mi)
 
 def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
@@ -253,16 +261,23 @@ def main(args):
     vae = VAE(encoder, decoder, args).to(device)
 
     if args.eval:
-        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
-        test_elbo_iw_ais_equal(vae, small_test_data, args, device)
+        vae.eval()
+
+        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
+                                                      device=device,
+                                                      batch_first=True)
+
+        test(vae, test_data_batch, "TEST", args)
+
+        # test_elbo_iw_ais_equal(vae, small_test_data, args, device)
 
         test_data_batch = test_data.create_data_batch(batch_size=1,
                                                       device=device,
                                                       batch_first=True)
-        vae.eval()
         with torch.no_grad():
             calc_iwnll(vae, test_data_batch, args)
 

@@ -238,6 +238,17 @@ class VAE(nn.Module):
         """
         return self.encoder.eval_inference_dist(x, z, param)
 
+    def calc_mi_q(self, x):
+        """Approximate the mutual information between x and z
+        under distribution q(z|x)
+
+        Args:
+            x: [batch_size, *]. The sampled data to estimate mutual info
+        """
+
+        return self.encoder.calc_mi(x)
+        
+
 
     # def eval_inference_mode(self, x):
     #     """compute the mode points in the inference distribution

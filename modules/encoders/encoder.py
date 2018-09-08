@@ -1,7 +1,8 @@
-
 import math
 import torch
 import torch.nn as nn
+
+from ..utils import log_sum_exp
 
 class GaussianEncoderBase(nn.Module):
     """docstring for EncoderBase"""
@@ -105,13 +106,13 @@ class GaussianEncoderBase(nn.Module):
         return mu.unsqueeze(1).expand(batch_size, nsamples, nz)
 
     def eval_inference_dist(self, x, z, param=None):
-        """this function computes q(z | x)
+        """this function computes log q(z | x)
         Args:
             z: tensor
                 different z points that will be evaluated, with
                 shape [batch, nsamples, nz]
         Returns: Tensor1
-            Tensor1: q(z|x) with shape [batch, nsamples]
+            Tensor1: log q(z|x) with shape [batch, nsamples]
         """
 
         nz = z.size(2)
@@ -134,3 +135,38 @@ class GaussianEncoderBase(nn.Module):
 
         return log_density
 
+    def calc_mi(self, x):
+        """Approximate the mutual information between x and z
+        I(x, z) = E_xE_{q(z|x)}log(q(z|x)) - E_xE_{q(z|x)}log(q(z))
+
+        Returns: Float
+
+        """
+
+        # [x_batch, nz]
+        mu, logvar = self.forward(x)
+
+        x_batch, nz = mu.size()
+
+        # E_{q(z|x)}log(q(z|x)) = -0.5*nz*log(2*\pi) - 0.5*(1+logvar).sum(-1)
+        neg_entropy = (-0.5 * nz * math.log(2 * math.pi)- 0.5 * (1 + logvar).sum(-1)).mean()
+
+        # [z_batch, 1, nz]
+        z_samples = self.reparameterize(mu, logvar, 1)
+
+        # [1, x_batch, nz]
+        mu, logvar = mu.unsqueeze(0), logvar.unsqueeze(0)
+        var = logvar.exp()
+
+        # (z_batch, x_batch, nz)
+        dev = z_samples - mu
+
+        # (z_batch, x_batch)
+        log_density = -0.5 * ((dev ** 2) / var).sum(dim=-1) - \
+            0.5 * (nz * math.log(2 * math.pi) + logvar.sum(-1))
+
+        # log q(z): aggregate posterior
+        # [z_batch]
+        log_qz = log_sum_exp(log_density, dim=1) - math.log(x_batch)
+
+        return (neg_entropy - log_qz.mean(-1)).item()
