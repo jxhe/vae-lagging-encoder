@@ -113,7 +113,7 @@ def test(model, test_loader, mode, args):
     kl = report_kl_loss / report_num_examples
 
     print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_examples, mutual_info
+           (mode, test_loss, report_kl_loss / report_num_examples, mutual_info,
             report_rec_loss / report_num_examples, nll))
     sys.stdout.flush()
 
@@ -125,7 +125,6 @@ def calc_mi(model, test_loader):
         batch_data, _ = datum
         mutual_info = model.calc_mi_q(batch_data)
         mi.append(mutual_info)
-
 
     return np.mean(mi)
 
