@@ -85,6 +85,7 @@ def test(model, test_loader, mode, args):
 
     report_kl_loss = report_rec_loss = 0
     report_num_examples = 0
+    mutual_info = []
     for datum in test_loader:
         batch_data, _ = datum
         batch_size = batch_data.size(0)
@@ -104,17 +105,29 @@ def test(model, test_loader, mode, args):
         report_rec_loss += loss_rc.item()
         report_kl_loss += loss_kl.item()
 
+    mutual_info = calc_mi(model, test_loader)
+
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
 
     nll = (report_kl_loss + report_rec_loss) / report_num_examples
     kl = report_kl_loss / report_num_examples
 
-    print('%s --- avg_loss: %.4f, kl: %.4f, recon: %.4f, nll: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_examples,
+    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f' % \
+           (mode, test_loss, report_kl_loss / report_num_examples, mutual_info
             report_rec_loss / report_num_examples, nll))
     sys.stdout.flush()
 
     return test_loss, nll, kl
+
+def calc_mi(model, test_loader):
+    mi = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        mutual_info = model.calc_mi_q(batch_data)
+        mi.append(mutual_info)
+
+
+    return np.mean(mi)
 
 def calc_iwnll(model, test_loader, args):
 
@@ -280,11 +293,16 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
+                vae.eval()
+                with torch.no_grad():
+                    mi = calc_mi(vae, val_loader)
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                vae.train()
+
+                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
                        'time elapsed %.2fs' %
                        (epoch, iter_, train_loss, report_kl_loss / report_num_examples,
-                       report_rec_loss / report_num_examples, time.time() - start))
+                       report_rec_loss / report_num_examples, mi, time.time() - start))
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0
