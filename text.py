@@ -78,7 +78,7 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_optim%s_burn%s_convs%.7f_ns%d_kls%.1f_warm%d_%d_%d" % \
+    id_ = "%s_optim%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_%d_%d" % \
             (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
