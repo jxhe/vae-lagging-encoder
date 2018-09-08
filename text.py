@@ -267,18 +267,18 @@ def main(args):
 
         vae.eval()
 
-        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
-                                                      device=device,
-                                                      batch_first=True)
-
-        test(vae, test_data_batch, "TEST", args)
-
-        # test_elbo_iw_ais_equal(vae, small_test_data, args, device)
-
-        test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                      device=device,
-                                                      batch_first=True)
         with torch.no_grad():
+            test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
+                                                          device=device,
+                                                          batch_first=True)
+
+            test(vae, test_data_batch, "TEST", args)
+
+            # test_elbo_iw_ais_equal(vae, small_test_data, args, device)
+
+            test_data_batch = test_data.create_data_batch(batch_size=1,
+                                                          device=device,
+                                                          batch_first=True)
             calc_iwnll(vae, test_data_batch, args)
 
         return
