@@ -243,7 +243,7 @@ class VAE(nn.Module):
         under distribution q(z|x)
 
         Args:
-            x: [batch_size, *]
+            x: [batch_size, *]. The sampled data to estimate mutual info
         """
 
         return self.encoder.calc_mi(x)
