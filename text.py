@@ -166,13 +166,11 @@ def calc_iwnll(model, test_data_batch, args):
     sys.stdout.flush()
 
 def calc_mi(model, test_data_batch):
-    model.eval()
     mi = []
     for batch_data in test_data_batch:
         mutual_info = model.calc_mi_q(batch_data)
         mi.append(mutual_info)
 
-    model.train()
 
     return np.mean(mi)
 
@@ -392,7 +390,9 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 with torch.no_grad():
+                    vae.eval()
                     mutual_info = calc_mi(vae, val_data_batch[:100])
+                    vae.train()
                 # mutual_info = 0
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
