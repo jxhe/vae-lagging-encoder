@@ -183,13 +183,15 @@ def calc_iwnll(model, test_data_batch, args, ns=100):
     return nll, ppl
 
 def calc_mi(model, test_data_batch):
-    mi = []
+    mi = 0
+    num_examples = 0
     for batch_data in test_data_batch:
+        batch_size = batch_data.size(0)
+        num_examples += batch_size
         mutual_info = model.calc_mi_q(batch_data)
-        mi.append(mutual_info)
+        mi += mutual_info * batch_size
 
-
-    return np.mean(mi)
+    return mi / num_examples
 
 def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
