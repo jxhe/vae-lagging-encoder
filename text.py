@@ -134,7 +134,7 @@ def test(model, test_data_batch, mode, args):
     ppl = np.exp(nll * report_num_sents / report_num_words)
 
     print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info, 
+           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
             report_rec_loss / report_num_sents, nll, ppl))
     sys.stdout.flush()
 
@@ -281,8 +281,8 @@ def main(args):
         dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0)
         opt_dict['lr'] = 1.0
     else:
-        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.5, 0.999))
-        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.5, 0.999))
+        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.9, 0.999))
         opt_dict['lr'] = 0.001
 
     iter_ = 0
@@ -392,7 +392,7 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 with torch.no_grad():
-                    mutual_info = calc_mi(vae, val_data_batch)
+                    mutual_info = calc_mi(vae, val_data_batch[:100])
                 # mutual_info = 0
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
@@ -447,8 +447,8 @@ def main(args):
                     enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
                     dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
                 else:
-                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
-                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
+                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
