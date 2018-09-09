@@ -18,6 +18,7 @@ from modules import generate_grid
 clip_grad = 5.0
 decay_epoch = 2
 lr_decay = 0.5
+max_decay = 5
 
 
 def init_config():
@@ -48,9 +49,6 @@ def init_config():
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
                          help='apply burning when nonzero, reduce to vanilla VAE when burn is 0')
-    parser.add_argument('--mi_ts', type=float, default=0,
-                         help='burning would be stopped if the MI change between two epochs is smaller than mi_ts')
-
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
 
@@ -297,7 +295,7 @@ def main(args):
         dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.5, 0.999))
         opt_dict['lr'] = 0.001
 
-    iter_ = 0
+    iter_ = decay_cnt = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
     pre_mi = 0
@@ -315,8 +313,6 @@ def main(args):
     val_data_batch = val_data.create_data_batch(batch_size=args.batch_size,
                                                 device=device,
                                                 batch_first=True)
-
-    burn_val_data = val_data_batch[:100]
 
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
@@ -337,18 +333,23 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            sub_best_loss = 1e3
-            sub_iter = 0
+            sub_iter = 1
             batch_data_enc = batch_data
-            pre_val_loss = 1e4
+            burn_num_words = 0
+            burn_pre_loss = 1e4
+            burn_cur_loss = 0
             while burn_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
+                burn_batch_size, burn_sents_len = batch_data_enc.size()
+                burn_num_words += (burn_sents_len - 1) * burn_batch_size
+
                 loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
                 # print(mix_prob[0])
 
+                burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
 
                 loss.backward()
@@ -361,21 +362,18 @@ def main(args):
                 batch_data_enc = train_data_batch[id_]
 
                 if sub_iter % 10 == 0:
-                    vae.eval()
-                    with torch.no_grad():
-                        cur_val_loss, _, _, _, _ = test(vae, burn_val_data, "TEST", args, verbose=False)
-                    vae.train()
-
-                    if (pre_val_loss - cur_val_loss) / abs(pre_val_loss) < 0.0001:
+                    burn_cur_loss = burn_cur_loss / burn_num_words
+                    if burn_pre_loss - burn_cur_loss < 0:
                         break
-                    pre_val_loss = cur_val_loss
+                    burn_pre_loss = burn_cur_loss
+                    burn_cur_loss = burn_num_words = 0
 
                 sub_iter += 1
 
                 # if sub_iter >= 30:
                 #     break
 
-            print(sub_iter)
+            # print(sub_iter)
 
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
@@ -431,6 +429,7 @@ def main(args):
 
             if burn_flag and (abs(cur_mi - pre_mi) < args.mi_ts):
                 burn_flag = False
+                print("STOP BURNING")
 
             pre_mi = cur_mi
 
@@ -451,6 +450,7 @@ def main(args):
                 opt_dict["lr"] = opt_dict["lr"] * lr_decay
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
+                decay_cnt += 1
                 if args.optim == 'sgd':
                     enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
                     dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
@@ -460,6 +460,9 @@ def main(args):
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
+
+        if decay_cnt == max_decay:
+            break
 
         if epoch % args.test_nepoch == 0:
             with torch.no_grad():
