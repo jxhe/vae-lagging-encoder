@@ -141,7 +141,6 @@ def calc_iwnll(model, test_loader, args):
 
         report_num_examples += batch_size
 
-        # TODO(junxian): check if __len__ function returns the number of examples
         if id_ % (round(len(test_loader) / 10)) == 0:
             print('iw nll computing %d0%%' % (id_/(round(len(test_loader) / 10))))
             sys.stdout.flush()

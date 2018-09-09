@@ -47,7 +47,9 @@ def init_config():
 
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
-                         help='number of epochs to performe multi-step update')
+                         help='apply burning when nonzero, reduce to vanilla VAE when burn is 0')
+    parser.add_argument('--mi_ts', type=float, default=0,
+                         help='burning would be stopped if the MI change between two epochs is smaller than mi_ts')
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -117,7 +119,7 @@ def test_ais(model, test_data_batch, mode_split, args):
     return nll, ppl
 
 
-def test(model, test_data_batch, mode, args):
+def test(model, test_data_batch, mode, args, verbose=True):
     report_kl_loss = report_rec_loss = 0
     report_num_words = report_num_sents = 0
     for i in np.random.permutation(len(test_data_batch)):
@@ -149,12 +151,13 @@ def test(model, test_data_batch, mode, args):
     nll = (report_kl_loss + report_rec_loss) / report_num_sents
     kl = report_kl_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
-    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
-           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
-            report_rec_loss / report_num_sents, nll, ppl))
-    sys.stdout.flush()
+    if verbose:
+        print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
+               (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
+                report_rec_loss / report_num_sents, nll, ppl))
+        sys.stdout.flush()
 
-    return test_loss, nll, kl, ppl
+    return test_loss, nll, kl, ppl, mutual_info
 
 def calc_iwnll(model, test_data_batch, args, ns=100):
     report_nll_loss = 0
@@ -297,7 +300,8 @@ def main(args):
     iter_ = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
-    burn_flag = True
+    pre_mi = 0
+    burn_flag = True if args.burn else False
     vae.train()
     start = time.time()
 
@@ -311,6 +315,8 @@ def main(args):
     val_data_batch = val_data.create_data_batch(batch_size=args.batch_size,
                                                 device=device,
                                                 batch_first=True)
+
+    burn_val_data = val_data_batch[:100]
 
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
@@ -331,13 +337,10 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            if epoch >= args.burn:
-                burn_flag = False
-
-            stuck_cnt = 0
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
+            pre_val_loss = 1
             while burn_flag and sub_iter <= args.conv_nstep:
 
                 enc_optimizer.zero_grad()
@@ -357,11 +360,16 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if loss.item() < sub_best_loss:
-                    sub_best_loss = loss.item()
-                    stuck_cnt = 0
-                else:
-                    stuck_cnt += 1
+                if sub_iter % 5 == 0:
+                    vae.eval()
+                    with torch.no_grad():
+                        cur_val_loss, _, _, _, _ = test(vae, burn_val_data, "TEST", args, verbose=False)
+                    vae.train()
+
+                    if abs((cur_val_loss - pre_val_loss) / pre_val_loss) < 0.001:
+                        break
+                    pre_val_loss = cur_val_loss
+
                 sub_iter += 1
 
                 # if sub_iter >= 30:
@@ -393,11 +401,21 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
+                if burn_flag:
+                    vae.eval()
+                    mi = calc_mi(vae, val_data_batch)
+                    vae.train()
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
-                       'time elapsed %.2fs' %
-                       (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
-                       report_rec_loss / report_num_sents, time.time() - start))
+                    print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi, 
+                           report_rec_loss / report_num_sents, time.time() - start))
+                else:
+                    print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
+                           report_rec_loss / report_num_sents, time.time() - start))
+
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0
@@ -409,7 +427,12 @@ def main(args):
 
         vae.eval()
         with torch.no_grad():
-            loss, nll, kl, ppl = test(vae, val_data_batch, "VAL", args)
+            loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, "VAL", args)
+
+            if burn_flag and (abs(cur_mi - pre_mi) < args.mi_ts):
+                burn_flag = False
+
+            pre_mi = cur_mi
 
 
         if loss < best_loss:
@@ -440,7 +463,7 @@ def main(args):
 
         if epoch % args.test_nepoch == 0:
             with torch.no_grad():
-                loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
+                loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
 
         vae.train()
 
