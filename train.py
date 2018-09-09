@@ -7,13 +7,13 @@ from experiments.omniglot import *
 # from saver.model_saver import ModelSaver
 # from loggers.logger import TrainLogger
 # from text import main
-# from image import main
-from image_v import main
+from image import main
+# from image_v import main
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num-resources', default=None, type=int, help="Number of resources to split jobs on")
-    parser.add_argument('--resource-id',default=None, type=int, help="Resource ID from 1...#Resources" )
+    parser.add_argument('--num-resources', default=1, type=int, help="Number of resources to split jobs on")
+    parser.add_argument('--resource-id',default=1, type=int, help="Resource ID from 1...#Resources" )
     parser.add_argument('--exp-names',default=None, type=str, help="Experiment Name" )
     cluster_config = parser.parse_args()
     return cluster_config

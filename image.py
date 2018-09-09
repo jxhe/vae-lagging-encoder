@@ -12,6 +12,7 @@ from torch import nn, optim
 
 from modules import ResNetEncoder, PixelCNNDecoder
 from modules import VAE
+from loggers.logger import Logger
 
 clip_grad = 5.0
 decay_epoch = 20
@@ -155,7 +156,39 @@ def calc_iwnll(model, test_loader, args):
     print('iw nll: %.4f' % nll)
     sys.stdout.flush()
 
+def make_savepath(args):
+    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    id_ = "%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_seed_%d" % \
+        (args.dataset, args.burn, args.conv_nstep, args.nsamples,
+         args.kl_start, args.warm_up, args.seed)
+
+    save_path = os.path.join(save_dir, id_ + '.pt')
+    args.save_path = save_path
+
+    if args.eval == 1:
+        # f = open(args.save_path[:-2]+'_log_test', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_test')
+    else:
+        # f = open(args.save_path[:-2]+'_log_val', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_val')
+    sys.stdout = Logger(log_path)
+    # sys.stdout = open(log_path, 'a')
+
+def seed(args):
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if args.cuda:
+        torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
+
 def main(args):
+    if args.save_path == '':
+        make_savepath(args)
+        seed(args)
 
     if args.cuda:
         print('using cuda')
