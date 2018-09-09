@@ -340,8 +340,8 @@ def main(args):
             sub_best_loss = 1e3
             sub_iter = 0
             batch_data_enc = batch_data
-            pre_val_loss = 1
-            while burn_flag and sub_iter <= args.conv_nstep:
+            pre_val_loss = 1e4
+            while burn_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
@@ -360,13 +360,13 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if sub_iter % 5 == 0:
+                if sub_iter % 10 == 0:
                     vae.eval()
                     with torch.no_grad():
                         cur_val_loss, _, _, _, _ = test(vae, burn_val_data, "TEST", args, verbose=False)
                     vae.train()
 
-                    if abs((cur_val_loss - pre_val_loss) / pre_val_loss) < 0.001:
+                    if (pre_val_loss - cur_val_loss) / abs(pre_val_loss) < 0.0001:
                         break
                     pre_val_loss = cur_val_loss
 
@@ -375,7 +375,7 @@ def main(args):
                 # if sub_iter >= 30:
                 #     break
 
-            # print(sub_iter)
+            print(sub_iter)
 
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
@@ -408,7 +408,7 @@ def main(args):
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
-                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi, 
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi,
                            report_rec_loss / report_num_sents, time.time() - start))
                 else:
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
