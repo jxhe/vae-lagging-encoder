@@ -77,7 +77,7 @@ class VAE(nn.Module):
 
         return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
 
-    def nll_iw(self, x, nsamples, ns=100):
+    def nll_iw(self, x, meta_optimizer, nsamples, ns=100):
         """compute the importance weighting estimate of the log-likelihood
         Args:
             x: if the data is constant-length, x is the data tensor with

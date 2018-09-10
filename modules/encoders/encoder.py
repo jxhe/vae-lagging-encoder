@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 
 from ..utils import log_sum_exp
 
@@ -21,7 +22,16 @@ class GaussianEncoderBase(nn.Module):
 
         raise NotImplementedError
 
-    def sample(self, input, nsamples):
+    def sa_forward(self, x, meta_optimizer):
+        mean, logvar = self.forward(x)
+        mean_svi = Variable(mean.data, requires_grad=True)
+        logvar_svi = Variable(logvar.data, requires_grad=True)
+        var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data)
+        mean_svi_final, logvar_svi_final = var_params_svi
+
+        return mean_svi_final, logvar_svi_final
+
+    def sample(self, input, meta_optimizer, nsamples):
         """sampling from the encoder
         Returns: Tensor1, Tuple
             Tensor1: the tensor latent z with shape [batch, nsamples, nz]
@@ -30,7 +40,7 @@ class GaussianEncoderBase(nn.Module):
         """
 
         # (batch_size, nz)
-        mu, logvar = self.forward(input)
+        mu, logvar = self.sa_forward(input, meta_optimizer)
 
         # (batch, nsamples, nz)
         z = self.reparameterize(mu, logvar, nsamples)
@@ -54,9 +64,12 @@ class GaussianEncoderBase(nn.Module):
 
         KL = 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
 
-        return z, KL
+        return z, KL, (mu, logvar)
 
-    def reparameterize(self, mu, logvar, nsamples=1):
+    def calc_kl(self, mean, logvar):
+        return 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
+
+    def reparameterize(self, mu, logvar, nsamples=1, z=None):
         """sample from posterior Gaussian family
         Args:
             mu: Tensor
@@ -74,7 +87,10 @@ class GaussianEncoderBase(nn.Module):
         mu_expd = mu.unsqueeze(1).expand(batch_size, nsamples, nz)
         std_expd = std.unsqueeze(1).expand(batch_size, nsamples, nz)
 
-        eps = torch.zeros_like(std_expd).normal_()
+        if z is None:
+            eps = torch.zeros_like(std_expd).normal_()
+        else:
+            eps = z
 
         return mu_expd + torch.mul(eps, std_expd)
 
