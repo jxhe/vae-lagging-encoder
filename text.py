@@ -102,7 +102,9 @@ def test_ais(model, test_data_batch, mode_split, args):
         report_num_words += (sent_len - 1) * batch_size
         report_num_sents += batch_size
         print("WOOT", batch_size, sent_len)
-        batch_ll = ais_trajectory(model, batch_data, mode='forward', prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T), n_sample=args.ais_K)
+        batch_ll = ais_trajectory(model, batch_data, mode='forward',
+         prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
+          n_sample=args.ais_K, modality='text')
         test_loss += torch.sum(-batch_ll).item()
 
     # test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
