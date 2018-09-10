@@ -93,6 +93,7 @@ class ResNet(nn.Module):
 class ResNetEncoderV2(GaussianEncoderBase):
     def __init__(self, args, ngpu=1):
         super(ResNetEncoderV2, self).__init__()
+        self.ngpu = ngpu
         self.nz = args.nz
         self.nc = 1
         hidden_units = 512

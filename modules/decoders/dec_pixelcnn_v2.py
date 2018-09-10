@@ -119,8 +119,9 @@ class PixelCNN(nn.Module):
         return input + direct_conncet(direct_inputs.pop(0))
 
 class PixelCNNDecoderV2(DecoderBase):
-    def __init__(self, args, ngpu=1, mode='small'):
+    def __init__(self, args, ngpu=1, mode='large'):
         super(PixelCNNDecoderV2, self).__init__()
+        self.ngpu = ngpu
         nz = args.nz
         self.nc = 1
         self.fm_latent = 4
