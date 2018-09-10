@@ -11,7 +11,7 @@ import torch.utils.data
 from torch import nn, optim
 from torch.autograd import Variable
 
-from modules import ResNetEncoder, PixelCNNDecoder
+from modules import ResNetEncoderV2, PixelCNNDecoderV2
 from modules import VAE
 from modules import OptimN2N
 from loggers.logger import Logger
@@ -41,6 +41,10 @@ def init_config():
     parser.add_argument('--warm_up', type=int, default=10)
     parser.add_argument('--kl_start', type=float, default=1.0)
 
+    # parallel parameters
+    parser.add_argument('--ngpu', type=int, default=1, help='number of gpus to use')
+    parser.add_argument('--gpu_ids', type=str, default='0,1', help='gpu ids to use, only activated when ngpu > 1')
+
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
 
@@ -51,6 +55,7 @@ def init_config():
 
     args = parser.parse_args()
     args.cuda = torch.cuda.is_available()
+    args.gpu_ids = args.gpu_ids.split(',')
 
     save_dir = "models/%s" % args.dataset
 
@@ -221,8 +226,8 @@ def main(args):
     # if args.model == 'autoreg':
     #     args.latent_feature_map = 0
 
-    encoder = ResNetEncoder(args)
-    decoder = PixelCNNDecoder(args)
+    encoder = ResNetEncoderV2(args)
+    decoder = PixelCNNDecoderV2(args)
 
     vae = VAE(encoder, decoder, args).to(device)
 
@@ -304,11 +309,11 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
-                vae.eval()
-                with torch.no_grad():
-                    mi = calc_mi(vae, val_loader)
+                # vae.eval()
+                # with torch.no_grad():
+                #     mi = calc_mi(vae, val_loader)
 
-                vae.train()
+                # vae.train()
 
                 print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
                        'time elapsed %.2fs' %
