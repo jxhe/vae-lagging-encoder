@@ -58,7 +58,6 @@ class ResidualBlock(nn.Module):
         return out
 
 
-
 class ResNetEncoder(GaussianEncoderBase):
     """docstring for ResNetEncoder"""
     def __init__(self, args):
