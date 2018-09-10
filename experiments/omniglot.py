@@ -102,6 +102,48 @@ def reproduce_vanilla(sub_exp=None):
         # collapsed: 558, 309
     return BaseExperiment(args)
 
+def fill_ais(sub_exp=None):
+    print(sub_exp, "sub_exp")
+    args = argparse.Namespace()
+    args.options = argparse.Namespace()
+    args.params = argparse.Namespace()
+
+    #########
+    args.model = 'vae'
+    args.mode = 'test'
+    # args.description = 'Vanilla VAE Baseline'
+    args.question = ''
+    args.extra_name = '_ais'
+    #########
+    args = default_(args)
+    args.eval = True
+    if sub_exp == '1':
+        args.description = 'Excel ais table score'
+        args.exp_name = 'replVanilla'
+        args.burn = 0
+        args.kl_start = 1
+        args.conv_nstep = 0
+        args.warm_up = 10
+        args.seed = 655
+    elif sub_exp == '2':
+        args.description = 'Excel ais table score'
+        args.exp_name = 'replVanilla'
+        args.burn = 0
+        args.kl_start = 0.1
+        args.conv_nstep = 0
+        args.warm_up = 10
+        args.seed = 811
+    elif sub_exp == '3':
+        args.description = 'Excel ais table score'
+        args.exp_name = 'our'
+        args.burn = 5
+        args.conv_nstep = 60
+        args.kl_start = [.1, 1]
+        args.seed = [655, 811]
+
+    return BaseExperiment(args)
+
+
 def debug(sub_exp=None):
     print(sub_exp, "sub_exp")
     args = argparse.Namespace()
@@ -118,6 +160,7 @@ def debug(sub_exp=None):
     #########
 
     args = default_(args)
+    args.eval = True
     args.description = 'Getting image and image_v to be the same'
 
     return BaseExperiment(args)
@@ -140,8 +183,8 @@ def our_method(sub_exp=None):
 
     args = default_(args)
 
+    args.eval = True
     args.description = 'Seeing how our method works on two seeds that correspond to V-VAE experiments'
-    args.burn_from = 0
     args.burn = 5
     args.conv_nstep = 60
     args.kl_start = [.1, 1]

@@ -13,6 +13,8 @@ from torch import nn, optim
 from modules import ResNetEncoder, PixelCNNDecoder
 from modules import VAE
 from loggers.logger import Logger
+from eval_ais.ais import ais_trajectory
+from make_small_test_script import load_indices_omniglot
 
 clip_grad = 5.0
 decay_epoch = 20
@@ -81,6 +83,46 @@ def init_config():
         torch.backends.cudnn.deterministic = True
 
     return args
+
+
+def test_ais(model, test_loader, mode_split, args):
+    for x in model.modules():
+        x.eval()
+
+    test_loss = 0
+    report_num_examples = 0
+    for datum in test_loader:
+        batch_data, _ = datum
+        batch_size = batch_data.size(0)
+
+        report_num_examples += batch_size
+
+        batch_ll = ais_trajectory(model, batch_data, mode='forward', prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T), n_sample=args.ais_K)
+        test_loss += torch.sum(-batch_ll).item()
+
+
+    nll = (test_loss) / report_num_examples
+
+    print('%s AIS --- nll: %.4f' % \
+           (mode_split, nll))
+    sys.stdout.flush()
+    return nll
+
+def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
+    nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
+    #########
+    vae.eval()
+    with torch.no_grad():
+        loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
+    #########
+    with torch.no_grad():
+        nll_iw = calc_iwnll(vae, small_test_loader, args)
+    #########
+    #
+
+    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
+
+
 
 def test(model, test_loader, mode, args):
 
@@ -154,6 +196,7 @@ def calc_iwnll(model, test_loader, args):
 
     print('iw nll: %.4f' % nll)
     sys.stdout.flush()
+    return nll
 
 def make_savepath(args):
     save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
@@ -170,11 +213,14 @@ def make_savepath(args):
 
     if args.eval == 1:
         # f = open(args.save_path[:-2]+'_log_test', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_test')
+        log_path = os.path.join(save_dir, id_ + '_log_test' + args.extra_name)
     else:
         # f = open(args.save_path[:-2]+'_log_val', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_val')
+        log_path = os.path.join(save_dir, id_ + '_log_val' + args.extra_name)
     sys.stdout = Logger(log_path)
+
+    if args.load_path == '':
+        args.load_path = args.save_path
     # sys.stdout = open(log_path, 'a')
 
 def seed(args):
@@ -201,6 +247,9 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
+    small_test_indices = load_indices_omniglot()
+    small_x_test = x_test[small_test_indices, :,:,:]
+
     x_train = x_train.to(device)
     x_val = x_val.to(device)
     x_test = x_test.to(device)
@@ -233,6 +282,13 @@ def main(args):
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
+
+        small_x_test = small_x_test.to(device)
+        small_y_test = x_train.new_zeros(small_x_test.size(0), y_size)
+        small_test_data = torch.utils.data.TensorDataset(small_x_test, small_y_test)
+        small_test_loader = torch.utils.data.DataLoader(small_test_data, batch_size=args.batch_size, shuffle=True)
+        test_elbo_iw_ais_equal(vae, small_test_loader, args, device)
+        return
         vae.eval()
         with torch.no_grad():
             test(vae, test_loader, "TEST", args)
