@@ -10,7 +10,7 @@ import torch
 import torch.utils.data
 from torch import nn, optim
 
-from modules import ResNetEncoder, PixelCNNDecoder
+from modules import ResNetEncoderV2, PixelCNNDecoderV2
 from modules import VAE
 from loggers.logger import Logger
 
@@ -224,8 +224,8 @@ def main(args):
     # if args.model == 'autoreg':
     #     args.latent_feature_map = 0
 
-    encoder = ResNetEncoder(args)
-    decoder = PixelCNNDecoder(args)
+    encoder = ResNetEncoderV2(args)
+    decoder = PixelCNNDecoderV2(args)
 
     vae = VAE(encoder, decoder, args).to(device)
 
@@ -240,8 +240,8 @@ def main(args):
 
         return
 
-    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.9, 0.999))
-    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001)
+    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001)
     opt_dict['lr'] = 0.001
 
     iter_ = 0
@@ -368,8 +368,8 @@ def main(args):
                 vae.load_state_dict(torch.load(args.save_path))
                 decay_cnt += 1
                 print('new lr: %f' % opt_dict["lr"])
-                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
-                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
+                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"])
+                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"])
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss

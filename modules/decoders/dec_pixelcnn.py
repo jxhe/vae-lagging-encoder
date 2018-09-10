@@ -154,5 +154,3 @@ class PixelCNNDecoder(DecoderBase):
         """
 
         return -self.reconstruct_error(x, z)
-
-
