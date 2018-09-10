@@ -97,7 +97,9 @@ def test_ais(model, test_loader, mode_split, args):
 
         report_num_examples += batch_size
 
-        batch_ll = ais_trajectory(model, batch_data, mode='forward', prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T), n_sample=args.ais_K)
+        batch_ll = ais_trajectory(model, batch_data, mode='forward',
+         prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
+          n_sample=args.ais_K, modality='image')
         test_loss += torch.sum(-batch_ll).item()
 
 

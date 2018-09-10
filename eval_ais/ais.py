@@ -9,7 +9,7 @@ from eval_ais.hmc import hmc_trajectory, accept_reject
 from tqdm import tqdm
 
 
-def ais_trajectory(model, batch_data, mode='forward', prior='inference', schedule=np.linspace(0., 1., 500), n_sample=100):
+def ais_trajectory(model, batch_data, mode='forward', prior='inference', schedule=np.linspace(0., 1., 500), n_sample=100, modality=None):
     """Compute annealed importance sampling trajectories for a batch of data.
     Could be used for *both* forward and reverse chain in bidirectional Monte Carlo
     (default: forward chain with linear schedule).
@@ -65,7 +65,10 @@ def ais_trajectory(model, batch_data, mode='forward', prior='inference', schedul
 
     print ('In %s mode' % mode)
 
-    batch_size, sent_len = batch_data.size()
+    if modality == 'image':
+        batch_size = batch_data.size(0)
+    elif modality == 'text':
+        batch_size, sent_len = batch_data.size()
 
     B = batch_size * n_sample
     batch_data = safe_repeat(batch_data, n_sample)
