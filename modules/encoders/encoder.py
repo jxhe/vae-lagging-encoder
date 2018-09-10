@@ -66,7 +66,7 @@ class GaussianEncoderBase(nn.Module):
 
         return z, KL, (mu, logvar)
 
-    def calc_kl(self, mean, logvar):
+    def calc_kl(self, mu, logvar):
         return 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
 
     def reparameterize(self, mu, logvar, nsamples=1, z=None):
@@ -90,7 +90,7 @@ class GaussianEncoderBase(nn.Module):
         if z is None:
             eps = torch.zeros_like(std_expd).normal_()
         else:
-            eps = z
+            eps = z.unsqueeze(1)
 
         return mu_expd + torch.mul(eps, std_expd)
 

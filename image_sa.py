@@ -89,17 +89,15 @@ def test(vae, test_loader, meta_optimizer, mode, args):
         batch_size = batch_data.size(0)
 
         report_num_examples += batch_size
-        z_samples, KL, (mean, logvar) = vae.encode(batch_data, 1)
-        reconstruct_err = vae.decoder.reconstruct_error(batch_data, z_samples)
+        mean, logvar = vae.encoder.forward(batch_data)
         var_params = torch.cat([mean, logvar], 1)
         mean_svi = Variable(mean.data, requires_grad=True)
         logvar_svi = Variable(logvar.data, requires_grad=True)
-        var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data,
-                                                iter_ % args.log_niter == 0)
+        var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data)
 
         mean_svi_final, logvar_svi_final = var_params_svi
         z_samples = vae.encoder.reparameterize(mean_svi_final, logvar_svi_final, 1)
-        rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples)
+        rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
         kl_svi = vae.encoder.calc_kl(mean_svi_final, logvar_svi_final)
 
         report_rec_loss += rc_svi.sum().item()
@@ -228,14 +226,15 @@ def main(args):
 
     vae = VAE(encoder, decoder, args).to(device)
 
-    def variational_loss(input, img, model, z = None):
+    def variational_loss(input, img, vae, z = None):
         mean, logvar = input
-        z_samples, kl = model.encoder.reparameterize(mean, logvar, 1, z)      
-        reconstruct_err = model.decoder.reconstruct_error(img, z_samples)
+        z_samples = vae.encoder.reparameterize(mean, logvar, 1, z)
+        kl = vae.encoder.calc_kl(mean, logvar)
+        reconstruct_err = vae.decoder.reconstruct_error(img, z_samples).squeeze(1)
         return (reconstruct_err + kl_weight*kl).mean(-1)
 
     update_params = list(vae.decoder.parameters())
-    meta_optimizer = OptimN2N(variational_loss, vae, update_params, eps=1e-5, 
+    meta_optimizer = OptimN2N(variational_loss, vae, update_params, eps=1e-5,
                               lr=[1, 1],
                               iters=args.svi_steps, momentum=0.5,
                               acc_param_grads=1,
@@ -280,23 +279,20 @@ def main(args):
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
             optimizer.zero_grad()
-            z_samples, KL, (mean, logvar) = vae.encode(batch_data, 1)
-            reconstruct_err = vae.decoder.reconstruct_error(batch_data, z_samples)
+            mean, logvar = vae.encoder.forward(batch_data)
             var_params = torch.cat([mean, logvar], 1)
             mean_svi = Variable(mean.data, requires_grad=True)
             logvar_svi = Variable(logvar.data, requires_grad=True)
-            var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data,
-                                                    iter_ % args.log_niter == 0)
+            var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data)
 
             mean_svi_final, logvar_svi_final = var_params_svi
             z_samples = vae.encoder.reparameterize(mean_svi_final, logvar_svi_final, 1)
-            rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples)
+            rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
             kl_svi = vae.encoder.calc_kl(mean_svi_final, logvar_svi_final)
 
             var_loss = (rc_svi + kl_weight * kl_svi).mean(-1)
             var_loss.backward(retain_graph=True)
-            var_param_grads = meta_optimizer.backward([mean_svi_final.grad, logvar_svi_final.grad],
-                                                      iter_ % args.log_niter == 0)
+            var_param_grads = meta_optimizer.backward([mean_svi_final.grad, logvar_svi_final.grad])
             var_param_grads = torch.cat(var_param_grads, 1)
             var_params.backward(var_param_grads)
 
