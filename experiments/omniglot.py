@@ -140,6 +140,14 @@ def fill_ais(sub_exp=None):
         args.conv_nstep = 60
         args.kl_start = [.1, 1]
         args.seed = [655, 811]
+    elif sub_exp == '4':
+        args.description = 'Excel ais table score'
+        #change the encoder/decoder to resnetv1
+        args.exp_name = 'allburn'
+        args.burn = 1000
+        args.conv_nstep = 20
+        args.kl_start = [.1, 1]
+
 
     return BaseExperiment(args)
 

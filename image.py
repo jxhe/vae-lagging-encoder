@@ -11,6 +11,7 @@ import torch.utils.data
 from torch import nn, optim
 
 from modules import ResNetEncoderV2, PixelCNNDecoderV2
+# from modules import ResNetEncoder, PixelCNNDecoder
 from modules import VAE
 from loggers.logger import Logger
 from eval_ais.ais import ais_trajectory
@@ -402,7 +403,7 @@ def main(args):
                      print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_examples,
-                           report_rec_loss / report_num_examples, time.time() - start))                   
+                           report_rec_loss / report_num_examples, time.time() - start))
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0

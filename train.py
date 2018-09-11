@@ -52,7 +52,7 @@ def setup(cluster, configs):
         if i % cluster.num_resources == (cluster.resource_id-1):
             if task.dataset in ['yahoo', 'synthetic', 'ptb']:
                 main_text(task)
-            elif task.datset == 'omniglot':
+            elif task.dataset == 'omniglot':
                 main_image(task)
             print(f"Task: {i} Done")
 
