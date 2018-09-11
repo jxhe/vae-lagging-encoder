@@ -3,11 +3,13 @@ import torch
 import numpy as np
 # from experiments.reproduce import *
 from experiments.omniglot import *
+from experiments.yahoo import *
 # from my_paths import paths
 # from saver.model_saver import ModelSaver
 # from loggers.logger import TrainLogger
 # from text import main
-from image import main
+from image import main as main_image
+from text import main as main_text
 # from image_v import main
 
 def parse_args():
@@ -48,7 +50,10 @@ def setup(cluster, configs):
     print("Running {} Jobs on {} resources".format(len(configs), cluster.num_resources))
     for i, task in enumerate(configs):
         if i % cluster.num_resources == (cluster.resource_id-1):
-            main(task)
+            if task.dataset in ['yahoo', 'synthetic', 'ptb']:
+                main_text(task)
+            elif task.datset == 'omniglot':
+                main_image(task)
             print(f"Task: {i} Done")
 
 if __name__ == "__main__":

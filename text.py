@@ -13,6 +13,7 @@ from data import MonoTextData
 from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
 from modules import generate_grid
+from loggers.logger import Logger
 # from eval_ais.ais import ais_trajectory
 
 clip_grad = 5.0
@@ -84,6 +85,7 @@ def init_config():
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
 
     return args
 
@@ -214,6 +216,39 @@ def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais))
 
 
+def make_savepath(args):
+    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    id_ = "%s_optim%s_burn%s_convs%d_constlen_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
+             args.kl_start, args.warm_up, args.jobid, args.taskid)
+
+    save_path = os.path.join(save_dir, id_ + '.pt')
+    args.save_path = save_path
+
+    if args.eval == 1:
+        # f = open(args.save_path[:-2]+'_log_test', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_test' + args.extra_name)
+    else:
+        # f = open(args.save_path[:-2]+'_log_val', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_val' + args.extra_name)
+    sys.stdout = Logger(log_path)
+
+    if args.load_path == '':
+        args.load_path = args.save_path
+    # sys.stdout = open(log_path, 'a')
+
+def seed(args):
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if args.cuda:
+        torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
+
+
 def main(args):
 
     class uniform_initializer(object):
@@ -226,6 +261,10 @@ def main(args):
     class xavier_normal_initializer(object):
         def __call__(self, tensor):
             nn.init.xavier_normal_(tensor)
+
+    if args.save_path == '':
+        make_savepath(args)
+        seed(args)
 
     if args.cuda:
         print('using cuda')
