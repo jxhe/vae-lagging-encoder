@@ -28,8 +28,6 @@ def init_config():
     parser.add_argument('--dataset', choices=['omniglot'], required=True, help='dataset to use')
 
     # optimization parameters
-    parser.add_argument('--conv_nstep', type=int, default=20,
-                         help='number of steps of not improving loss to determine convergence, only used when burning is turned on')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
     parser.add_argument('--iw_nsamples', type=int, default=500,
                          help='number of samples to compute importance weighted estimate')
@@ -62,8 +60,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.burn, args.conv_nstep, args.nsamples,
+    id_ = "%s_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -206,8 +204,8 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_seed_%d" % \
-        (args.dataset, args.burn, args.conv_nstep, args.nsamples,
+    id_ = "%s_ns%d_kls%.1f_warm%d_seed_%d" % \
+        (args.dataset, args.nsamples,
          args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -306,7 +304,7 @@ def main(args):
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
     decay_cnt = 0
-    burn_flag = True
+    burn_flag = True if args.burn else False
     vae.train()
     start = time.time()
 
@@ -329,18 +327,21 @@ def main(args):
             if epoch >= args.burn:
                 burn_flag = False
 
-            stuck_cnt = 0
-            sub_best_loss = 1e3
-            sub_iter = 0
+            sub_iter = 1
             batch_data_enc = batch_data
-            while burn_flag and sub_iter <= args.conv_nstep:
+            burn_num_examples = 0
+            burn_pre_loss = 1e4
+            burn_cur_loss = 0
+            while burn_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
+                burn_num_examples += batch_data_enc.size(0)
                 loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
                 # print(mix_prob[0])
 
+                burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
 
                 loss.backward()
@@ -352,11 +353,13 @@ def main(args):
 
                 batch_data_enc = x_train[id_]
 
-                # if loss.item() < sub_best_loss:
-                #     sub_best_loss = loss.item()
-                #     stuck_cnt = 0
-                # else:
-                #     stuck_cnt += 1
+                if sub_iter % 10 == 0:
+                    burn_cur_loss = burn_cur_loss / burn_num_examples
+                    if burn_pre_loss - burn_cur_loss < 0:
+                        break
+                    burn_pre_loss = burn_cur_loss
+                    burn_cur_loss = burn_num_examples = 0
+
                 sub_iter += 1
 
             # print(sub_iter)
@@ -385,16 +388,22 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
-                vae.eval()
-                with torch.no_grad():
-                    mi = calc_mi(vae, val_loader)
+                if burn_flag:
+                    vae.eval()
+                    with torch.no_grad():
+                        mi = calc_mi(vae, val_loader)
 
-                vae.train()
+                    vae.train()
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                       'time elapsed %.2fs' %
-                       (epoch, iter_, train_loss, report_kl_loss / report_num_examples, mi,
-                       report_rec_loss / report_num_examples, time.time() - start))
+                    print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_examples, mi,
+                           report_rec_loss / report_num_examples, time.time() - start))
+                else:
+                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_examples,
+                           report_rec_loss / report_num_examples, time.time() - start))                   
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0
