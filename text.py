@@ -32,9 +32,6 @@ def init_config():
     parser.add_argument('--optim', type=str, default='sgd', help='')
 
     parser.add_argument('--momentum', type=float, default=0, help='sgd momentum')
-    parser.add_argument('--conv_nstep', type=int, default=20,
-                         help='number of steps of not improving loss to determine convergence, only used when burning is turned on')
-
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
     parser.add_argument('--iw_nsamples', type=int, default=500,
                          help='number of samples to compute importance weighted estimate')
@@ -66,8 +63,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_optim%s_burn%s_convs%d_constlen_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
+    id_ = "%s_constlen_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -462,18 +459,21 @@ def main(args):
 
             iter_ += 1
 
+            if burn_flag and (iter_ % len(train_data_batch) / 2) == 0:
+                vae.eval()
+                cur_mi = calc_mi(vae, val_data_batch)
+                vae.train()
+                if cur_mi - pre_mi < 0:
+                    burn_flag = False
+                    print("STOP BURNING")
+
+                pre_mi = cur_mi
+
         print('kl weight %.4f' % kl_weight)
 
         vae.eval()
         with torch.no_grad():
-            loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, "VAL", args)
-
-            if burn_flag and (abs(cur_mi - pre_mi) < args.mi_ts):
-                burn_flag = False
-                print("STOP BURNING")
-
-            pre_mi = cur_mi
-
+            loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
 
         if loss < best_loss:
             print('update best loss')
