@@ -55,7 +55,7 @@ def init_config():
 
     args = parser.parse_args()
     args.cuda = torch.cuda.is_available()
-    args.gpu_ids = args.gpu_ids.split(',')
+    args.gpu_ids = [int(x) for x in args.gpu_ids.split(',')]
 
     save_dir = "models/%s" % args.dataset
 

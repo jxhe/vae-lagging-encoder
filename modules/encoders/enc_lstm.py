@@ -14,6 +14,9 @@ class LSTMEncoder(GaussianEncoderBase):
         self.ni = args.ni
         self.nh = args.enc_nh
         self.nz = args.nz
+        self.ngpu = args.ngpu
+        self.gpu_ids = args.gpu_ids
+        self.cuda= args.cuda
 
         self.embed = nn.Embedding(vocab_size, args.ni)
 
@@ -22,6 +25,11 @@ class LSTMEncoder(GaussianEncoderBase):
                             num_layers=1,
                             batch_first=True,
                             dropout=0)
+
+        self.main = nn.Sequential(
+            self.embed,
+            self.lstm
+            )
 
         # dimension transformation to z (mean and logvar)
         self.linear = nn.Linear(args.enc_nh, 2 * args.nz, bias=False)
@@ -54,10 +62,10 @@ class LSTMEncoder(GaussianEncoderBase):
             Tensor2: the logvar tensor, shape (batch, nz)
         """
 
-        # (batch_size, seq_len-1, args.ni)
-        word_embed = self.embed(input)
-
-        _, (last_state, last_cell) = self.lstm(word_embed)
+        if self.cuda and self.ngpu > 1:
+            _, (last_state, last_cell) = nn.parallel.data_parallel(self.main, input, self.gpu_ids)
+        else:
+            _, (last_state, last_cell) = self.main(input)
 
         mean, logvar = self.linear(last_state).chunk(2, -1)
 

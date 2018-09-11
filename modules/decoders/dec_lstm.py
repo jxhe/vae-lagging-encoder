@@ -20,6 +20,9 @@ class LSTMDecoder(DecoderBase):
         self.ni = args.ni
         self.nh = args.dec_nh
         self.nz = args.nz
+        self.ngpu = args.ngpu
+        self.gpu_ids = args.gpu_ids
+        self.cuda = args.cuda
 
         # no padding when setting padding_idx to -1
         self.embed = nn.Embedding(len(vocab), args.ni, padding_idx=-1)
@@ -99,7 +102,11 @@ class LSTMDecoder(DecoderBase):
         h_init = torch.tanh(c_init)
         # h_init = self.trans_linear(z).unsqueeze(0)
         # c_init = h_init.new_zeros(h_init.size())
-        output, _ = self.lstm(word_embed, (h_init, c_init))
+        if self.cuda and self.ngpu > 1:
+            output, _ = nn.parallel.data_parallel(self.lstm, (word_embed, (h_init, c_init)), self.gpu_ids)
+        else:
+            output, _ = self.lstm(word_embed, (h_init, c_init))
+        # output, _ = self.lstm(word_embed, (h_init, c_init))
 
         output = self.dropout_out(output)
 
