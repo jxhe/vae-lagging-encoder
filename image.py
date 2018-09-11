@@ -60,8 +60,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.nsamples,
+    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -204,8 +204,8 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_ns%d_kls%.1f_warm%d_seed_%d" % \
-        (args.dataset, args.nsamples,
+    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_seed_%d" % \
+        (args.dataset, args.burn, args.nsamples,
          args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -247,6 +247,10 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
+
+    # x_train = x_train[:500]
+    # x_val = x_val[:500]
+    # x_test = x_test[:500]
 
     x_train = x_train.to(device)
     x_val = x_val.to(device)
@@ -302,13 +306,13 @@ def main(args):
     iter_ = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
-    decay_cnt = 0
+    decay_cnt = pre_mi = best_mi = mi_not_improved =0
     burn_flag = True if args.burn else False
     vae.train()
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = 1.0 / (args.warm_up * len(train_loader))
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * len(train_loader))
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
@@ -322,9 +326,6 @@ def main(args):
 
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
-
-            if epoch >= args.burn:
-                burn_flag = False
 
             sub_iter = 1
             batch_data_enc = batch_data
@@ -402,7 +403,7 @@ def main(args):
                      print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_examples,
-                           report_rec_loss / report_num_examples, time.time() - start))                   
+                           report_rec_loss / report_num_examples, time.time() - start))
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0
@@ -410,13 +411,18 @@ def main(args):
 
             iter_ += 1
 
-            if burn_flag and (iter_ % (len(train_loader) / 2)) == 0:
+            if burn_flag and (iter_ % len(train_loader)) == 0:
                 vae.eval()
                 cur_mi = calc_mi(vae, val_loader)
                 vae.train()
-                if cur_mi - pre_mi < 0:
-                    burn_flag = False
-                    print("STOP BURNING")
+                if cur_mi - best_mi < 0:
+                    mi_not_improved += 1
+                    if mi_not_improved == 5:
+                        burn_flag = False
+                        print("STOP BURNING")
+
+                else:
+                    best_mi = cur_mi
 
                 pre_mi = cur_mi
 
@@ -426,7 +432,7 @@ def main(args):
         vae.eval()
 
         with torch.no_grad():
-            loss, nll, kl, mi = test(vae, val_loader, "VAL", args)
+            loss, nll, kl = test(vae, val_loader, "VAL", args)
 
         if loss < best_loss:
             print('update best loss')

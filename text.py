@@ -62,8 +62,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_constlen_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.nsamples,
+    id_ = "%s_burn%d_constlen_ns%d_kls%.2f_warm%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -74,8 +74,12 @@ def init_config():
     # load config file into args
     config_file = "config.config_%s" % args.dataset
     params = importlib.import_module(config_file).params
-
     args = argparse.Namespace(**vars(args), **params)
+
+    if 'label' in params:
+        args.label = params['label']
+    else:
+        args.label = False
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -232,13 +236,13 @@ def main(args):
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data)
+    train_data = MonoTextData(args.train_data, label=args.label)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    val_data = MonoTextData(args.val_data, vocab=vocab)
-    test_data = MonoTextData(args.test_data, vocab=vocab)
+    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
+    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
@@ -303,7 +307,7 @@ def main(args):
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -398,7 +402,7 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
-                if burn_flag:
+                if burn_flag or epoch == 0:
                     vae.eval()
                     mi = calc_mi(vae, val_data_batch)
                     vae.train()
@@ -477,7 +481,7 @@ def main(args):
 
     vae.eval()
     with torch.no_grad():
-        loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
+        loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
