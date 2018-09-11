@@ -14,7 +14,7 @@ from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
 from modules import generate_grid
 from loggers.logger import Logger
-# from eval_ais.ais import ais_trajectory
+from eval_ais.ais import ais_trajectory
 
 clip_grad = 5.0
 decay_epoch = 2
@@ -205,12 +205,12 @@ def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     #########
     vae.eval()
     with torch.no_grad():
-        loss_elbo, nll_elbo, kl_elbo, ppl_elbo = test(vae, small_test_data_batch, "10%TEST", args)
+        loss_elbo, nll_elbo, kl_elbo, ppl_elbo, mutual_info = test(vae, small_test_data_batch, "10%TEST", args)
     #########
     with torch.no_grad():
         nll_iw, ppl_iw = calc_iwnll(vae, small_test_data_batch, args, ns=20)
     #########
-    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais))
+    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f\tMIT:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais, mutual_info))
 
 
 def make_savepath(args):
@@ -219,9 +219,9 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_optim%s_burn%s_convs%d_constlen_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid)
+    id_ = "%s_constlen_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
+            (args.dataset, args.nsamples,
+             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -267,7 +267,6 @@ def main(args):
         print('using cuda')
 
     print(args)
-    # logger = TrainLogger(args, paths)
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
@@ -302,10 +301,12 @@ def main(args):
     vae = VAE(encoder, decoder, args).to(device)
 
     if args.eval:
-        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
+        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        test_elbo_iw_ais_equal(vae, small_test_data, args, device)
+        return
         vae.eval()
 
         with torch.no_grad():
@@ -315,7 +316,6 @@ def main(args):
 
             test(vae, test_data_batch, "TEST", args)
 
-            # test_elbo_iw_ais_equal(vae, small_test_data, args, device)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,

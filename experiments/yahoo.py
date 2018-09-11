@@ -69,28 +69,20 @@ def fill_ais_text(sub_exp=None):
     args = default_text(args)
     args.eval = True
     if sub_exp == '1':
-        args.description = 'Excel ais table score'
-        args.exp_name = 'replVanilla'
-        args.burn = 0
+        args.description = 'Excel ais two models with 2 seeds each'
+        args.exp_name = 'our_mit'
+        args.burn = 1
         args.kl_start = 1
-        args.conv_nstep = 0
-        args.warm_up = 10
-        args.seed = 655
-    elif sub_exp == '2':
-        args.description = 'Excel ais table score'
-        args.exp_name = 'replVanilla'
-        args.burn = 0
+        args.load_path = 'models/yahoo/yahoo_optimsgd_burn1_mits0.10_constlen_ns1_kls1.0_warm10_86609_1.pt'
+        args.seed = [111, 333]
+    if sub_exp == '2':
+        args.description = 'Excel ais two models with 2 seeds each'
+        args.exp_name = 'our_mit'
+        args.load_path = 'models/yahoo/yahoo_optimsgd_burn1_mits0.10_constlen_ns1_kls0.1_warm10_86610_1.pt'
+        args.burn = 1
         args.kl_start = 0.1
-        args.conv_nstep = 0
-        args.warm_up = 10
-        args.seed = 811
-    elif sub_exp == '3':
-        args.description = 'Excel ais table score'
-        args.exp_name = 'our'
-        args.burn = 5
-        args.conv_nstep = 60
-        args.kl_start = [.1, 1]
-        args.seed = [655, 811]
+        args.seed = [111, 333]
+
 
     return BaseExperiment(args)
 
@@ -105,15 +97,15 @@ def debug_text(sub_exp=None):
     args.model = 'vae'
     args.mode = 'test'
     args.exp_name = 'debug'
-    args.dataset = "yahoo"
+    args.dataset = 'yahoo'
     # args.description = 'Vanilla VAE Baseline'
     args.question = ''
     args.extra_name = ''
     #########
 
     args = default_text(args)
-    args.eval = False
-    args.burn = 1
+    args.eval = True
     args.description = 'Finding what to run AIS on'
+    args.load_path = 'models/yahoo/yahoo_optimsgd_burn1_mits0.10_constlen_ns1_kls0.1_warm10_86610_1.pt'
 
     return BaseExperiment(args)
