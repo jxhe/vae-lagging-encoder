@@ -247,8 +247,6 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
-    small_test_indices = load_indices_omniglot()
-    small_x_test = x_test[small_test_indices, :,:,:]
 
     x_train = x_train.to(device)
     x_val = x_val.to(device)
@@ -282,7 +280,8 @@ def main(args):
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-
+        small_test_indices = load_indices_omniglot()
+        small_x_test = x_test[small_test_indices, :,:,:]
         small_x_test = small_x_test.to(device)
         small_y_test = x_train.new_zeros(small_x_test.size(0), y_size)
         small_test_data = torch.utils.data.TensorDataset(small_x_test, small_y_test)
