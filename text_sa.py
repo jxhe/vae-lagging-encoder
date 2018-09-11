@@ -15,7 +15,8 @@ from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
 from modules import generate_grid
 from modules import OptimN2N
-# from eval_ais.ais import ais_trajectory
+from eval_ais.ais import ais_trajectory
+from loggers.logger import Logger
 
 clip_grad = 5.0
 decay_epoch = 2
@@ -115,7 +116,13 @@ def test_ais(model, test_data_batch, mode_split, args):
     return nll, ppl
 
 
-def test(model, test_data_batch, mode, args, verbose=True):
+def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
+    # for x in model.modules():
+        # print(x.training)
+        # x.eval() #not sure why this breaks???
+    model.decoder.dropout_in.eval()
+    model.decoder.dropout_out.eval()
+
     report_kl_loss = report_rec_loss = 0
     report_num_words = report_num_sents = 0
     for i in np.random.permutation(len(test_data_batch)):
@@ -126,16 +133,16 @@ def test(model, test_data_batch, mode, args, verbose=True):
         report_num_words += (sent_len - 1) * batch_size
 
         report_num_sents += batch_size
-        mean, logvar = vae.encoder.forward(batch_data)
+        mean, logvar = model.encoder.forward(batch_data)
         var_params = torch.cat([mean, logvar], 1)
         mean_svi = Variable(mean.data, requires_grad=True)
         logvar_svi = Variable(logvar.data, requires_grad=True)
         var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data)
 
         mean_svi_final, logvar_svi_final = var_params_svi
-        z_samples = vae.encoder.reparameterize(mean_svi_final, logvar_svi_final, 1)
-        rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
-        kl_svi = vae.encoder.calc_kl(mean_svi_final, logvar_svi_final)
+        z_samples = model.encoder.reparameterize(mean_svi_final, logvar_svi_final, 1)
+        rc_svi = model.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
+        kl_svi = model.encoder.calc_kl(mean_svi_final, logvar_svi_final)
 
         report_rec_loss += rc_svi.sum().item()
         report_kl_loss += kl_svi.sum().item()
@@ -155,7 +162,10 @@ def test(model, test_data_batch, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_iwnll(model, test_data_batch, args, ns=100):
+def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
+    model.decoder.dropout_in.eval()
+    model.decoder.dropout_out.eval()
+
     report_nll_loss = 0
     report_num_words = report_num_sents = 0
     for id_, i in enumerate(np.random.permutation(len(test_data_batch))):
@@ -170,7 +180,7 @@ def calc_iwnll(model, test_data_batch, args, ns=100):
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
             sys.stdout.flush()
 
-        loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples, ns=ns)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
 
         report_nll_loss += loss.sum().item()
 
@@ -192,7 +202,7 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
-def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
+def test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
     small_test_data_batch = small_test_data.create_data_batch(batch_size=20,
                                                   device=device,
@@ -202,13 +212,47 @@ def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     #########
     vae.eval()
     with torch.no_grad():
-        loss_elbo, nll_elbo, kl_elbo, ppl_elbo = test(vae, small_test_data_batch, "10%TEST", args)
+        loss_elbo, nll_elbo, kl_elbo, ppl_elbo, mutual_info = test(vae, small_test_data_batch, meta_optimizer, "10%TEST", args)
     #########
     with torch.no_grad():
-        nll_iw, ppl_iw = calc_iwnll(vae, small_test_data_batch, args, ns=20)
+        nll_iw, ppl_iw = calc_iwnll(vae, small_test_data_batch, meta_optimizer, args, ns=20)
     #########
-    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais))
+    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f,\tMIT:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais, mutual_info))
 
+def make_savepath(args):
+    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    id_ = "%s_savae_ns%d_kls%.1f_warm%d_seed_%d" % \
+            (args.dataset, args.nsamples,
+             args.kl_start, args.warm_up, args.seed)
+
+    # id_ = "%s_savae_nref%d_kls%.1f_warm%d_seed_%d" % \
+    #     (args.dataset, args.svi_steps,
+    #      args.kl_start, args.warm_up, args.seed)
+
+    save_path = os.path.join(save_dir, id_ + '.pt')
+    args.save_path = save_path
+
+    if args.eval == 1:
+        # f = open(args.save_path[:-2]+'_log_test', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_test')
+    else:
+        # f = open(args.save_path[:-2]+'_log_val', 'a')
+        log_path = os.path.join(save_dir, id_ + '_log_val')
+    sys.stdout = Logger(log_path)
+    # sys.stdout = open(log_path, 'a')
+
+def seed(args):
+    if args.ngpu != 1:
+        args.gpu_ids = [int(x) for x in args.gpu_ids.split(',')]
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if args.cuda:
+        torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
 
 def main(args):
 
@@ -222,6 +266,9 @@ def main(args):
     class xavier_normal_initializer(object):
         def __call__(self, tensor):
             nn.init.xavier_normal_(tensor)
+    if args.save_path == '':
+        make_savepath(args)
+        seed(args)
 
     if args.cuda:
         print('using cuda')
@@ -238,6 +285,7 @@ def main(args):
 
     val_data = MonoTextData(args.val_data, vocab=vocab)
     test_data = MonoTextData(args.test_data, vocab=vocab)
+
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
@@ -271,10 +319,11 @@ def main(args):
                               max_grad_norm=5)
 
     if args.eval:
-        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
+        test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
         vae.eval()
 
         with torch.no_grad():
@@ -282,14 +331,13 @@ def main(args):
                                                           device=device,
                                                           batch_first=True)
 
-            test(vae, test_data_batch, "TEST", args)
+            test(vae, test_data_batch, meta_optimizer, "TEST", args)
 
-            # test_elbo_iw_ais_equal(vae, small_test_data, args, device)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,
                                                           batch_first=True)
-            calc_iwnll(vae, test_data_batch, args)
+            calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
         return
 
@@ -316,7 +364,9 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-
+    # train_data_batch = train_data_batch[:10]
+    # val_data_batch = val_data_batch[:10]
+    # test_data_batch = test_data_batch[:10]
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
@@ -373,9 +423,9 @@ def main(args):
 
         print('kl weight %.4f' % kl_weight)
 
-        vae.eval()
-        with torch.no_grad():
-            loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, "VAL", args)
+        loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        # vae.eval()
+        # with torch.no_grad():
 
         if loss < best_loss:
             print('update best loss')
@@ -404,23 +454,23 @@ def main(args):
             break
 
         if epoch % args.test_nepoch == 0:
-            with torch.no_grad():
-                loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
+            loss, nll, kl, ppl, _ = test(vae, test_data_batch, meta_optimizer, "TEST", args)
+            # with torch.no_grad():
 
         vae.train()
 
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
 
-    vae.eval()
-    with torch.no_grad():
-        test(vae, test_data_batch, "TEST", args)
+    test(vae, test_data_batch, meta_optimizer, "TEST", args)
+    # vae.eval()
+    # with torch.no_grad():
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)
-    with torch.no_grad():
-        calc_iwnll(vae, test_data_batch, args)
+    calc_iwnll(vae, test_data_batch, meta_optimizer, args)
+    # with torch.no_grad():
 
 if __name__ == '__main__':
     args = init_config()

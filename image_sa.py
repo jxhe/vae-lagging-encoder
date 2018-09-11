@@ -85,6 +85,8 @@ def init_config():
     return args
 
 def test(vae, test_loader, meta_optimizer, mode, args):
+    for x in vae.modules():
+        x.eval()
 
     report_kl_loss = report_rec_loss = 0
     report_num_examples = 0
@@ -180,6 +182,8 @@ def make_savepath(args):
     # sys.stdout = open(log_path, 'a')
 
 def seed(args):
+    if args.ngpu != 1:
+        args.gpu_ids = [int(x) for x in args.gpu_ids.split(',')]
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.cuda:
@@ -203,6 +207,11 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
+    # xxx
+    x_train = x_train[:500,:,:,:]
+    x_val = x_val[:500,:,:,:]
+    x_test = x_test[:500,:,:,:]
+    # xxx
     x_train = x_train.to(device)
     x_val = x_val.to(device)
     x_test = x_test.to(device)
@@ -249,10 +258,10 @@ def main(args):
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-        vae.eval()
-        with torch.no_grad():
-            test(vae, test_loader, meta_optimizer, "TEST", args)
-            calc_iwnll(vae, test_loader, meta_optimizer, args)
+        test(vae, test_loader, meta_optimizer, "TEST", args)
+        calc_iwnll(vae, test_loader, meta_optimizer, args)
+        # vae.eval()
+        # with torch.no_grad():
 
         return
 
@@ -329,10 +338,10 @@ def main(args):
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
-        vae.eval()
 
-        with torch.no_grad():
-            loss, nll, kl = test(vae, val_loader, meta_optimizer, "VAL", args)
+        loss, nll, kl = test(vae, val_loader, meta_optimizer, "VAL", args)
+        # vae.eval()
+        # with torch.no_grad():
 
         if loss < best_loss:
             print('update best loss')
@@ -360,21 +369,21 @@ def main(args):
             break
 
         if epoch % args.test_nepoch == 0:
-            with torch.no_grad():
-                loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
+            # with torch.no_grad():
+            loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
 
         vae.train()
 
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
-    vae.eval()
-    with torch.no_grad():
-        loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
+    loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
+    # with torch.no_grad():
 
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=True)
 
-    with torch.no_grad():
-        calc_iwnll(vae, test_loader, meta_optimizer, args)
+    calc_iwnll(vae, test_loader, meta_optimizer, args)
+    # vae.eval()
+    # with torch.no_grad():
 
 if __name__ == '__main__':
     args = init_config()

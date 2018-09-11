@@ -163,7 +163,7 @@ def burn_logic(args, epoch, kl_now=None, kl_prev=None):
     return False
 
 def make_savepath(args):
-    save_dir = "models/%s" % args.dataset
+    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -181,6 +181,7 @@ def seed(args):
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.deterministic = True
 
 def main(args):
     if args.save_path == '':
