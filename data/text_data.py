@@ -110,7 +110,6 @@ class MonoTextData(object):
             batch_first: If true, the returned tensor shape is
                 (batch, seq_len), otherwise (seq_len, batch)
             device: torch.device
-
         Returns: Tensor, Int list
             Tensor: Tensor of the batch data after padding
             Int list: a list of integers representing the length
