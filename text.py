@@ -26,7 +26,7 @@ def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
 
     # model hyperparameters
-    parser.add_argument('--dataset', choices=['yahoo', 'synthetic', 'ptb'], required=True, help='dataset to use')
+    parser.add_argument('--dataset', choices=['yahoo', 'yelp', 'synthetic', 'ptb'], required=True, help='dataset to use')
 
     # optimization parameters
     parser.add_argument('--optim', type=str, default='sgd', help='')
