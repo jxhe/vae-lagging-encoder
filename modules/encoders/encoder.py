@@ -26,7 +26,7 @@ class GaussianEncoderBase(nn.Module):
         mean, logvar = self.forward(x)
         mean_svi = Variable(mean.data, requires_grad=True)
         logvar_svi = Variable(logvar.data, requires_grad=True)
-        var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], batch_data)
+        var_params_svi = meta_optimizer.forward([mean_svi, logvar_svi], x)
         mean_svi_final, logvar_svi_final = var_params_svi
 
         return mean_svi_final, logvar_svi_final
