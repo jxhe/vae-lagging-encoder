@@ -93,11 +93,12 @@ class MonoTextData(object):
                         dropped += 1
                         continue
 
-                labels.append(lb)
+                if label:
+                    labels.append(lb)
                 data.append([vocab[word] for word in line.split()])
 
         if isinstance(vocab, VocabEntry):
-            return data, vocab, dropped
+            return data, vocab, dropped, labels
 
         return data, VocabEntry(vocab), dropped, labels
 
