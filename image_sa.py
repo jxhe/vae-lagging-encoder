@@ -315,9 +315,9 @@ def main(args):
 
                 # vae.train()
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
+                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                        'time elapsed %.2fs' %
-                       (epoch, iter_, train_loss, report_kl_loss / report_num_examples, mi,
+                       (epoch, iter_, train_loss, report_kl_loss / report_num_examples,
                        report_rec_loss / report_num_examples, time.time() - start))
                 sys.stdout.flush()
 
