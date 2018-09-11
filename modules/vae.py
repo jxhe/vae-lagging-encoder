@@ -92,7 +92,7 @@ class VAE(nn.Module):
         # compute iw every ns samples to address the memory issue
         # nsamples = 500, ns = 100
         # nsamples = 500, ns = 10
-        ns = 50
+        ns = 10
         tmp = []
         for _ in range(int(nsamples / ns)):
             # [batch, ns, nz]
@@ -103,7 +103,7 @@ class VAE(nn.Module):
             log_comp_ll = self.eval_complete_ll(x, z)
             log_infer_ll = self.eval_inference_dist(x, z, param)
 
-            tmp.append(log_comp_ll - log_infer_ll)
+            tmp.append(log_comp_ll.detach() - log_infer_ll.detach())
 
         ll_iw = log_sum_exp(torch.cat(tmp, dim=-1), dim=-1) - math.log(nsamples)
 

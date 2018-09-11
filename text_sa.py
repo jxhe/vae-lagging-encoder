@@ -471,8 +471,8 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)
-    with torch.no_grad():
-        calc_iwnll(vae, test_data_batch, meta_optimizer, args)
+    # with torch.no_grad():
+    calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
 if __name__ == '__main__':
     args = init_config()
