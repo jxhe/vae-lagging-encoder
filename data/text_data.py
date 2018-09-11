@@ -57,16 +57,17 @@ class VocabEntry(object):
 
 class MonoTextData(object):
     """docstring for MonoTextData"""
-    def __init__(self, fname, max_length=None, vocab=None):
+    def __init__(self, fname, label=False, max_length=None, vocab=None):
         super(MonoTextData, self).__init__()
 
-        self.data, self.vocab, self.dropped = self._read_corpus(fname, max_length, vocab)
+        self.data, self.vocab, self.dropped, self.labels = self._read_corpus(fname, label, max_length, vocab)
 
     def __len__(self):
         return len(self.data)
 
-    def _read_corpus(self, fname, max_length, vocab):
+    def _read_corpus(self, fname, label, max_length, vocab):
         data = []
+        labels = [] if label else None
         dropped = 0
         if not vocab:
             vocab = defaultdict(lambda: len(vocab))
@@ -77,7 +78,12 @@ class MonoTextData(object):
 
         with open(fname) as fin:
             for line in fin:
-                split_line = line.split()
+                if label:
+                    split_line = line.split('\t')
+                    lb = split_line[0]
+                    split_line = split_line[1].split()
+                else:
+                    split_line = line.split()
                 if len(split_line) < 1:
                     dropped += 1
                     continue
@@ -87,13 +93,13 @@ class MonoTextData(object):
                         dropped += 1
                         continue
 
-                
+                labels.append(lb)
                 data.append([vocab[word] for word in line.split()])
 
         if isinstance(vocab, VocabEntry):
             return data, vocab, dropped
 
-        return data, VocabEntry(vocab), dropped
+        return data, VocabEntry(vocab), dropped, labels
 
     def _to_tensor(self, batch_data, batch_first, device):
         """pad a list of sequences, and transform them to tensors
