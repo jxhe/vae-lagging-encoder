@@ -411,13 +411,23 @@ def main(args):
 
             iter_ += 1
 
+            if burn_flag and (iter_ % (len(train_loader) / 2)) == 0:
+                vae.eval()
+                cur_mi = calc_mi(vae, val_loader)
+                vae.train()
+                if cur_mi - pre_mi < 0:
+                    burn_flag = False
+                    print("STOP BURNING")
+
+                pre_mi = cur_mi
+
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
         vae.eval()
 
         with torch.no_grad():
-            loss, nll, kl = test(vae, val_loader, "VAL", args)
+            loss, nll, kl, mi = test(vae, val_loader, "VAL", args)
 
         if loss < best_loss:
             print('update best loss')

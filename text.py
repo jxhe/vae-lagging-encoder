@@ -420,18 +420,21 @@ def main(args):
 
             iter_ += 1
 
+            if burn_flag and (iter_ % len(train_data_batch) / 2) == 0:
+                vae.eval()
+                cur_mi = calc_mi(vae, val_data_batch)
+                vae.train()
+                if cur_mi - pre_mi < 0:
+                    burn_flag = False
+                    print("STOP BURNING")
+
+                pre_mi = cur_mi
+
         print('kl weight %.4f' % kl_weight)
 
         vae.eval()
         with torch.no_grad():
-            loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, "VAL", args)
-
-            if burn_flag and (abs(cur_mi - pre_mi) < args.mi_ts):
-                burn_flag = False
-                print("STOP BURNING")
-
-            pre_mi = cur_mi
-
+            loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
 
         if loss < best_loss:
             print('update best loss')
