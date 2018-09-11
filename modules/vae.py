@@ -92,11 +92,12 @@ class VAE(nn.Module):
         # compute iw every ns samples to address the memory issue
         # nsamples = 500, ns = 100
         # nsamples = 500, ns = 10
+        ns = 50
         tmp = []
         for _ in range(int(nsamples / ns)):
             # [batch, ns, nz]
             # param is the parameters required to evaluate q(z|x)
-            z, param = self.encoder.sample(x, ns)
+            z, param = self.encoder.sample(x, meta_optimizer, ns)
 
             # [batch, ns]
             log_comp_ll = self.eval_complete_ll(x, z)
@@ -247,7 +248,7 @@ class VAE(nn.Module):
         """
 
         return self.encoder.calc_mi(x)
-        
+
 
 
     # def eval_inference_mode(self, x):

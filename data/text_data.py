@@ -1,4 +1,3 @@
-import random
 import torch
 import numpy as np
 
@@ -87,7 +86,7 @@ class MonoTextData(object):
                         dropped += 1
                         continue
 
-                
+
                 data.append([vocab[word] for word in line.split()])
 
         if isinstance(vocab, VocabEntry):
@@ -153,7 +152,7 @@ class MonoTextData(object):
         for i in range(batch_num):
             batch_ids = index_arr[i * batch_size : (i+1) * batch_size]
             batch_data = [self.data[index] for index in batch_ids]
- 
+
             # uncomment this line if the dataset has variable length
             batch_data.sort(key=lambda e: -len(e))
 

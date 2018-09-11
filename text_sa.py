@@ -364,9 +364,11 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-    # train_data_batch = train_data_batch[:10]
-    # val_data_batch = val_data_batch[:10]
-    # test_data_batch = test_data_batch[:10]
+    # xxx
+    train_data_batch = train_data_batch[:10]
+    val_data_batch = val_data_batch[:10]
+    test_data_batch = test_data_batch[:10]
+    # xxx
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
@@ -469,8 +471,8 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)
-    calc_iwnll(vae, test_data_batch, meta_optimizer, args)
-    # with torch.no_grad():
+    with torch.no_grad():
+        calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
 if __name__ == '__main__':
     args = init_config()

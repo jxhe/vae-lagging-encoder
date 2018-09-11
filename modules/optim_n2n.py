@@ -6,7 +6,8 @@ import os
 import argparse
 import json
 import random
-import shutil
+import psutil
+import gc
 
 import torch
 from torch import cuda
@@ -24,7 +25,7 @@ class OptimN2N:
                max_grad_norm = 0,
                eps = 0.00001,
                momentum=0.5):
-       
+
     self.iters = iters
     self.lr = lr
     self.loss_fn = loss_fn
@@ -37,21 +38,35 @@ class OptimN2N:
       self.params = model_update_params
       self.param_grads = [torch.zeros([self.iters] + list(p.size())).type_as(p.data)
                           for p in self.params]
-    
+
   def forward(self, input, y, verbose=False):
     self.seeds = np.random.randint(3435, size=self.iters)
     return self.forward_mom(input, y, verbose)
 
   def backward(self, grad_output, verbose=False):
     grads = self.backward_mom(grad_output, verbose)
-    return grads                             
+    return grads
 
-      
-  def grad_norm(self, g_list, g_norm_list):
-    for g, g_norm in zip(g_list, g_norm_list):
-      g_norm2 = (g**2).sum(1)**0.5
-      g.div_(g_norm2.unsqueeze(1).expand_as(g)).mul_(g_norm.unsqueeze(1).expand_as(g))
-      
+  def memReport(self):
+    for obj in gc.get_objects():
+      if torch.is_tensor(obj):
+        print(type(obj), obj.size())
+      # if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+
+  def cpuStats(self):
+    print(sys.version)
+    print(psutil.cpu_percent())
+    print(psutil.virtual_memory())  # physical memory usage
+    pid = os.getpid()
+    py = psutil.Process(pid)
+    memoryUse = py.memory_info()[0] / 2. ** 30  # memory use in GB...I think
+    print('memory GB:', memoryUse)
+
+  # def grad_norm(self, g_list, g_norm_list):
+  #   for g, g_norm in zip(g_list, g_norm_list):
+  #     g_norm2 = (g**2).sum(1)**0.5
+  #     g.div_(g_norm2.unsqueeze(1).expand_as(g)).mul_(g_norm.unsqueeze(1).expand_as(g))
+
   def clip_grad_norm(self, parameters, max_norm, norm_type=2):
     if len(parameters) > 0:
       max_norm = float(max_norm)
@@ -68,13 +83,15 @@ class OptimN2N:
         if clip_coef < 1:
           for p in parameters:
             p.mul_(clip_coef)
-            
+
   def forward_mom(self, input, y, verbose=False):
+    # self.cpuStats()
+    # self.memReport()
     self.y = y
     self.input_grads = [torch.zeros([self.iters] + list(x.size())).type_as(x.data) for x in input]
-    self.mom_params = [torch.zeros(x.size()).type_as(x) for x in self.input_grads]    
+    self.mom_params = [torch.zeros(x.size()).type_as(x) for x in self.input_grads]
     self.input_cache = [torch.zeros(x.size()).type_as(x) for x in self.input_grads]
-    self.all_z = []    
+    self.all_z = []
     if self.acc_param_grads:
       for p in self.param_grads:
         p.zero_()
@@ -82,26 +99,26 @@ class OptimN2N:
       self.all_z.append(Variable(torch.cuda.FloatTensor(input[0].size()).normal_(0, 1)))
       torch.manual_seed(int(self.seeds[k]))
       loss = self.loss_fn(input, self.y, self.model, self.all_z[k])
-        
+
       if self.acc_param_grads:
         all_input_params = input + self.params
       else:
-        all_input_params = input        
+        all_input_params = input
       all_grads_k = torch.autograd.grad(loss, all_input_params, retain_graph = True)
       input_grad_k = all_grads_k[:len(input)]
       param_grads_k = all_grads_k[len(input):]
-      
-      if self.max_grad_norm > 0:        
+
+      if self.max_grad_norm > 0:
         self.clip_grad_norm([input_grad_k[0].data], self.max_grad_norm)
         self.clip_grad_norm([input_grad_k[1].data], self.max_grad_norm)
-        
+
       if self.acc_param_grads:
         for i, p in enumerate(param_grads_k):
           self.param_grads[i][k].copy_(p.data)
       for i, x_grad_k in enumerate(input_grad_k):
-        self.input_cache[i][k].copy_(input[i].data)        
-        self.input_grads[i][k].copy_(x_grad_k.data)        
-        
+        self.input_cache[i][k].copy_(input[i].data)
+        self.input_grads[i][k].copy_(x_grad_k.data)
+
       for i in range(len(self.mom_params)):
         if k == 0:
           self.mom_params[i][k] = -input_grad_k[i].data
@@ -109,9 +126,9 @@ class OptimN2N:
           self.mom_params[i][k] = self.mom_params[i][k-1]*self.momentum -input_grad_k[i].data
       lr_k_list = [lr for lr in self.lr]
       input = [Variable(x.data + lr_k * p[k], requires_grad=True) for x, p, lr_k in
-               zip(input, self.mom_params, lr_k_list)]      
+               zip(input, self.mom_params, lr_k_list)]
       if verbose:
-        print('mom', k, loss.data[0])
+        print('mom', k, loss.item())
     return input
 
   def backward_mom(self, grad_output, verbose=False):
@@ -135,15 +152,15 @@ class OptimN2N:
       else:
         all_input_params = input_k_rv
       torch.manual_seed(int(self.seeds[k]))
-      loss = self.loss_fn(input_k_rv, self.y, self.model, self.all_z[k])        
+      loss = self.loss_fn(input_k_rv, self.y, self.model, self.all_z[k])
       all_grads_rv_k = torch.autograd.grad(loss, all_input_params, retain_graph=True)
-      
+
       if self.max_grad_norm > 0:
         self.clip_grad_norm([g.data for g in all_grads_rv_k], self.max_grad_norm)
-        
+
       input_grads_rv_k = all_grads_rv_k[:len(input_k_rv)]
-      param_grads_rv_k = all_grads_rv_k[len(input_k_rv):]      
-      
+      param_grads_rv_k = all_grads_rv_k[len(input_k_rv):]
+
       if self.acc_param_grads:
         H_wx_v_list = []
         for i, p_grad_rv_k in enumerate(param_grads_rv_k):
@@ -153,18 +170,18 @@ class OptimN2N:
             self.params[i].grad = Variable(torch.zeros(self.params[i].size()).type_as(
               self.params[i].data))
         if self.max_grad_norm > 0:
-          self.clip_grad_norm(H_wx_v_list, self.max_grad_norm)                                
+          self.clip_grad_norm(H_wx_v_list, self.max_grad_norm)
         for i in range(len(self.params)):
-          self.params[i].grad.data += -H_wx_v_list[i]           
+          self.params[i].grad.data += -H_wx_v_list[i]
       for i, x_k_rv_grad in enumerate(input_grads_rv_k):
         H_xx_v = (x_k_rv_grad.data - self.input_grads[i][k])/r
         input_H_xx_v.append(H_xx_v)
       input_kp1_grad = [x_kp1_grad - H_xx_v
                         for (x_kp1_grad, H_xx_v) in zip(input_kp1_grad, input_H_xx_v)]
       if self.max_grad_norm > 0:
-        self.clip_grad_norm(input_kp1_grad, self.max_grad_norm)                                
+        self.clip_grad_norm(input_kp1_grad, self.max_grad_norm)
       p_kp1_grad = [p.mul_(self.momentum) for p in p_kp1_grad]
       if verbose:
-        print('mom', k, input_kp1_grad[0][0].norm())        
+        print('mom', k, input_kp1_grad[0][0].norm())
     return input_kp1_grad
 

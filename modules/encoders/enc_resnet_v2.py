@@ -120,7 +120,7 @@ class ResNetEncoderV2(GaussianEncoderBase):
 
     def forward(self, input):
         if isinstance(input.data, torch.cuda.FloatTensor) and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.gpu_ids))
+            output = nn.parallel.data_parallel(self.main, input, self.gpu_ids)
         else:
             output = self.main(input)
         output = self.linear(output.view(output.size()[:2]))
