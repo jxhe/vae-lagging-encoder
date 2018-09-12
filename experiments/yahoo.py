@@ -12,7 +12,7 @@ def default_text(args):
     # optimization parameters
     # model hyperparameters
     args.optim = 'sgd'
-
+    args.label = False
     # optimization parameters
     args.conv_nstep = 20
     args.momentum = 0

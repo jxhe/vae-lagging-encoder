@@ -320,7 +320,7 @@ def main(args):
         report_num_examples = 0
         for datum in train_loader:
             batch_data, _ = datum
-            batch_data = torch.bernoulli(batch_data)
+            # batch_data = torch.bernoulli(batch_data)
             batch_size = batch_data.size(0)
 
             report_num_examples += batch_size
