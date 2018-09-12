@@ -389,7 +389,7 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
-                if burn_flag:
+                if burn_flag or epoch == 0:
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
