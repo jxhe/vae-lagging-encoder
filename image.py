@@ -320,7 +320,7 @@ def main(args):
         report_num_examples = 0
         for datum in train_loader:
             batch_data, _ = datum
-            # batch_data = torch.bernoulli(batch_data)
+            batch_data = torch.bernoulli(batch_data)
             batch_size = batch_data.size(0)
 
             report_num_examples += batch_size
@@ -352,7 +352,7 @@ def main(args):
 
                 id_ = np.random.choice(x_train.size(0), args.batch_size, replace=False)
 
-                batch_data_enc = x_train[id_]
+                batch_data_enc = torch.bernoulli(x_train[id_])
 
                 if sub_iter % 10 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_examples

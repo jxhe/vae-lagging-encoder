@@ -10,7 +10,7 @@ params={
     'epochs': 1000,
     'log_niter': 100,
     'test_nepoch': 5,
-    'data_file': 'omniglot_data/omniglot_binarized.pt'
+    'data_file': 'omniglot_data/omniglot.pt'
 }
 
 params_v2={
