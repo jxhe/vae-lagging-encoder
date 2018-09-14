@@ -25,7 +25,7 @@ def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
 
     # model hyperparameters
-    parser.add_argument('--dataset', choices=['omniglot'], required=True, help='dataset to use')
+    parser.add_argument('--dataset', choices=['omniglot', 'omniglot_binary'], required=True, help='dataset to use')
 
     # optimization parameters
     parser.add_argument('--svi_steps', type=int, default=10)
