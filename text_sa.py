@@ -50,6 +50,7 @@ def init_config():
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--train_from', type=str, default='')
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -366,10 +367,16 @@ def main(args):
                                                   device=device,
                                                   batch_first=True)
     # xxx
-    train_data_batch = train_data_batch[:10]
-    val_data_batch = val_data_batch[:10]
-    test_data_batch = test_data_batch[:10]
+    # train_data_batch = train_data_batch[:10]
+    # val_data_batch = val_data_batch[:10]
+    # test_data_batch = test_data_batch[:10]
     # xxx
+
+    if args.train_from != '':
+        vae.load_state_dict(args.train_from)
+        test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        vae.train()
+
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
@@ -440,15 +447,14 @@ def main(args):
 
         if loss > opt_dict["best_loss"]:
             opt_dict["not_improved"] += 1
-            if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
+            if opt_dict["not_improved"] >= decay_epoch:
                 opt_dict["best_loss"] = loss
                 opt_dict["not_improved"] = 0
                 opt_dict["lr"] = opt_dict["lr"] * lr_decay
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
                 decay_cnt += 1
-                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
-                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                optimizer = optim.SGD(vae.parameters(), lr=opt_dict["lr"])
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss

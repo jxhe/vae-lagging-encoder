@@ -47,6 +47,7 @@ def init_config():
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--train_from', type=str, default='')
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -279,6 +280,11 @@ def main(args):
     kl_weight = args.kl_start
     anneal_rate = 1.0 / (args.warm_up * len(train_loader))
 
+    if args.train_from != '':
+        vae.load_state_dict(args.train_from)
+        test(vae, val_loader, meta_optimizer, "VAL", args)
+        vae.train()
+
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_examples = 0
@@ -359,8 +365,7 @@ def main(args):
                 vae.load_state_dict(torch.load(args.save_path))
                 decay_cnt += 1
                 print('new lr: %f' % opt_dict["lr"])
-                enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
-                dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
+                optimizer = optim.Adam(vae.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
