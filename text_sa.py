@@ -374,7 +374,9 @@ def main(args):
 
     if args.train_from != '':
         vae.load_state_dict(torch.load(args.train_from))
-        test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        loss, nll, kl, ppl, _ = test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        best_loss = opt_dict["best_loss"] = loss
+        torch.save(vae.state_dict(), args.save_path)
         vae.train()
 
     for epoch in range(args.epochs):
