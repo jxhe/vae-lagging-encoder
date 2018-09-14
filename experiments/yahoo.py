@@ -12,7 +12,7 @@ def default_text(args):
     # optimization parameters
     # model hyperparameters
     args.optim = 'sgd'
-    args.label = False
+    # args.extra_name = ''
     # optimization parameters
     args.conv_nstep = 20
     args.momentum = 0
@@ -50,9 +50,7 @@ def default_text(args):
 
     return args
 
-
-
-def fill_ais_text(sub_exp=None):
+def best_baselines_yahoo(sub_exp=None):
     print(sub_exp, "sub_exp")
     args = argparse.Namespace()
     args.options = argparse.Namespace()
@@ -60,16 +58,85 @@ def fill_ais_text(sub_exp=None):
 
     #########
     args.model = 'vae'
+    args.mode = 'test'
+    # args.description = 'Vanilla VAE Baseline'
+    args.question = ''
+    #########
     args.dataset = "yahoo"
+    args.label = False
+    args = default_text(args)
+    if sub_exp == '1':
+        args.description = 'Best baselines on yahoo'
+        args.exp_name = 'bestbaselines'
+        args.burn = 0
+        args.kl_start = [0.1, 1.0]
+
+    return BaseExperiment(args)
+
+
+def fill_ais_text_yelp(sub_exp=None):
+    print(sub_exp, "sub_exp")
+    args = argparse.Namespace()
+    args.options = argparse.Namespace()
+    args.params = argparse.Namespace()
+
+    #########
+    args.model = 'vae'
     args.mode = 'test'
     # args.description = 'Vanilla VAE Baseline'
     args.question = ''
     args.extra_name = '_ais'
     #########
+    args.dataset = "yelp"
+    args = default_text(args)
+    args.eval = True
+    if sub_exp == '1':
+        args.description = 'Excel ais 4 models 1/4 yelp'
+        args.exp_name = 'our_mit'
+        args.load_path = 'models/yelp/our_mit/yelp_burn0_constlen_ns1_kls1.00_warm10_86878_1.pt'
+        args.burn = 0
+        args.kl_start = 1.0
+    if sub_exp == '2':
+        args.description = 'Excel ais 4 models 2/4 yelp'
+        args.exp_name = 'our_mit'
+        args.load_path = 'models/yelp/our_mit/yelp_burn0_constlen_ns1_kls0.10_warm10_86879_1.pt'
+        args.burn = 0
+        args.kl_start = 0.1
+    if sub_exp == '3':
+        args.description = 'Excel ais 4 models 3/4 yelp'
+        args.exp_name = 'our_mit'
+        args.load_path = 'models/yelp/our_mit/yelp_burn1_constlen_ns1_kls0.10_warm10_87561_1.pt'
+        args.burn = 1
+        args.kl_start = 0.1
+    if sub_exp == '4':
+        args.description = 'Excel ais 4 models 4/4 yelp'
+        args.exp_name = 'our_mit'
+        args.load_path = 'models/yelp/our_mit/yelp_burn1_constlen_ns1_kls1.00_warm10_87562_1.pt'
+        args.burn = 1
+        args.kl_start = 1.0
+
+    return BaseExperiment(args)
+
+def fill_ais_text_yahoo(sub_exp=None):
+    print(sub_exp, "sub_exp")
+    args = argparse.Namespace()
+    args.options = argparse.Namespace()
+    args.params = argparse.Namespace()
+
+    #########
+    args.model = 'vae'
+    args.mode = 'test'
+    # args.description = 'Vanilla VAE Baseline'
+    args.question = ''
+    args.extra_name = '_ais'
+    #########
+    args.dataset = "yahoo"
+    args.label = False
     args = default_text(args)
     args.eval = True
     if sub_exp == '1':
         args.description = 'Excel ais two models with 2 seeds each'
+
         args.exp_name = 'our_mit'
         args.burn = 1
         args.kl_start = 1
@@ -82,7 +149,11 @@ def fill_ais_text(sub_exp=None):
         args.burn = 1
         args.kl_start = 0.1
         args.seed = [111, 333]
-
+    if sub_exp == '3':
+        args.description = 'Excel ais two models with 2 seeds each'
+        args.exp_name = 'bestbaselines'
+        args.burn = 0
+        args.kl_start = [0.1, 1.0]
 
     return BaseExperiment(args)
 

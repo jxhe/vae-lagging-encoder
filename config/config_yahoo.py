@@ -17,6 +17,6 @@ params={
     'test_data': 'yahoo_data/yahoo.test.txt',
     'small_test_data': 'yahoo_data/yahoo_10percent.test.txt',
     'ais_prior': 'normal',
-    'ais_T': 1,
+    'ais_T': 500,
     'ais_K': 3
 }

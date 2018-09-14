@@ -223,9 +223,10 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_constlen_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
-            (args.dataset, args.nsamples,
+    id_ = "%s_burn%d_constlen_ns%d_kls%.2f_warm%d_%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
+
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -308,18 +309,15 @@ def main(args):
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
-        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
         test_elbo_iw_ais_equal(vae, small_test_data, args, device)
-        return
         vae.eval()
-
         with torch.no_grad():
             test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                           device=device,
                                                           batch_first=True)
 
             test(vae, test_data_batch, "TEST", args)
-
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,
@@ -359,7 +357,6 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0

@@ -14,8 +14,6 @@ def default_(args):
     # model hyperparameters
     args.dataset = 'omniglot'
 
-    # optimization parameters
-    args.conv_nstep =20
 
     args.nsamples =1
     args.iw_nsamples=500
@@ -83,26 +81,22 @@ def reproduce_vanilla(sub_exp=None):
     #########
     args.model = 'vae'
     args.mode = 'test'
-    args.exp_name = 'replVanilla'
     # args.description = 'Vanilla VAE Baseline'
     args.question = ''
-    args.extra_name = ''
+    args.extra_name = '_ais'
     #########
     args = default_(args)
 
-    if sub_exp == 'vanilla':
+    if sub_exp == '1':
+        args.eval=True
         args.description = 'Vanilla replicate junhians baseline results'
-        args.eval = True
+        args.exp_name = 'bestbaseline'
         args.burn = 0
-        args.burn_from = 0
         args.kl_start = [0.1, 1]
-        args.conv_nstep = 0
         args.warm_up = 10
-        args.seed = [811, 332, 345, 655]
-        # collapsed: 558, 309
     return BaseExperiment(args)
 
-def fill_ais(sub_exp=None):
+def fill_ais_omni(sub_exp=None):
     print(sub_exp, "sub_exp")
     args = argparse.Namespace()
     args.options = argparse.Namespace()
@@ -147,6 +141,12 @@ def fill_ais(sub_exp=None):
         args.burn = 1000
         args.conv_nstep = 20
         args.kl_start = [.1, 1]
+    elif sub_exp == '5':
+        args.description = 'Excel ais table score for our new best after fixing the binarization in infer'
+        args.exp_name = 'ourbest'
+        args.burn = 1
+        args.kl_start = 1
+        args.load_path = 'models/omniglot/ourbest/omniglot_burn1_ns1_kls1.0_warm10_90950_1.pt'
 
 
     return BaseExperiment(args)

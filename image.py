@@ -292,7 +292,6 @@ def main(args):
         small_test_data = torch.utils.data.TensorDataset(small_x_test, small_y_test)
         small_test_loader = torch.utils.data.DataLoader(small_test_data, batch_size=args.batch_size, shuffle=True)
         test_elbo_iw_ais_equal(vae, small_test_loader, args, device)
-        return
         vae.eval()
         with torch.no_grad():
             test(vae, test_loader, "TEST", args)

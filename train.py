@@ -50,7 +50,7 @@ def setup(cluster, configs):
     print("Running {} Jobs on {} resources".format(len(configs), cluster.num_resources))
     for i, task in enumerate(configs):
         if i % cluster.num_resources == (cluster.resource_id-1):
-            if task.dataset in ['yahoo', 'synthetic', 'ptb']:
+            if task.dataset in ['yahoo', 'synthetic', 'ptb', 'yelp']:
                 main_text(task)
             elif task.dataset == 'omniglot':
                 main_image(task)
