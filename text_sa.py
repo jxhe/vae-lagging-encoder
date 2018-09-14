@@ -367,9 +367,9 @@ def main(args):
                                                   device=device,
                                                   batch_first=True)
     # xxx
-    # train_data_batch = train_data_batch[:10]
-    # val_data_batch = val_data_batch[:10]
-    # test_data_batch = test_data_batch[:10]
+    #train_data_batch = train_data_batch[:10]
+    #val_data_batch = val_data_batch[:10]
+    #test_data_batch = test_data_batch[:10]
     # xxx
 
     if args.train_from != '':
