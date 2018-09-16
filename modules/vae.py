@@ -92,7 +92,6 @@ class VAE(nn.Module):
         # compute iw every ns samples to address the memory issue
         # nsamples = 500, ns = 100
         # nsamples = 500, ns = 10
-        ns = 10
         tmp = []
         for _ in range(int(nsamples / ns)):
             # [batch, ns, nz]

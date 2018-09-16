@@ -321,25 +321,24 @@ def main(args):
                               max_grad_norm=5)
 
     if args.eval:
-        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        kl_weight = 1.0
+        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
-        test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
-        vae.eval()
+        # test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
+        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
+                                                      device=device,
+                                                      batch_first=True)
+        test_data_batch = test_data_batch[:10]
 
-        with torch.no_grad():
-            test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
-                                                          device=device,
-                                                          batch_first=True)
-
-            test(vae, test_data_batch, meta_optimizer, "TEST", args)
+        test(vae, test_data_batch, meta_optimizer, "TEST", args)
 
 
-            test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                          device=device,
-                                                          batch_first=True)
-            calc_iwnll(vae, test_data_batch, meta_optimizer, args)
+        test_data_batch = test_data.create_data_batch(batch_size=1,
+                                                      device=device,
+                                                      batch_first=True)
+        calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
         return
 
