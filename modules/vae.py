@@ -182,6 +182,10 @@ class VAE(nn.Module):
         # (batch_size)
         return loc
 
+    def sample_from_prior(self, nsamples):
+
+        return torch.randn(samples, self.nz)
+
 
     def sample_from_inference(self, x, nsamples=1):
         """perform sampling from inference net
