@@ -76,8 +76,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_optim%s_burn%s_convs%d_ns%d_kls%.1f_warm%d_%d_%d" % \
-            (args.dataset, args.optim, args.burn, args.conv_nstep, args.nsamples,
+    id_ = "%s_optim%s_burn%s_ns%d_kls%.1f_warm%d_%d_%d" % \
+            (args.dataset, args.optim, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -286,7 +286,7 @@ def main(args):
     iter_ = decay_cnt = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
-    pre_mi = 0
+    pre_mi = -1
     burn_flag = True if args.burn else False
     vae.train()
     start = time.time()
@@ -357,7 +357,7 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if sub_iter % 10 == 0:
+                if sub_iter % 15 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
                     if burn_pre_loss - burn_cur_loss < 0:
                         break
@@ -435,8 +435,6 @@ def main(args):
                                  log_prior, iter_, num_slice, args)
                 # return
 
-            iter_ += 1
-
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
@@ -467,8 +465,8 @@ def main(args):
                 print('new lr: %f' % opt_dict["lr"])
                 decay_cnt += 1
                 if args.optim == 'sgd':
-                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
                 else:
                     enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
                     dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
