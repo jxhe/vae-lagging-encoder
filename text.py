@@ -335,7 +335,7 @@ def main(args):
 
         elif args.plot_mode == '1d':
             grid_z = generate_grid(args.zmin, args.zmax, args.dz, ndim=1)
-            plot_fn = plot_1d_posterior           
+            plot_fn = plot_1d_posterior
 
         grid_z = grid_z.to(device)
 
@@ -394,7 +394,7 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if sub_iter % 15 == 0:
+                if sub_iter % 20 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
                     if burn_pre_loss - burn_cur_loss < 0:
                         break
@@ -477,7 +477,7 @@ def main(args):
 
         if args.plot_mode != '':
             with torch.no_grad():
-                plot_fn(plotter, vae, plot_data, zrange,
+                plot_fn(plotter, vae, plot_data, grid_z,
                         iter_, args)
 
         vae.eval()
