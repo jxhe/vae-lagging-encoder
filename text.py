@@ -16,9 +16,9 @@ from modules import VAE, VisPlotter
 from modules import generate_grid
 
 clip_grad = 5.0
-decay_epoch = 5
+decay_epoch = 2
 lr_decay = 0.5
-
+max_decay = 5
 
 def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
@@ -28,8 +28,6 @@ def init_config():
 
     # optimization parameters
     parser.add_argument('--optim', type=str, default='sgd', help='')
-    parser.add_argument('--conv_nstep', type=int, default=20,
-                         help='number of steps of not improving loss to determine convergence, only used when burning is turned on')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
     parser.add_argument('--iw_nsamples', type=int, default=500,
                          help='number of samples to compute importance weighted estimate')
@@ -166,13 +164,15 @@ def calc_iwnll(model, test_data_batch, args):
     sys.stdout.flush()
 
 def calc_mi(model, test_data_batch):
-    mi = []
+    mi = 0
+    num_examples = 0
     for batch_data in test_data_batch:
+        batch_size = batch_data.size(0)
+        num_examples += batch_size
         mutual_info = model.calc_mi_q(batch_data)
-        mi.append(mutual_info)
+        mi += mutual_info * batch_size
 
-
-    return np.mean(mi)
+    return mi / num_examples
 
 def plot_vae(plotter, model, plot_data, zrange,
              log_prior, iter_, num_slice, args):
@@ -283,15 +283,16 @@ def main(args):
         dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.9, 0.999))
         opt_dict['lr'] = 0.001
 
-    iter_ = 0
+    iter_ = decay_cnt = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
-    burn_flag = True
+    pre_mi = 0
+    burn_flag = True if args.burn else False
     vae.train()
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = 1.0 / (args.warm_up * (len(train_data) / args.batch_size))
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
 
     if args.plot:
         layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
@@ -328,21 +329,23 @@ def main(args):
             # kl_weight = 1.0
             kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            if epoch >= args.burn:
-                burn_flag = False
-
-            stuck_cnt = 0
-            sub_best_loss = 1e3
-            sub_iter = 0
+            sub_iter = 1
             batch_data_enc = batch_data
-            while burn_flag and sub_iter <= args.conv_nstep:
+            burn_num_words = 0
+            burn_pre_loss = 1e4
+            burn_cur_loss = 0
+            while burn_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
+                burn_batch_size, burn_sents_len = batch_data_enc.size()
+                burn_num_words += (burn_sents_len - 1) * burn_batch_size
+
                 loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
                 # print(mix_prob[0])
 
+                burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
 
                 loss.backward()
@@ -354,11 +357,13 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if loss.item() < sub_best_loss:
-                    sub_best_loss = loss.item()
-                    stuck_cnt = 0
-                else:
-                    stuck_cnt += 1
+                if sub_iter % 10 == 0:
+                    burn_cur_loss = burn_cur_loss / burn_num_words
+                    if burn_pre_loss - burn_cur_loss < 0:
+                        break
+                    burn_pre_loss = burn_cur_loss
+                    burn_cur_loss = burn_num_words = 0
+
                 sub_iter += 1
 
                 # if sub_iter >= 30:
@@ -389,24 +394,41 @@ def main(args):
             report_kl_loss += loss_kl.item()
 
             if iter_ % args.log_niter == 0:
-                with torch.no_grad():
-                    vae.eval()
-                    mutual_info = calc_mi(vae, val_data_batch[:100])
-                    vae.train()
-                # mutual_info = 0
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
+                if burn_flag or epoch == 0:
+                    vae.eval()
+                    mi = calc_mi(vae, val_data_batch)
+                    vae.train()
 
+                    print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi,
+                           report_rec_loss / report_num_sents, time.time() - start))
+                else:
+                    print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
+                           'time elapsed %.2fs' %
+                           (epoch, iter_, train_loss, report_kl_loss / report_num_sents,
+                           report_rec_loss / report_num_sents, time.time() - start))
 
-                print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                       'time elapsed %.2fs' %
-                       (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mutual_info,
-                       report_rec_loss / report_num_sents, time.time() - start))
                 sys.stdout.flush()
 
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
-            if args.plot and epoch < args.burn:
+            iter_ += 1
+
+            if burn_flag and (iter_ % len(train_data_batch) / 2) == 0:
+                vae.eval()
+                cur_mi = calc_mi(vae, val_data_batch)
+                vae.train()
+                if cur_mi - pre_mi < 0:
+                    burn_flag = False
+                    print("STOP BURNING")
+
+                pre_mi = cur_mi
+
+
+            if args.plot and burn_flag:
                 if iter_ % args.plot_niter == 0:
                     with torch.no_grad():
                         plot_vae(plotter, vae, plot_data, zrange,
@@ -437,21 +459,25 @@ def main(args):
 
         if loss > opt_dict["best_loss"]:
             opt_dict["not_improved"] += 1
-            if opt_dict["not_improved"] >= decay_epoch:
+            if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
                 opt_dict["best_loss"] = loss
                 opt_dict["not_improved"] = 0
                 opt_dict["lr"] = opt_dict["lr"] * lr_decay
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
+                decay_cnt += 1
                 if args.optim == 'sgd':
-                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
-                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
                 else:
-                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
-                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.9, 0.999))
+                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
+
+        if decay_cnt == max_decay:
+            break
 
         if epoch % args.test_nepoch == 0:
             with torch.no_grad():
