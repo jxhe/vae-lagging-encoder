@@ -28,5 +28,5 @@ params_v2={
     'data_file': 'omniglot_data/omniglot.pt',
     'ais_prior': 'normal',
     'ais_T': 500,
-    'ais_K': 3
+    'ais_K': 2
 }

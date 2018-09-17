@@ -62,8 +62,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_constlen_ns%d_%d_%d" % \
-            (args.dataset, args.burn, args.nsamples,
+    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples, args.beta,
              args.jobid, args.taskid)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -222,9 +222,10 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_constlen_ns%d_%d_%d_%d" % \
-            (args.dataset, args.nsamples,
+    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%s_%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples, str(args.beta),
              args.jobid, args.taskid, args.seed)
+
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
