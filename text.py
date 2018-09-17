@@ -33,7 +33,7 @@ def init_config():
                          help='number of samples to compute importance weighted estimate')
 
     # plotting parameters
-    parser.add_argument('--plot_mode', choices=['2d', '1d'], default='')
+    parser.add_argument('--plot_mode', choices=['2d', '1d', 'trajectory'], default='')
     parser.add_argument('--zmin', type=float, default=-2.0)
     parser.add_argument('--zmax', type=float, default=2.0)
     parser.add_argument('--dz', type=float, default=0.1)
@@ -241,6 +241,16 @@ def plot_1d_posterior(plotter, model, plot_data, grid_z,
     plotter.plot_scatter(infer_posterior_mean, labels,
         legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
+def plot_trajectory(plotter, vae, infer_mean, posterior_mean,
+                    iter_, args):
+
+    # [batch, time]
+    infer_mean = torch.cat(infer_mean, 1)
+    posterior_mean = torch.cat(posterior_mean, 1)
+
+    plotter.plot_line(posterior_mean, infer_mean, args.zmin, args.zmax, args.dz)
+    
+
 
 def main(args):
 
@@ -330,14 +340,21 @@ def main(args):
         plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
 
         if args.plot_mode == '2d':
-            grid_z, _ = generate_grid(args.zmin, args.zmax, args.dz, ndim=2)
+            grid_z, _ = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=2)
             plot_fn = plot_2d_posterior
 
         elif args.plot_mode == '1d':
-            grid_z = generate_grid(args.zmin, args.zmax, args.dz, ndim=1)
+            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
             plot_fn = plot_1d_posterior
 
-        grid_z = grid_z.to(device)
+        elif args.plot_mode == 'trajectory':
+            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
+            plot_fn = plot_trajectory
+            posterior_mean = []
+            infer_mean = []
+
+            posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
+            infer_mean.append(vae.calc_infer_mean(plot_data[0]))
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -408,6 +425,14 @@ def main(args):
 
             # print(sub_iter)
 
+            if args.plot_mode == 'trajectory' and epoch == 0:
+                vae.eval()
+                with torch.no_grad():
+                    posterior_mean.append(posterior_mean[-1])
+                    infer_mean.append(vae.calc_infer_mean(plot_data[0]))                
+                vae.train()
+
+
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
 
@@ -424,8 +449,20 @@ def main(args):
 
             if not burn_flag:
                 enc_optimizer.step()
+                if args.plot_mode == 'trajectory' and epoch == 0:
+                    vae.eval()
+                    with torch.no_grad():
+                        posterior_mean.append(posterior_mean[-1])
+                        infer_mean.append(vae.calc_infer_mean(plot_data[0]))
+                    vae.train()
 
             dec_optimizer.step()
+            if args.plot_mode == 'trajectory' and epoch == 0:
+                vae.eval()
+                with torch.no_grad():
+                    posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
+                    infer_mean.append(infer_mean[-1])
+                vae.train()
 
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
@@ -468,6 +505,10 @@ def main(args):
             if args.plot_mode != '' and epoch == 0:
                 if iter_ % args.plot_niter == 0:
                     with torch.no_grad():
+                        if args.plot_mode == 'trajectory':
+                            plot_fn(plotter, vae, infer_mean, posterior_mean,
+                                    iter_, args)
+                            return 
                         plot_fn(plotter, vae, plot_data, grid_z,
                                 iter_, args)
                 # return

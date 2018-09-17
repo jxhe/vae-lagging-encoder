@@ -16,7 +16,7 @@ def log_sum_exp(value, dim=None, keepdim=False):
         return m + torch.log(sum_exp)
 
 
-def generate_grid(zmin, zmax, dz, ndim=2):
+def generate_grid(zmin, zmax, dz, device, ndim=2):
     """generate a 1- or 2-dimensional grid
     Returns: Tensor, int
         Tensor: The grid tensor with shape (k^2, 2),
@@ -31,7 +31,7 @@ def generate_grid(zmin, zmax, dz, ndim=2):
         x1 = x.unsqueeze(1).repeat(1, k).view(-1)
         x2 = x.repeat(k)
 
-        return torch.cat((x1.unsqueeze(-1), x2.unsqueeze(-1)), dim=-1), k
+        return torch.cat((x1.unsqueeze(-1), x2.unsqueeze(-1)), dim=-1).to(device), k
 
     elif ndim == 1:
-        return torch.arange(zmin, zmax, dz).unsqueeze(1)
+        return torch.arange(zmin, zmax, dz).unsqueeze(1).to(device)
