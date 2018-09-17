@@ -8,6 +8,7 @@ import numpy as np
 
 import torch
 import torch.utils.data
+from torchvision.utils import save_image
 from torch import nn, optim
 
 from modules import ResNetEncoderV2, PixelCNNDecoderV2
@@ -47,6 +48,7 @@ def init_config():
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--sample_from', type=str, default='', help='load model and perform sampling')
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -280,6 +282,33 @@ def main(args):
     decoder = PixelCNNDecoderV2(args)
 
     vae = VAE(encoder, decoder, args).to(device)
+
+    if args.sample_from != '':
+        save_dir = "samples/%s" % args.dataset
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # data_id = np.random.permutation(len(x_test))
+        # data = x_test[data_id[:400]]
+        # sample_x = torch.bernoulli(data)
+        # sample_probs = data
+        # image_file = 'sample_binary_from_true.png'
+        # save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        # image_file = 'sample_cont_from_true.png'
+        # save_image(sample_probs.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        # return
+
+        vae.load_state_dict(torch.load(args.sample_from))
+        vae.eval()
+        with torch.no_grad():
+            sample_z = vae.sample_from_prior(400).to(device)
+            sample_x, sample_probs = vae.decode(sample_z, False)
+        image_file = 'sample_binary_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
+        save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        image_file = 'sample_cont_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
+        save_image(sample_probs.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+
+        return
 
     if args.eval:
         print('begin evaluation')

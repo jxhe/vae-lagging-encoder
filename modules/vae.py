@@ -30,9 +30,11 @@ class VAE(nn.Module):
         """
         return self.encoder.encode(x, nsamples)
 
-    def decode(self, z):
+    def decode(self, z, deterministic):
         """generate samples from z (perhaps beam search ?)
         """
+
+        return self.decoder.decode(z, deterministic)
 
 
     def loss(self, x, kl_weight, nsamples=1):
@@ -182,6 +184,10 @@ class VAE(nn.Module):
         # (batch_size)
         return loc
 
+    def sample_from_prior(self, nsamples):
+
+        return torch.randn(nsamples, self.nz)
+
 
     def sample_from_inference(self, x, nsamples=1):
         """perform sampling from inference net
@@ -247,7 +253,7 @@ class VAE(nn.Module):
         """
 
         return self.encoder.calc_mi(x)
-        
+
 
 
     # def eval_inference_mode(self, x):

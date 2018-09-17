@@ -3,6 +3,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
+
 import numpy as np
 
 from .decoder import DecoderBase
@@ -188,35 +190,35 @@ class PixelCNNDecoderV2(DecoderBase):
         bce = self.reconstruct_error(x, z)
         return bce * -1.
 
-    # def decode(self, z, deterministic):
-    #     '''
+    def decode(self, z, deterministic):
+        '''
 
-    #     Args:
-    #         z: Tensor
-    #             the tensor of latent z shape=[batch, nz]
-    #         deterministic: boolean
-    #             randomly sample of decode via argmaximizing probability
+        Args:
+            z: Tensor
+                the tensor of latent z shape=[batch, nz]
+            deterministic: boolean
+                randomly sample of decode via argmaximizing probability
 
-    #     Returns: Tensor
-    #         the tensor of decoded x shape=[batch, *]
+        Returns: Tensor
+            the tensor of decoded x shape=[batch, *]
 
-    #     '''
-    #     H = W = 28
-    #     batch_size, nz = z.size()
+        '''
+        H = W = 28
+        batch_size, nz = z.size()
 
-    #     # [batch, -1] --> [batch, fm, H, W]
-    #     z = self.z_transform(z).view(batch_size, self.fm_latent, H, W)
-    #     img = Variable(z.data.new(batch_size, self.nc, H, W).zero_(), volatile=True)
-    #     # [batch, nc+fm, H, W]
-    #     img = torch.cat([img, z], dim=1)
-    #     for i in range(H):
-    #         for j in range(W):
-    #             # [batch, nc, H, W]
-    #             recon_img = self.forward(img)
-    #             # [batch, nc]
-    #             img[:, :self.nc, i, j] = torch.ge(recon_img[:, :, i, j], 0.5).float() if deterministic else torch.bernoulli(recon_img[:, :, i, j])
-    #             # img[:, :self.nc, i, j] = torch.bernoulli(recon_img[:, :, i, j])
+        # [batch, -1] --> [batch, fm, H, W]
+        z = self.z_transform(z).view(batch_size, self.fm_latent, H, W)
+        img = Variable(z.data.new(batch_size, self.nc, H, W).zero_(), volatile=True)
+        # [batch, nc+fm, H, W]
+        img = torch.cat([img, z], dim=1)
+        for i in range(H):
+            for j in range(W):
+                # [batch, nc, H, W]
+                recon_img = self.forward(img)
+                # [batch, nc]
+                img[:, :self.nc, i, j] = torch.ge(recon_img[:, :, i, j], 0.5).float() if deterministic else torch.bernoulli(recon_img[:, :, i, j])
+                # img[:, :self.nc, i, j] = torch.bernoulli(recon_img[:, :, i, j])
 
-    #     # [batch, nc, H, W]
-    #     img_probs = self.forward(img)
-    #     return img[:, :self.nc], img_probs
+        # [batch, nc, H, W]
+        img_probs = self.forward(img)
+        return img[:, :self.nc], img_probs
