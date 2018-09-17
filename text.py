@@ -33,7 +33,7 @@ def init_config():
                          help='number of samples to compute importance weighted estimate')
 
     # plotting parameters
-    parser.add_argument('--plot', action='store_true', default=False)
+    parser.add_argument('--plot_mode', choices=['2d', '1d'], default='')
     parser.add_argument('--zmin', type=float, default=-2.0)
     parser.add_argument('--zmax', type=float, default=2.0)
     parser.add_argument('--dz', type=float, default=0.1)
@@ -174,8 +174,8 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
-def plot_vae(plotter, model, plot_data, zrange,
-             log_prior, iter_, num_slice, args):
+def plot_2d_posterior(plotter, model, plot_data, grid_z,
+                      iter_, args):
 
     plot_data, sents_len = plot_data
 
@@ -183,9 +183,11 @@ def plot_vae(plotter, model, plot_data, zrange,
 
     posterior = []
     inference = []
+    report_loss_kl = report_mi = report_num_sample = 0
     for data in plot_data_list:
-        loss_kl = model.KL(data).sum() / data.size(0)
-
+        report_loss_kl += model.KL(data).sum().item()
+        report_num_sample += data.size(0)
+        report_mi += model.calc_mi_q(data) * data.size(0)
         # [batch_size]
         # posterior_loc = model.eval_true_posterior_dist(data, zrange, log_prior)
 
@@ -205,11 +207,39 @@ def plot_vae(plotter, model, plot_data, zrange,
 
     labels = [1] * num_points + [2] * num_points
     legend = ["model posterior", "inference"]
-    name = "iter %d, KL: %.4f" % (iter_, loss_kl.item())
+    name = "iter %d, KL: %.4f, MI: %.4f" % (iter_, report_loss_kl / report_num_sample, report_mi / report_num_sample)
     win_name = "iter %d" % iter_
     plotter.plot_scatter(torch.cat([posterior, inference], 0), labels,
         legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
+def plot_1d_posterior(plotter, model, plot_data, grid_z,
+                      iter_, args):
+
+    plot_data, sents_len = plot_data
+    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size))
+
+    infer_posterior_mean = []
+    report_loss_kl = report_mi = report_num_sample = 0
+    for data in plot_data_list:
+        report_loss_kl += model.KL(data).sum().item()
+        report_num_sample += data.size(0)
+        report_mi += model.calc_mi_q(data) * data.size(0)
+
+        # [batch, 1]
+        posterior_mean = model.calc_model_posterior_mean(data, grid_z)
+
+        infer_mean = model.calc_infer_mean(data)
+
+        infer_posterior_mean.append(torch.cat([posterior_mean, infer_mean], 1))
+
+    # [*, 2]
+    infer_posterior_mean = torch.cat(infer_posterior_mean, 0)
+    labels = [1] * infer_posterior_mean.size(0)
+    legend = ['']
+    name = "iter %d, KL: %.4f, MI: %.4f" % (iter_, report_loss_kl / report_num_sample, report_mi / report_num_sample)
+    win_name = "iter %d" % iter_
+    plotter.plot_scatter(infer_posterior_mean, labels,
+        legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
 
 def main(args):
@@ -294,13 +324,20 @@ def main(args):
     kl_weight = args.kl_start
     anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
 
-    if args.plot:
+    if args.plot_mode != '':
         layout=dict(dx=args.dz, dy=args.dz, x0=args.zmin, y0=args.zmin)
         plotter = VisPlotter(server=args.server, env=args.env, contour_layout=layout)
         plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
-        zrange, num_slice = generate_grid(args.zmin, args.zmax, args.dz)
-        zrange = zrange.to(device)
-        log_prior = vae.eval_prior_dist(zrange)
+
+        if args.plot_mode == '2d':
+            grid_z, _ = generate_grid(args.zmin, args.zmax, args.dz, ndim=2)
+            plot_fn = plot_2d_posterior
+
+        elif args.plot_mode == '1d':
+            grid_z = generate_grid(args.zmin, args.zmax, args.dz, ndim=1)
+            plot_fn = plot_1d_posterior           
+
+        grid_z = grid_z.to(device)
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -428,20 +465,20 @@ def main(args):
                 pre_mi = cur_mi
 
 
-            if args.plot and burn_flag:
+            if args.plot_mode != '' and epoch == 0:
                 if iter_ % args.plot_niter == 0:
                     with torch.no_grad():
-                        plot_vae(plotter, vae, plot_data, zrange,
-                                 log_prior, iter_, num_slice, args)
+                        plot_fn(plotter, vae, plot_data, grid_z,
+                                iter_, args)
                 # return
 
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
-        if args.plot:
+        if args.plot_mode != '':
             with torch.no_grad():
-                plot_vae(plotter, vae, plot_data, zrange,
-                         log_prior, iter_, num_slice, args)
+                plot_fn(plotter, vae, plot_data, zrange,
+                        iter_, args)
 
         vae.eval()
         with torch.no_grad():
