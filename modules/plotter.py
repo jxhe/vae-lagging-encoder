@@ -1,6 +1,11 @@
 import visdom
 import numpy as np
 
+import plotly
+import plotly.plotly as py
+import plotly.graph_objs as go
+
+plotly.tools.set_credentials_file(username='jxhe', api_key='kBFaZWzRnzO0aXU835FB')
 
 class VisPlotter(object):
     """A plotter class based on visdom"""
