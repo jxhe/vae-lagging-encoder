@@ -31,6 +31,24 @@ class GaussianEncoderBase(nn.Module):
 
         return mean_svi_final, logvar_svi_final
 
+    def sample_no_meta(self, input, nsamples):
+        """sampling from the encoder
+        Returns: Tensor1, Tuple
+            Tensor1: the tensor latent z with shape [batch, nsamples, nz]
+            Tuple: contains the tensor mu [batch, nz] and
+                logvar[batch, nz]
+        """
+
+        # (batch_size, nz)
+        mean, logvar = self.forward(input)
+        mu = Variable(mean.data, requires_grad=True)
+        logvar = Variable(logvar.data, requires_grad=True)
+
+        # (batch, nsamples, nz)
+        z = self.reparameterize(mu, logvar, nsamples)
+
+        return z, (mu, logvar)
+
     def sample(self, input, meta_optimizer, nsamples):
         """sampling from the encoder
         Returns: Tensor1, Tuple

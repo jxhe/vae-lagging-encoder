@@ -47,7 +47,7 @@ def default_image(args):
     return args
 
 
-def debug_image(sub_exp=None):
+def savae_image_eval(sub_exp=None):
     print(sub_exp, "sub_exp")
     args = argparse.Namespace()
     args.options = argparse.Namespace()
@@ -56,20 +56,20 @@ def debug_image(sub_exp=None):
     #########
     args.model = 'vae'
     args.mode = 'test'
-    args.exp_name = 'debug'
+    args.exp_name = 'savae'
     # args.description = 'Vanilla VAE Baseline'
     args.question = ''
     args.extra_name = ''
     #########
 
     args = default_image(args)
-    args.eval = False
+    args.eval = True
     args.description = 'Debugging the SAVAE on omniglot'
     args.svi_steps = 10
     args.ngpu = 1
     # args.gpu_ids = '0,1'
     args.gpu_ids = ''
-
+    args.load_path = 'models/omniglot/savae/omni_savae_anneal_91633.pt'
     return BaseExperiment(args)
 
 
@@ -130,13 +130,14 @@ def debug_text(sub_exp=None):
     #########
 
     args = default_text(args)
-    args.eval = False
-    args.description = 'Debugging the SAVAE on omniglot'
+    args.eval = True
+    args.description = 'Debugging the SAVAE on yahoo eval'
     args.svi_steps = 10
-    args.epochs = 1
+    args.epochs = 0
     args.ngpu = 1
     # args.gpu_ids = '0,1'
     args.gpu_ids = ''
+    args.load_path = 'models/yahoo/savae/yahoo_savae_ns1_kls1.0_warm10_91516_1.pt'
 
     return BaseExperiment(args)
 

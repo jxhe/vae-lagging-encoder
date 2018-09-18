@@ -12,6 +12,7 @@ from torch import nn, optim
 from torch.autograd import Variable
 
 from modules import ResNetEncoderV2, PixelCNNDecoderV2
+# from modules import ResNetEncoder, PixelCNNDecoder
 from modules import VAE
 from modules import OptimN2N
 from loggers.logger import Logger
@@ -85,6 +86,41 @@ def init_config():
 
     return args
 
+def test_no_meta(vae, test_loader, mode, args):
+    for x in vae.modules():
+        x.eval()
+
+    report_kl_loss = report_rec_loss = 0
+    report_num_examples = 0
+    mutual_info = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        batch_size = batch_data.size(0)
+
+        report_num_examples += batch_size
+        mean, logvar = vae.encoder.forward(batch_data)
+
+        z_samples = vae.encoder.reparameterize(mean, logvar, 1)
+        rc_svi = vae.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
+        kl_svi = vae.encoder.calc_kl(mean, logvar)
+
+        report_rec_loss += rc_svi.sum().item()
+        report_kl_loss += kl_svi.sum().item()
+
+    mutual_info = calc_mi(vae, test_loader)
+
+    test_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
+
+    nll = (report_kl_loss + report_rec_loss) / report_num_examples
+    kl = report_kl_loss / report_num_examples
+
+    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f' % \
+           (mode, test_loss, report_kl_loss / report_num_examples, mutual_info,
+            report_rec_loss / report_num_examples, nll))
+    sys.stdout.flush()
+
+    return test_loss, nll, kl
+
 def test(vae, test_loader, meta_optimizer, mode, args):
     for x in vae.modules():
         x.eval()
@@ -151,7 +187,10 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
             print('iw nll computing %d0%%' % (id_/(round(len(test_loader) / 10))))
             sys.stdout.flush()
 
-        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples)
+        # XXX change batch size for eval.
+        # GET RID OF META OPTIMIZER
+        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=100)
+        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=100)
 
         report_nll_loss += loss.sum().item()
 
@@ -259,7 +298,8 @@ def main(args):
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-        test(vae, test_loader, meta_optimizer, "TEST", args)
+        test_no_meta(vae, test_loader, "TEST", args)
+        # test(vae, test_loader, meta_optimizer, "TEST", args)
         calc_iwnll(vae, test_loader, meta_optimizer, args)
         # vae.eval()
         # with torch.no_grad():
