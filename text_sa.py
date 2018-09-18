@@ -117,6 +117,46 @@ def test_ais(model, test_data_batch, mode_split, args):
     sys.stdout.flush()
     return nll, ppl
 
+def test_no_meta(model, test_data_batch, mode, args, verbose=True):
+    # for x in model.modules():
+        # print(x.training)
+        # x.eval() #not sure why this breaks???
+    model.decoder.dropout_in.eval()
+    model.decoder.dropout_out.eval()
+
+    report_kl_loss = report_rec_loss = 0
+    report_num_words = report_num_sents = 0
+    for i in np.random.permutation(len(test_data_batch)):
+        batch_data = test_data_batch[i]
+        batch_size, sent_len = batch_data.size()
+
+        # not predict start symbol
+        report_num_words += (sent_len - 1) * batch_size
+
+        report_num_sents += batch_size
+        mean, logvar = model.encoder.forward(batch_data)
+
+        z_samples = model.encoder.reparameterize(mean, logvar, 1)
+        rc_svi = model.decoder.reconstruct_error(batch_data, z_samples).mean(dim=1)
+        kl_svi = model.encoder.calc_kl(mean, logvar)
+
+        report_rec_loss += rc_svi.sum().item()
+        report_kl_loss += kl_svi.sum().item()
+
+    mutual_info = calc_mi(model, test_data_batch)
+
+    test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
+    print("report_num_sents", "report_num_words", report_num_sents, report_num_words)
+    nll = (report_kl_loss + report_rec_loss) / report_num_sents
+    kl = report_kl_loss / report_num_sents
+    ppl = np.exp(nll * report_num_sents / report_num_words)
+    if verbose:
+        print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
+               (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
+                report_rec_loss / report_num_sents, nll, ppl))
+        sys.stdout.flush()
+
+    return test_loss, nll, kl, ppl, mutual_info
 
 def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
     # for x in model.modules():
@@ -182,10 +222,11 @@ def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
             sys.stdout.flush()
 
-        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
+        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=ns)
+        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
 
         report_nll_loss += loss.sum().item()
-
+    print("report_num_sents", "report_num_words", report_num_sents, report_num_words)
     nll = report_nll_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
 
@@ -327,17 +368,19 @@ def main(args):
         vae.load_state_dict(torch.load(args.load_path))
 
         # test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
-        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
-                                                      device=device,
-                                                      batch_first=True)
-        test_data_batch = test_data_batch[:10]
-
-        test(vae, test_data_batch, meta_optimizer, "TEST", args)
-
-
         test_data_batch = test_data.create_data_batch(batch_size=1,
                                                       device=device,
                                                       batch_first=True)
+        # test_data_batch = test_data_batch[:100]
+
+        # test(vae, test_data_batch, meta_optimizer, "TEST", args)
+        test_no_meta(vae, test_data_batch, "TEST", args)
+
+
+        # test_data_batch = test_data.create_data_batch(batch_size=1,
+        #                                               device=device,
+        #                                               batch_first=True)
+        # test_data_batch = test_data_batch[:100]
         calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
         return

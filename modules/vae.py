@@ -77,6 +77,37 @@ class VAE(nn.Module):
 
         return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
 
+    def nll_iw_no_meta(self, x, nsamples, ns=100):
+        """compute the importance weighting estimate of the log-likelihood
+        Args:
+            x: if the data is constant-length, x is the data tensor with
+                shape (batch, *). Otherwise x is a tuple that contains
+                the data tensor and length list
+            nsamples: Int
+                the number of samples required to estimate marginal data likelihood
+        Returns: Tensor1
+            Tensor1: the estimate of log p(x), shape [batch]
+        """
+
+        # compute iw every ns samples to address the memory issue
+        # nsamples = 500, ns = 100
+        # nsamples = 500, ns = 10
+        tmp = []
+        for _ in range(int(nsamples / ns)):
+            # [batch, ns, nz]
+            # param is the parameters required to evaluate q(z|x)
+            z, param = self.encoder.sample_no_meta(x, ns)
+
+            # [batch, ns]
+            log_comp_ll = self.eval_complete_ll(x, z)
+            log_infer_ll = self.eval_inference_dist(x, z, param)
+
+            tmp.append(log_comp_ll.detach() - log_infer_ll.detach())
+
+        ll_iw = log_sum_exp(torch.cat(tmp, dim=-1), dim=-1) - math.log(nsamples)
+
+        return -ll_iw
+
     def nll_iw(self, x, meta_optimizer, nsamples, ns=100):
         """compute the importance weighting estimate of the log-likelihood
         Args:
