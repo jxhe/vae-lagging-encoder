@@ -2,7 +2,7 @@
 params={
     'enc_type': 'lstm',
     'dec_type': 'lstm',
-    'nz': 1,
+    'nz': 2,
     'ni': 50,
     'enc_nh': 50,
     'dec_nh': 50,

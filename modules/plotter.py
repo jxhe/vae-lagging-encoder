@@ -54,7 +54,7 @@ class VisPlotter(object):
                             legend=legend,
                             xtickmin=zmin,
                             xtickmax=zmax,
-                            xtickstep=dz * 5, 
+                            xtickstep=dz * 5,
                             ytickmin=zmin,
                             ytickmax=zmax,
                             ytickstep=dz * 5,
@@ -76,11 +76,11 @@ class VisPlotter(object):
                             markers=True,
                             xtickmin=zmin,
                             xtickmax=zmax,
-                            xtickstep=dz * 5, 
+                            xtickstep=dz * 5,
                             ytickmin=zmin,
                             ytickmax=zmax,
                             ytickstep=dz * 5,
-                            markersize=1))
+                            markersize=3))
 
 
     def plot_text(self):

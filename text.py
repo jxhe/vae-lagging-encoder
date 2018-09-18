@@ -1,4 +1,5 @@
 import sys
+import pickle
 import os
 import time
 import importlib
@@ -62,6 +63,8 @@ def init_config():
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--save_plot_data', type=str, default='')
+
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -179,7 +182,7 @@ def plot_2d_posterior(plotter, model, plot_data, grid_z,
 
     plot_data, sents_len = plot_data
 
-    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size))
+    plot_data_list = torch.chunk(plot_data, round(args.num_plot / 8))
 
     posterior = []
     inference = []
@@ -193,10 +196,10 @@ def plot_2d_posterior(plotter, model, plot_data, grid_z,
 
         # [batch_size, nz]
         # posterior_ = torch.index_select(zrange, dim=0, index=posterior_loc)
-        posterior_ = model.sample_from_posterior(data, nsamples=1)
+        posterior_ = model.calc_infer_mean(data)
 
         # [batch_size, nsamples, nz]
-        inference_ = model.sample_from_inference(data, nsamples=1)
+        inference_ = model.calc_model_posterior_mean(data, grid_z)
 
         posterior.append(posterior_)
         inference.append(inference_)
@@ -209,6 +212,14 @@ def plot_2d_posterior(plotter, model, plot_data, grid_z,
     legend = ["model posterior", "inference"]
     name = "iter %d, KL: %.4f, MI: %.4f" % (iter_, report_loss_kl / report_num_sample, report_mi / report_num_sample)
     win_name = "iter %d" % iter_
+    if args.save_plot_data != '':
+        save_path = os.path.join(args.save_plot_data, 'burn%d_iter%d.pickle' % (args.burn, iter_))
+        save_data = {'posterior': posterior.cpu().numpy(),
+                     'inference': inference.cpu().numpy(),
+                     'kl': report_loss_kl / report_num_sample,
+                     'mi': report_mi / report_num_sample
+                     }
+        pickle.dump(save_data, open(save_path, 'wb'))
     plotter.plot_scatter(torch.cat([posterior, inference], 0), labels,
         legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
@@ -238,6 +249,14 @@ def plot_1d_posterior(plotter, model, plot_data, grid_z,
     legend = ['']
     name = "iter %d, KL: %.4f, MI: %.4f" % (iter_, report_loss_kl / report_num_sample, report_mi / report_num_sample)
     win_name = "iter %d" % iter_
+    if args.save_plot_data != '':
+        save_path = os.path.join(args.save_plot_data, 'burn%d_iter%d_1dmode.pickle' % (args.burn, iter_))
+        save_data = {'posterior': infer_posterior_mean[:,0].cpu().numpy(),
+                     'inference': infer_posterior_mean[:,1].cpu().numpy(),
+                     'kl': report_loss_kl / report_num_sample,
+                     'mi': report_mi / report_num_sample
+                     }
+        pickle.dump(save_data, open(save_path, 'wb'))
     plotter.plot_scatter(infer_posterior_mean, labels,
         legend, args.zmin, args.zmax, args.dz, win=win_name, name=name)
 
@@ -248,8 +267,15 @@ def plot_trajectory(plotter, vae, infer_mean, posterior_mean,
     infer_mean = torch.cat(infer_mean, 1)
     posterior_mean = torch.cat(posterior_mean, 1)
 
+    if args.save_plot_data != '':
+        save_path = os.path.join(args.save_plot_data, 'burn%d.pickle' % args.burn)
+        save_data = {'posterior': posterior_mean.cpu().numpy(),
+                     'inference': infer_mean.cpu().numpy(),
+                     }
+        pickle.dump(save_data, open(save_path, 'wb'))
+
     plotter.plot_line(posterior_mean, infer_mean, args.zmin, args.zmax, args.dz)
-    
+
 
 
 def main(args):
@@ -269,6 +295,9 @@ def main(args):
         print('using cuda')
 
     print(args)
+
+    if args.plot_mode == '1d' or args.plot_mode == 'trajectory':
+        args.nz = 1
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
@@ -411,7 +440,7 @@ def main(args):
 
                 batch_data_enc = train_data_batch[id_]
 
-                if sub_iter % 20 == 0:
+                if sub_iter % 25 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
                     if burn_pre_loss - burn_cur_loss < 0:
                         break
@@ -425,11 +454,11 @@ def main(args):
 
             # print(sub_iter)
 
-            if args.plot_mode == 'trajectory' and epoch == 0:
+            if args.plot_mode == 'trajectory' and epoch == 0 and burn_flag:
                 vae.eval()
                 with torch.no_grad():
                     posterior_mean.append(posterior_mean[-1])
-                    infer_mean.append(vae.calc_infer_mean(plot_data[0]))                
+                    infer_mean.append(vae.calc_infer_mean(plot_data[0]))
                 vae.train()
 
 
@@ -449,19 +478,17 @@ def main(args):
 
             if not burn_flag:
                 enc_optimizer.step()
-                if args.plot_mode == 'trajectory' and epoch == 0:
-                    vae.eval()
-                    with torch.no_grad():
-                        posterior_mean.append(posterior_mean[-1])
-                        infer_mean.append(vae.calc_infer_mean(plot_data[0]))
-                    vae.train()
 
             dec_optimizer.step()
             if args.plot_mode == 'trajectory' and epoch == 0:
                 vae.eval()
                 with torch.no_grad():
                     posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
-                    infer_mean.append(infer_mean[-1])
+
+                    if burn_flag:
+                        infer_mean.append(infer_mean[-1])
+                    else:
+                        infer_mean.append(vae.calc_infer_mean(plot_data[0]))
                 vae.train()
 
             report_rec_loss += loss_rc.item()
@@ -489,6 +516,17 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
+            if args.plot_mode != '' and epoch == 0:
+                if iter_ % args.plot_niter == 0:
+                    with torch.no_grad():
+                        if args.plot_mode == 'trajectory' and iter_ != 0:
+                            plot_fn(plotter, vae, infer_mean, posterior_mean,
+                                    iter_, args)
+                            return
+                        elif args.plot_mode != 'trajectory':
+                            plot_fn(plotter, vae, plot_data, grid_z,
+                                    iter_, args)
+
             iter_ += 1
 
             if burn_flag and (iter_ % len(train_data_batch) / 2) == 0:
@@ -502,15 +540,6 @@ def main(args):
                 pre_mi = cur_mi
 
 
-            if args.plot_mode != '' and epoch == 0:
-                if iter_ % args.plot_niter == 0:
-                    with torch.no_grad():
-                        if args.plot_mode == 'trajectory':
-                            plot_fn(plotter, vae, infer_mean, posterior_mean,
-                                    iter_, args)
-                            return 
-                        plot_fn(plotter, vae, plot_data, grid_z,
-                                iter_, args)
                 # return
 
         print('kl weight %.4f' % kl_weight)
