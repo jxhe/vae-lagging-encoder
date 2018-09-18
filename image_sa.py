@@ -17,7 +17,7 @@ from modules import OptimN2N
 from loggers.logger import Logger
 
 clip_grad = 5.0
-decay_epoch = 2
+decay_epoch = 20
 lr_decay = 0.5
 max_decay = 5
 

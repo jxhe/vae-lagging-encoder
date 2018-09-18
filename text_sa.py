@@ -81,6 +81,11 @@ def init_config():
 
     args = argparse.Namespace(**vars(args), **params)
 
+    if 'label' in params:
+        args.label = params['label']
+    else:
+        args.label = False
+
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.cuda:
@@ -280,13 +285,13 @@ def main(args):
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data)
+    train_data = MonoTextData(args.train_data, label=args.label)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    val_data = MonoTextData(args.val_data, vocab=vocab)
-    test_data = MonoTextData(args.test_data, vocab=vocab)
+    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
+    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
 
 
     print('Train data: %d samples' % len(train_data))
@@ -322,7 +327,7 @@ def main(args):
 
     if args.eval:
         kl_weight = 1.0
-        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        # small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
