@@ -189,8 +189,8 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
 
         # XXX change batch size for eval.
         # GET RID OF META OPTIMIZER
-        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=100)
-        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=100)
+        # loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=100)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=20)
 
         report_nll_loss += loss.sum().item()
 
@@ -296,10 +296,10 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-        test_no_meta(vae, test_loader, "TEST", args)
-        # test(vae, test_loader, meta_optimizer, "TEST", args)
+        # test_no_meta(vae, test_loader, "TEST", args)
+        test(vae, test_loader, meta_optimizer, "TEST", args)
         calc_iwnll(vae, test_loader, meta_optimizer, args)
         # vae.eval()
         # with torch.no_grad():
@@ -425,8 +425,6 @@ def main(args):
     vae.load_state_dict(torch.load(args.save_path))
     loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
     # with torch.no_grad():
-
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=True)
 
     calc_iwnll(vae, test_loader, meta_optimizer, args)
     # vae.eval()

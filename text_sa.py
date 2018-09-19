@@ -204,7 +204,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
+def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=3):
     model.decoder.dropout_in.eval()
     model.decoder.dropout_out.eval()
 
@@ -222,8 +222,8 @@ def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
             sys.stdout.flush()
 
-        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=ns)
-        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
+        # loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=ns)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
 
         report_nll_loss += loss.sum().item()
     print("report_num_sents", "report_num_words", report_num_sents, report_num_words)
@@ -368,19 +368,21 @@ def main(args):
         vae.load_state_dict(torch.load(args.load_path))
 
         # test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
-        test_data_batch = test_data.create_data_batch(batch_size=1,
+        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                       device=device,
                                                       batch_first=True)
-        # test_data_batch = test_data_batch[:100]
+        # test_data_batch = test_data_batch[:40]
 
-        # test(vae, test_data_batch, meta_optimizer, "TEST", args)
-        test_no_meta(vae, test_data_batch, "TEST", args)
+        test(vae, test_data_batch, meta_optimizer, "TEST", args)
+        # test_no_meta(vae, test_data_batch, "TEST", args)
 
 
         # test_data_batch = test_data.create_data_batch(batch_size=1,
         #                                               device=device,
         #                                               batch_first=True)
         # test_data_batch = test_data_batch[:100]
+        # test_data_batch = [test_sample.unsqueeze(0) for batch in test_data_batch for test_sample in batch]
+
         calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
         return
@@ -519,9 +521,6 @@ def main(args):
     # vae.eval()
     # with torch.no_grad():
 
-    test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                  device=device,
-                                                  batch_first=True)
     # with torch.no_grad():
     calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
