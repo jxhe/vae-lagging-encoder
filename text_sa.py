@@ -321,13 +321,13 @@ def main(args):
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data)
+    train_data = MonoTextData(args.train_data, label=args.label)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    val_data = MonoTextData(args.val_data, vocab=vocab)
-    test_data = MonoTextData(args.test_data, vocab=vocab)
+    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
+    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
 
 
     print('Train data: %d samples' % len(train_data))
