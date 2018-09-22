@@ -250,6 +250,26 @@ def seed(args):
         torch.cuda.manual_seed(args.seed)
         torch.backends.cudnn.deterministic = True
 
+def sample_sentences(vae, vocab, device, num_sentences):
+    vae.eval()
+    sampled_sents = []
+    for i in range(num_sentences):
+        z = vae.sample_from_prior(1)
+        z = z.view(1,1,-1)
+        start = vocab.word2id['<s>']
+        # START = torch.tensor([[[start]]])
+        START = torch.tensor([[start]])
+        end = vocab.word2id['</s>']
+        START = START.to(device)
+        z = z.to(device)
+        vae.eval()
+        sentence = vae.decoder.sample_text(START, z, end, device)
+        decoded_sentence = vocab.decode_sentence(sentence)
+        sampled_sents.append(decoded_sentence)
+    for i, sent in enumerate(sampled_sents):
+        print(i,":",' '.join(sent))
+
+
 
 def main(args):
 
@@ -308,7 +328,8 @@ def main(args):
     if args.eval:
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
-
+        sample_sentences(vae, vocab, device, 10)
+        return
         small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
         test_elbo_iw_ais_equal(vae, small_test_data, args, device)
         vae.eval()

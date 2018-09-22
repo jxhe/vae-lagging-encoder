@@ -44,6 +44,13 @@ class VocabEntry(object):
     def id2word(self, wid):
         return self.id2word_[wid]
 
+    def decode_sentence(self, sentence):
+        decoded_sentence = []
+        for wid_t in sentence:
+            wid = wid_t.item()
+            decoded_sentence.append(self.id2word_[wid])
+        return decoded_sentence
+
 
     @staticmethod
     def from_corpus(fname):
