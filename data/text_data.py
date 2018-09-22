@@ -174,6 +174,48 @@ class MonoTextData(object):
 
             yield batch_data, sents_len
 
+    def create_data_batch_labels(self, batch_size, device, batch_first=False):
+        """pad data with start and stop symbol, batching is performerd w.r.t.
+        the sentence length, so that each returned batch has the same length,
+        no further pack sequence function (e.g. pad_packed_sequence) is required
+        Returns: List
+            List: a list of batched data, each element is a tensor with shape
+                (seq_len, batch_size)
+        """
+        sents_len = np.array([len(sent) for sent in self.data])
+        sort_idx = np.argsort(sents_len)
+        sort_len = sents_len[sort_idx]
+
+        # record the locations where length changes
+        change_loc = []
+        for i in range(1, len(sort_len)):
+            if sort_len[i] != sort_len[i-1]:
+                change_loc.append(i)
+        change_loc.append(len(sort_len))
+
+        batch_data_list = []
+        batch_label_list = []
+        total = 0
+        curr = 0
+        for idx in change_loc:
+            while curr < idx:
+                batch_data = []
+                batch_label = []
+                next = min(curr + batch_size, idx)
+                for id_ in range(curr, next):
+                    batch_data.append(self.data[sort_idx[id_]])
+                    batch_label.append(self.labels[sort_idx[id_]])
+                curr = next
+                batch_data, sents_len = self._to_tensor(batch_data, batch_first, device)
+                batch_data_list.append(batch_data)
+                batch_label_list.append(batch_label)
+
+                total += batch_data.size(0)
+                assert(sents_len == ([sents_len[0]] * len(sents_len)))
+
+        assert(total == len(self.data))
+        return batch_data_list, batch_label_list
+
     def create_data_batch(self, batch_size, device, batch_first=False):
         """pad data with start and stop symbol, batching is performerd w.r.t.
         the sentence length, so that each returned batch has the same length,

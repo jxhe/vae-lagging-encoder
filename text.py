@@ -269,6 +269,28 @@ def sample_sentences(vae, vocab, device, num_sentences):
     for i, sent in enumerate(sampled_sents):
         print(i,":",' '.join(sent))
 
+def visualize_latent(args, vae, device, test_data):
+    f = open('yelp_embeddings_z','w')
+    g = open('yelp_embeddings_labels','w')
+
+    test_data_batch, test_label_batch = test_data.create_data_batch_labels(batch_size=args.batch_size, device=device, batch_first=True)
+    for i in range(len(test_data_batch)):
+        batch_data = test_data_batch[i]
+        batch_label = test_label_batch[i]
+        batch_size, sent_len = batch_data.size()
+        means, _ = vae.encoder.forward(batch_data)
+        for i in range(batch_size):
+            mean = means[i,:].cpu().detach().numpy().tolist()
+            for val in mean:
+                f.write(str(val)+'\t')
+            f.write('\n')
+        for label in batch_label:
+            g.write(label+'\n')
+        fo
+        print(mean.size())
+        print(logvar.size())
+        fooo
+
 
 
 def main(args):
@@ -329,6 +351,8 @@ def main(args):
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
         sample_sentences(vae, vocab, device, 10)
+        print()
+        visualize_latent(args, vae, device, test_data)
         return
         small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
         test_elbo_iw_ais_equal(vae, small_test_data, args, device)
