@@ -1,12 +1,6 @@
 import visdom
 import numpy as np
 
-import plotly
-import plotly.plotly as py
-import plotly.graph_objs as go
-
-plotly.tools.set_credentials_file(username='jxhe', api_key='kBFaZWzRnzO0aXU835FB')
-
 class VisPlotter(object):
     """A plotter class based on visdom"""
     def __init__(self, server='http://localhost', env='main', contour_layout=None):
@@ -59,10 +53,10 @@ class VisPlotter(object):
                             legend=legend,
                             xtickmin=zmin,
                             xtickmax=zmax,
-                            xtickstep=dz * 5,
+                            xtickstep=0.5,
                             ytickmin=zmin,
                             ytickmax=zmax,
-                            ytickstep=dz * 5,
+                            ytickstep=0.5,
                             markersize=3))
 
     def plot_line(self, batch_x, batch_y, zmin, zmax, dz):
@@ -81,10 +75,10 @@ class VisPlotter(object):
                             markers=True,
                             xtickmin=zmin,
                             xtickmax=zmax,
-                            xtickstep=dz * 5,
+                            xtickstep=0.5,
                             ytickmin=zmin,
                             ytickmax=zmax,
-                            ytickstep=dz * 5,
+                            ytickstep=0.5,
                             markersize=3))
 
 
