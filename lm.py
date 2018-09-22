@@ -33,9 +33,9 @@ def init_config():
 
 
     # data parameters
-    parser.add_argument('--train_data', type=str, default='datasets/yahoo/data_yahoo_release/train.txt',
+    parser.add_argument('--train_data', type=str, default='yahoo_data/yahoo.train.txt',
                         help='training data file')
-    parser.add_argument('--test_data', type=str, default='datasets/yahoo/data_yahoo_release/test.txt',
+    parser.add_argument('--test_data', type=str, default='yahoo_data/yahoo.test.txt',
                         help='testing data file')
 
     # log parameters
@@ -161,9 +161,7 @@ def main(args):
             loss = lm.reconstruct_error(batch_data)
 
             report_loss += loss.sum().item()
-
             loss = loss.mean(dim=-1)
-
             loss.backward()
             torch.nn.utils.clip_grad_norm_(lm.parameters(), args.clip_grad)
 

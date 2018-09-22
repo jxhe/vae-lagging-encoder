@@ -83,8 +83,9 @@ def test(model, test_loader, mode, args):
         batch_size = batch_data.size(0)
 
         report_num_examples += batch_size
-        z = torch.zeros(batch_size, 1, args.nz)
-        z = z.to(args.device)
+        # z = torch.zeros(batch_size, 1, args.nz)
+        # z = z.to(args.device)
+        z = None
         loss = model.reconstruct_error(batch_data, z)
         # loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
         loss = loss.sum()
@@ -134,6 +135,8 @@ def seed(args):
         torch.backends.cudnn.deterministic = True
 
 def main(args):
+    args.latent_feature_map = 0 #pixelcnn xxx only
+    args.nz = 0
     if args.save_path == '':
         make_savepath(args)
         seed(args)
@@ -142,7 +145,6 @@ def main(args):
         print('using cuda')
 
     print(args)
-
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
 
@@ -225,6 +227,7 @@ def main(args):
 
             z = torch.zeros(batch_size, 1, args.nz)
             z = z.to(device)
+            z=None
             loss = decoder.reconstruct_error(batch_data, z)
             report_nll_loss += loss.sum().item()
             loss = loss.squeeze(dim=1)
