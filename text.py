@@ -253,7 +253,7 @@ def plot_1d_posterior(plotter, model, plot_data, grid_z,
     name = "iter %d, KL: %.4f, MI: %.4f" % (iter_, report_loss_kl / report_num_sample, report_mi / report_num_sample)
     win_name = "iter %d" % iter_
     if args.save_plot_data != '':
-        save_path = os.path.join(args.save_plot_data, 'burn%d_iter%d_1dmode.pickle' % (args.burn, iter_))
+        save_path = os.path.join(args.save_plot_data, '%s_burn%d_iter%d_1dmode.pickle' % (args.optim, args.burn, iter_))
         save_data = {'posterior': infer_posterior_mean[:,0].cpu().numpy(),
                      'inference': infer_posterior_mean[:,1].cpu().numpy(),
                      'kl': report_loss_kl / report_num_sample,
@@ -453,12 +453,12 @@ def main(args):
 
                     batch_data_enc = train_data_batch[id_]
 
-                # if sub_iter % 25 == 0:
-                #     burn_cur_loss = burn_cur_loss / burn_num_words
-                #     if burn_pre_loss - burn_cur_loss < 0:
-                #         break
-                #     burn_pre_loss = burn_cur_loss
-                #     burn_cur_loss = burn_num_words = 0
+                if sub_iter % 25 == 0:
+                    burn_cur_loss = burn_cur_loss / burn_num_words
+                    if burn_pre_loss - burn_cur_loss < 0:
+                        break
+                    burn_pre_loss = burn_cur_loss
+                    burn_cur_loss = burn_num_words = 0
 
                 sub_iter += 1
 
@@ -530,7 +530,7 @@ def main(args):
                 report_num_words = report_num_sents = 0
 
             if args.plot_mode != '':
-                if iter_ % args.plot_niter == 0:
+                if iter_ % args.plot_niter == 0 and epoch == 0:
                     vae.eval()
                     with torch.no_grad():
                         if args.plot_mode == 'trajectory' and iter_ != 0:
@@ -560,48 +560,48 @@ def main(args):
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
-        # if args.plot_mode != '':
-        #     with torch.no_grad():
-        #         plot_fn(plotter, vae, plot_data, grid_z,
-        #                 iter_, args)
+        if args.plot_mode != '':
+            with torch.no_grad():
+                plot_fn(plotter, vae, plot_data, grid_z,
+                        iter_, args)
 
-        # vae.eval()
-        # with torch.no_grad():
-        #     loss, nll, kl, ppl = test(vae, val_data_batch, "VAL", args)
+        vae.eval()
+        with torch.no_grad():
+            loss, nll, kl, ppl = test(vae, val_data_batch, "VAL", args)
 
-        # if loss < best_loss:
-        #     print('update best loss')
-        #     best_loss = loss
-        #     best_nll = nll
-        #     best_kl = kl
-        #     best_ppl = ppl
-        #     torch.save(vae.state_dict(), args.save_path)
+        if loss < best_loss:
+            print('update best loss')
+            best_loss = loss
+            best_nll = nll
+            best_kl = kl
+            best_ppl = ppl
+            torch.save(vae.state_dict(), args.save_path)
 
-        # if loss > opt_dict["best_loss"]:
-        #     opt_dict["not_improved"] += 1
-        #     if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
-        #         opt_dict["best_loss"] = loss
-        #         opt_dict["not_improved"] = 0
-        #         opt_dict["lr"] = opt_dict["lr"] * lr_decay
-        #         vae.load_state_dict(torch.load(args.save_path))
-        #         print('new lr: %f' % opt_dict["lr"])
-        #         decay_cnt += 1
-        #         if args.optim == 'sgd':
-        #             enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
-        #             dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
-        #         else:
-        #             enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
-        #             dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
-        # else:
-        #     opt_dict["not_improved"] = 0
-        #     opt_dict["best_loss"] = loss
+        if loss > opt_dict["best_loss"]:
+            opt_dict["not_improved"] += 1
+            if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
+                opt_dict["best_loss"] = loss
+                opt_dict["not_improved"] = 0
+                opt_dict["lr"] = opt_dict["lr"] * lr_decay
+                vae.load_state_dict(torch.load(args.save_path))
+                print('new lr: %f' % opt_dict["lr"])
+                decay_cnt += 1
+                if args.optim == 'sgd':
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                else:
+                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+        else:
+            opt_dict["not_improved"] = 0
+            opt_dict["best_loss"] = loss
 
-        # if decay_cnt == max_decay:
-        #     break
+        if decay_cnt == max_decay:
+            break
 
-        # if epoch % args.test_nepoch == 0:
-        #     with torch.no_grad():
-        #         loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
+        if epoch % args.test_nepoch == 0:
+            with torch.no_grad():
+                loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
 
         vae.train()
 
