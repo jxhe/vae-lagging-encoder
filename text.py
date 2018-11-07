@@ -308,9 +308,6 @@ def main(args):
     if args.eval:
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
-
-        small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
-        test_elbo_iw_ais_equal(vae, small_test_data, args, device)
         vae.eval()
         with torch.no_grad():
             test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
