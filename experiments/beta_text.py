@@ -71,6 +71,34 @@ def beta_base_yahoo(sub_exp=None):
 
     return BaseExperiment(args)
 
+def beta_burn_yahoo(sub_exp=None):
+    print(sub_exp, "sub_exp")
+    args = argparse.Namespace()
+    args.options = argparse.Namespace()
+    args.params = argparse.Namespace()
+
+    #########
+    args.model = 'vae'
+    args.mode = 'test'
+    # args.description = 'Vanilla VAE Baseline'
+    args.question = ''
+    #########
+    args.dataset = "yahoo"
+    args.label = False
+    args = default_text(args)
+    if sub_exp == '1':
+        args.description = 'Beta and our method'
+        args.exp_name = 'betaburn'
+        args.burn = 1
+        args.beta = [0.2,0.4,0.6,0.8]
+    if sub_exp == '2':
+        args.description = 'Beta and our method'
+        args.exp_name = 'betaburn'
+        args.burn = 1
+        args.beta = [0.84,0.88,0.92,.96]
+
+    return BaseExperiment(args)
+
 def beta_base_yelp(sub_exp=None):
     print(sub_exp, "sub_exp")
     args = argparse.Namespace()

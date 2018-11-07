@@ -60,6 +60,37 @@ class LSTMDecoder(DecoderBase):
             model_init(param)
         emb_init(self.embed.weight)
 
+    def sample_text(self, input, z, EOS, device):
+        sentence = [input]
+        max_index = 0
+
+        input_word = input
+        batch_size, n_sample, _ = z.size()
+        seq_len = 1
+        z_ = z.expand(batch_size, seq_len, self.nz)
+        seq_len = input.size(1)
+        softmax = torch.nn.Softmax(dim=0)
+        while max_index != EOS and len(sentence) < 100:
+            # (batch_size, seq_len, ni)
+            word_embed = self.embed(input_word)
+            word_embed = torch.cat((word_embed, z_), -1)
+            c_init = self.trans_linear(z).unsqueeze(0)
+            h_init = torch.tanh(c_init)
+            if len(sentence) == 1:
+                h_init = h_init.squeeze(dim=1)
+                c_init = c_init.squeeze(dim=1)
+                output, hidden = self.lstm.forward(word_embed, (h_init, c_init))
+            else:
+                output, hidden = self.lstm.forward(word_embed, hidden)
+            # (batch_size * n_sample, seq_len, vocab_size)
+            output_logits = self.pred_linear(output)
+            output_logits = output_logits.view(-1)
+            probs = softmax(output_logits)
+            # max_index = torch.argmax(output_logits)
+            max_index = torch.multinomial(probs, num_samples=1)
+            input_word = torch.tensor([[max_index]]).to(device)
+            sentence.append(max_index)
+        return sentence
 
     def decode(self, input, z):
         """

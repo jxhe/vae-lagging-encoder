@@ -169,9 +169,7 @@ def main(args):
             loss = lm.reconstruct_error(batch_data)
 
             report_loss += loss.sum().item()
-
             loss = loss.mean(dim=-1)
-
             loss.backward()
             torch.nn.utils.clip_grad_norm_(lm.parameters(), args.clip_grad)
 

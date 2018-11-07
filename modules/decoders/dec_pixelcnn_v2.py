@@ -124,13 +124,16 @@ class PixelCNNDecoderV2(DecoderBase):
     def __init__(self, args, ngpu=1, mode='large'):
         super(PixelCNNDecoderV2, self).__init__()
         self.ngpu = ngpu
-        nz = args.nz
+        self.nz = args.nz
         self.nc = 1
-        self.fm_latent = 4
+        # self.fm_latent = 4 old ??? hardcoded
+        self.fm_latent = args.latent_feature_map
+
         self.img_latent = 28 * 28 * self.fm_latent
-        self.z_transform = nn.Sequential(
-            nn.Linear(nz, self.img_latent),
-        )
+        if self.nz != 0 :
+            self.z_transform = nn.Sequential(
+                nn.Linear(self.nz, self.img_latent),
+            )
         if mode == 'small':
             kernal_sizes = [7, 7, 7, 5, 5, 3, 3]
         elif mode == 'large':
@@ -150,8 +153,9 @@ class PixelCNNDecoderV2(DecoderBase):
         self.reset_parameters()
 
     def reset_parameters(self):
-        nn.init.xavier_uniform_(self.z_transform[0].weight)
-        nn.init.constant_(self.z_transform[0].bias, 0)
+        if self.nz != 0:
+            nn.init.xavier_uniform_(self.z_transform[0].weight)
+            nn.init.constant_(self.z_transform[0].bias, 0)
 
         m = self.main[2]
         assert isinstance(m, nn.BatchNorm2d)
@@ -167,15 +171,19 @@ class PixelCNNDecoderV2(DecoderBase):
 
     def reconstruct_error(self, x, z):
         eps = 1e-12
-        batch_size, nsampels, nz = z.size()
+        if type(z) == type(None):
+            batch_size, nsampels, _, _ = x.size()
+            img = x.unsqueeze(1).expand(batch_size, nsampels, *x.size()[1:])
+        else:
+            batch_size, nsampels, nz = z.size()
+            # [batch, nsamples, -1] --> [batch, nsamples, fm, H, W]
+            z = self.z_transform(z).view(batch_size, nsampels, self.fm_latent, 28, 28)
 
-        # [batch, nsamples, -1] --> [batch, nsamples, fm, H, W]
-        z = self.z_transform(z).view(batch_size, nsampels, self.fm_latent, 28, 28)
+            # [batch, nc, H, W] --> [batch, 1, nc, H, W] --> [batch, nsample, nc, H, W]
+            img = x.unsqueeze(1).expand(batch_size, nsampels, *x.size()[1:])
+            # [batch, nsample, nc+fm, H, W] --> [batch * nsamples, nc+fm, H, W]
+            img = torch.cat([img, z], dim=2)
 
-        # [batch, nc, H, W] --> [batch, 1, nc, H, W] --> [batch, nsample, nc, H, W]
-        img = x.unsqueeze(1).expand(batch_size, nsampels, *x.size()[1:])
-        # [batch, nsample, nc+fm, H, W] --> [batch * nsamples, nc+fm, H, W]
-        img = torch.cat([img, z], dim=2)
         img = img.view(-1, *img.size()[2:])
 
         # [batch * nsamples, *] --> [batch, nsamples, -1]
