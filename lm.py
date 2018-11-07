@@ -11,6 +11,7 @@ from data import MonoTextData
 
 from modules import LSTM_LM
 
+max_decay = 5
 
 def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
@@ -33,7 +34,10 @@ def init_config():
 
 
     # data parameters
+    parser.add_argument('--label', type=int, default=0, help='batch size')
     parser.add_argument('--train_data', type=str, default='datasets/yahoo/data_yahoo_release/train.txt',
+                        help='training data file')
+    parser.add_argument('--val_data', type=str, default='datasets/yahoo/data_yahoo_release/train.txt',
                         help='training data file')
     parser.add_argument('--test_data', type=str, default='datasets/yahoo/data_yahoo_release/test.txt',
                         help='testing data file')
@@ -108,12 +112,13 @@ def main(args):
 
     opt_dict = {"not_improved": 0, "lr": args.lr, "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data)
+    train_data = MonoTextData(args.train_data, label=args.label)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    test_data = MonoTextData(args.test_data, vocab=vocab)
+    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
+    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
@@ -132,7 +137,7 @@ def main(args):
     else:
         optimizer = optim.Adam(lm.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
 
-    iter_ = 0
+    iter_ = decay_cnt =  0
     best_loss = 1e4
     best_nll = best_ppl = 0
     lm.train()
@@ -141,6 +146,9 @@ def main(args):
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
                                                     batch_first=True)
+    val_data_batch = val_data.create_data_batch(batch_size=args.batch_size,
+                                                device=device,
+                                                batch_first=True)
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
@@ -187,21 +195,23 @@ def main(args):
 
             with torch.no_grad():
                 nll, ppl = test(lm, test_data_batch, args)
+                nll, ppl = test(lm, val_data_batch, args)
 
             if nll < best_loss:
                 print('update best loss')
                 best_loss = nll
                 best_nll = nll
                 best_ppl = ppl
-                torch.save(lm, args.save_path)
+                torch.save(lm.state_dict(), args.save_path)
 
             if nll > opt_dict["best_loss"]:
                 opt_dict["not_improved"] += 1
-                if opt_dict["not_improved"] >= args.decay_epoch:
+                if opt_dict["not_improved"] >= args.decay_epoch and epoch >= 15:
                     opt_dict["best_loss"] = loss
                     opt_dict["not_improved"] = 0
                     opt_dict["lr"] = opt_dict["lr"] * args.lr_decay
                     print('new lr: %f' % opt_dict["lr"])
+                    decay_cnt += 1
                     if args.optim == 'sgd':
                         optimizer = optim.SGD(lm.parameters(), lr=opt_dict["lr"])
                     else:
@@ -210,12 +220,19 @@ def main(args):
                 opt_dict["not_improved"] = 0
                 opt_dict["best_loss"] = nll
 
+            if decay_cnt == max_decay:
+                break
+
             lm.train()
 
     print('best_loss: %.4f, nll: %.4f, ppl: %.4f' \
           % (best_loss, best_nll, best_ppl))
     sys.stdout.flush()
 
+    lm.load_state_dict(torch.load(args.save_path))
+    lm.eval()
+    with torch.no_grad():
+        nll, ppl = test(lm, test_data_batch, args)
     # vae.eval()
     # calc_nll(vae, test_data, args)
 
