@@ -199,6 +199,26 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
+def calc_au(model, test_data_batch, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for batch_data in test_data_batch:
+        mean, _ = model.encode_stats(batch_data)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / ns
+
+    return (au_var >= delta).sum().item()
+
+
 def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
     small_test_data_batch = small_test_data.create_data_batch(batch_size=20,
@@ -357,6 +377,8 @@ def main(args):
                                                           batch_first=True)
 
             test(vae, test_data_batch, "TEST", args)
+            au = calc_au(vae, test_data_batch)
+            print("%d active units" % au)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,

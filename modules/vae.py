@@ -30,6 +30,15 @@ class VAE(nn.Module):
         """
         return self.encoder.encode(x, nsamples)
 
+    def encode_stats(self, x):
+        """
+        Returns: Tensor1, Tensor2
+            Tensor1: the mean of latent z with shape [batch, nz]
+            Tensor2: the logvar of latent z with shape [batch, nz]
+        """
+
+        return self.encoder(x)
+
     def decode(self, z, deterministic):
         """generate samples from z (perhaps beam search ?)
         """
@@ -253,7 +262,6 @@ class VAE(nn.Module):
         """
 
         return self.encoder.calc_mi(x)
-
 
 
     # def eval_inference_mode(self, x):
