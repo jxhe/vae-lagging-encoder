@@ -80,6 +80,10 @@ def init_config():
     params = importlib.import_module(config_file).params
 
     args = argparse.Namespace(**vars(args), **params)
+    if 'label' in params:
+        args.label = params['label']
+    else:
+        args.label = False
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)

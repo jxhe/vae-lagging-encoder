@@ -110,9 +110,10 @@ def text_savae_seeds(sub_exp=None):
         args.dataset = 'yelp'
 
     if sub_exp == 'yahoo':
+        args.label = False
         args.dataset = 'yahoo'
 
     args = default_text(args)
-    args.seed = 7
+    args.seed = [783435, 101, 202, 303, 404]
     args.epoch = 1
     return BaseExperiment(args)
