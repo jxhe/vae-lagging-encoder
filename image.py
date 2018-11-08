@@ -63,9 +63,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d" % \
+    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid)
+             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
