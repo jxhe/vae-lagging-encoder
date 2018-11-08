@@ -189,7 +189,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
         report_rec_loss += rc_svi.sum().item()
         report_kl_loss += kl_svi.sum().item()
 
-    mutual_info = calc_mi(model, test_data_batch)
+    mutual_info = calc_mi(model, test_data_batch, meta_optimizer)
 
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
@@ -234,16 +234,36 @@ def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=3):
     sys.stdout.flush()
     return nll, ppl
 
-def calc_mi(model, test_data_batch):
+def calc_mi(model, test_data_batch, meta_optimizer):
     mi = 0
     num_examples = 0
     for batch_data in test_data_batch:
         batch_size = batch_data.size(0)
         num_examples += batch_size
-        mutual_info = model.calc_mi_q(batch_data)
+        mutual_info = model.calc_mi_q(batch_data, meta_optimizer)
         mi += mutual_info * batch_size
 
     return mi / num_examples
+
+def calc_au(model, test_data_batch, meta_optimizer, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for batch_data in test_data_batch:
+        mean, _ = vae.encoder.sa_forward(batch_data, meta_optimizer)
+
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item()
 
 def test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
@@ -480,6 +500,8 @@ def main(args):
         print('kl weight %.4f' % kl_weight)
 
         loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        au = calc_au(vae, val_data_batch, meta_optimizer)
+        print('%d active units' % au)
         # vae.eval()
         # with torch.no_grad():
 
@@ -518,6 +540,8 @@ def main(args):
     vae.load_state_dict(torch.load(args.save_path))
 
     test(vae, test_data_batch, meta_optimizer, "TEST", args)
+    au = calc_au(vae, test_data_batch, meta_optimizer)
+    print('%d active units' % au)
     # vae.eval()
     # with torch.no_grad():
 

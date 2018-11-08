@@ -147,7 +147,7 @@ def test(vae, test_loader, meta_optimizer, mode, args):
         report_rec_loss += rc_svi.sum().item()
         report_kl_loss += kl_svi.sum().item()
 
-    mutual_info = calc_mi(vae, test_loader)
+    mutual_info = calc_mi(vae, test_loader, meta_optimizer)
 
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
 
@@ -161,17 +161,37 @@ def test(vae, test_loader, meta_optimizer, mode, args):
 
     return test_loss, nll, kl
 
-def calc_mi(model, test_loader):
+def calc_mi(model, test_loader, meta_optimizer):
     mi = 0
     num_examples = 0
     for datum in test_loader:
         batch_data, _ = datum
         batch_size = batch_data.size(0)
         num_examples += batch_size
-        mutual_info = model.calc_mi_q(batch_data)
+        mutual_info = model.calc_mi_q(batch_data, meta_optimizer)
         mi += mutual_info * batch_size
 
     return mi / num_examples
+
+def calc_au(model, test_loader, meta_optimizer, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        mean, _ = vae.encoder.sa_forward(batch_data, meta_optimizer)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item()
 
 def calc_iwnll(model, test_loader, meta_optimizer, args):
 
@@ -388,6 +408,8 @@ def main(args):
 
 
         loss, nll, kl = test(vae, val_loader, meta_optimizer, "VAL", args)
+        au = calc_au(vae, val_loader, meta_optimizer)
+        print('%d active units' % au)
         # vae.eval()
         # with torch.no_grad():
 
@@ -424,6 +446,8 @@ def main(args):
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
     loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
+    au = calc_au(vae, test_loader, meta_optimizer)
+    print('%d active units' % au)
     # with torch.no_grad():
 
     calc_iwnll(vae, test_loader, meta_optimizer, args)
