@@ -189,7 +189,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
         report_rec_loss += rc_svi.sum().item()
         report_kl_loss += kl_svi.sum().item()
 
-    mutual_info = calc_mi(model, test_data_batch)
+    mutual_info = calc_mi(model, test_data_batch, meta_optimizer)
 
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
@@ -204,7 +204,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
+def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=3):
     model.decoder.dropout_in.eval()
     model.decoder.dropout_out.eval()
 
@@ -222,8 +222,8 @@ def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
             sys.stdout.flush()
 
-        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=ns)
-        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
+        # loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=ns)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=ns)
 
         report_nll_loss += loss.sum().item()
     print("report_num_sents", "report_num_words", report_num_sents, report_num_words)
@@ -234,16 +234,36 @@ def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=100):
     sys.stdout.flush()
     return nll, ppl
 
-def calc_mi(model, test_data_batch):
+def calc_mi(model, test_data_batch, meta_optimizer):
     mi = 0
     num_examples = 0
     for batch_data in test_data_batch:
         batch_size = batch_data.size(0)
         num_examples += batch_size
-        mutual_info = model.calc_mi_q(batch_data)
+        mutual_info = model.calc_mi_q(batch_data, meta_optimizer)
         mi += mutual_info * batch_size
 
     return mi / num_examples
+
+def calc_au(model, test_data_batch, meta_optimizer, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for batch_data in test_data_batch:
+        mean, _ = vae.encoder.sa_forward(batch_data, meta_optimizer)
+
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item()
 
 def test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device):
     #### Compare ELBOvsIWvsAIS on Same Data
@@ -318,13 +338,13 @@ def main(args):
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data)
+    train_data = MonoTextData(args.train_data, label=args.label)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    val_data = MonoTextData(args.val_data, vocab=vocab)
-    test_data = MonoTextData(args.test_data, vocab=vocab)
+    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
+    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
 
 
     print('Train data: %d samples' % len(train_data))
@@ -365,19 +385,21 @@ def main(args):
         vae.load_state_dict(torch.load(args.load_path))
 
         # test_elbo_iw_ais_equal(vae, small_test_data, meta_optimizer, args, device)
-        test_data_batch = test_data.create_data_batch(batch_size=1,
+        test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                       device=device,
                                                       batch_first=True)
-        # test_data_batch = test_data_batch[:100]
+        # test_data_batch = test_data_batch[:40]
 
-        # test(vae, test_data_batch, meta_optimizer, "TEST", args)
-        test_no_meta(vae, test_data_batch, "TEST", args)
+        test(vae, test_data_batch, meta_optimizer, "TEST", args)
+        # test_no_meta(vae, test_data_batch, "TEST", args)
 
 
         # test_data_batch = test_data.create_data_batch(batch_size=1,
         #                                               device=device,
         #                                               batch_first=True)
         # test_data_batch = test_data_batch[:100]
+        # test_data_batch = [test_sample.unsqueeze(0) for batch in test_data_batch for test_sample in batch]
+
         calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 
         return
@@ -475,6 +497,8 @@ def main(args):
         print('kl weight %.4f' % kl_weight)
 
         loss, nll, kl, ppl, cur_mi = test(vae, val_data_batch, meta_optimizer, "VAL", args)
+        au = calc_au(vae, val_data_batch, meta_optimizer)
+        print('%d active units' % au)
         # vae.eval()
         # with torch.no_grad():
 
@@ -513,12 +537,11 @@ def main(args):
     vae.load_state_dict(torch.load(args.save_path))
 
     test(vae, test_data_batch, meta_optimizer, "TEST", args)
+    au = calc_au(vae, test_data_batch, meta_optimizer)
+    print('%d active units' % au)
     # vae.eval()
     # with torch.no_grad():
 
-    test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                  device=device,
-                                                  batch_first=True)
     # with torch.no_grad():
     calc_iwnll(vae, test_data_batch, meta_optimizer, args)
 

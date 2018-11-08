@@ -169,7 +169,7 @@ class GaussianEncoderBase(nn.Module):
 
         return log_density
 
-    def calc_mi(self, x):
+    def calc_mi(self, x, meta_optimizer):
         """Approximate the mutual information between x and z
         I(x, z) = E_xE_{q(z|x)}log(q(z|x)) - E_xE_{q(z|x)}log(q(z))
 
@@ -178,7 +178,7 @@ class GaussianEncoderBase(nn.Module):
         """
 
         # [x_batch, nz]
-        mu, logvar = self.forward(x)
+        mu, logvar = self.sa_forward(x, meta_optimizer)
 
         x_batch, nz = mu.size()
 

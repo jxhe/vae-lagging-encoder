@@ -269,7 +269,7 @@ class VAE(nn.Module):
         """
         return self.encoder.eval_inference_dist(x, z, param)
 
-    def calc_mi_q(self, x):
+    def calc_mi_q(self, x, meta_optimizer):
         """Approximate the mutual information between x and z
         under distribution q(z|x)
 
