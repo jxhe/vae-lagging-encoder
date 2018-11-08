@@ -536,6 +536,8 @@ def main(args):
         vae.eval()
         with torch.no_grad():
             loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
+            au = calc_au(vae, val_data_batch)
+            print("%d active units" % au)
 
         if loss < best_loss:
             print('update best loss')
@@ -579,6 +581,8 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
+        au = calc_au(vae, test_data_batch)
+        print("%d active units" % au)
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
