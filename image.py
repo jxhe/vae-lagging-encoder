@@ -86,44 +86,44 @@ def init_config():
     return args
 
 
-def test_ais(model, test_loader, mode_split, args):
-    for x in model.modules():
-        x.eval()
+# def test_ais(model, test_loader, mode_split, args):
+#     for x in model.modules():
+#         x.eval()
 
-    test_loss = 0
-    report_num_examples = 0
-    for datum in test_loader:
-        batch_data, _ = datum
-        batch_size = batch_data.size(0)
+#     test_loss = 0
+#     report_num_examples = 0
+#     for datum in test_loader:
+#         batch_data, _ = datum
+#         batch_size = batch_data.size(0)
 
-        report_num_examples += batch_size
+#         report_num_examples += batch_size
 
-        batch_ll = ais_trajectory(model, batch_data, mode='forward',
-         prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
-          n_sample=args.ais_K, modality='image')
-        test_loss += torch.sum(-batch_ll).item()
+#         batch_ll = ais_trajectory(model, batch_data, mode='forward',
+#          prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
+#           n_sample=args.ais_K, modality='image')
+#         test_loss += torch.sum(-batch_ll).item()
 
 
-    nll = (test_loss) / report_num_examples
+#     nll = (test_loss) / report_num_examples
 
-    print('%s AIS --- nll: %.4f' % \
-           (mode_split, nll))
-    sys.stdout.flush()
-    return nll
+#     print('%s AIS --- nll: %.4f' % \
+#            (mode_split, nll))
+#     sys.stdout.flush()
+#     return nll
 
-def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
-    nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
-    #########
-    vae.eval()
-    with torch.no_grad():
-        loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
-    #########
-    with torch.no_grad():
-        nll_iw = calc_iwnll(vae, small_test_loader, args)
-    #########
-    #
+# def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
+#     nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
+#     #########
+#     vae.eval()
+#     with torch.no_grad():
+#         loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
+#     #########
+#     with torch.no_grad():
+#         nll_iw = calc_iwnll(vae, small_test_loader, args)
+#     #########
+#     #
 
-    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
+#     print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
 
 
 
