@@ -247,10 +247,10 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
-    # xxx
-    # x_train = x_train[:500,:,:,:]
-    # x_val = x_val[:500,:,:,:]
-    # x_test = x_test[:500,:,:,:]
+    # xxx small
+    x_train = x_train[:500,:,:,:]
+    x_val = x_val[:500,:,:,:]
+    x_test = x_test[:500,:,:,:]
     # xxx
     x_train = x_train.to(device)
     x_val = x_val.to(device)

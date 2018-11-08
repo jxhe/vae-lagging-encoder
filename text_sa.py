@@ -66,9 +66,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_savae_ns%d_kls%.1f_warm%d_%d_%d" % \
+    id_ = "%s_savae_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
             (args.dataset, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid)
+             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
@@ -272,9 +272,6 @@ def make_savepath(args):
             (args.dataset, args.nsamples,
              args.kl_start, args.warm_up, args.seed)
 
-    # id_ = "%s_savae_nref%d_kls%.1f_warm%d_seed_%d" % \
-    #     (args.dataset, args.svi_steps,
-    #      args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -408,10 +405,10 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-    # xxx
-    #train_data_batch = train_data_batch[:10]
-    #val_data_batch = val_data_batch[:10]
-    #test_data_batch = test_data_batch[:10]
+    # xxx small
+    train_data_batch = train_data_batch[:10]
+    val_data_batch = val_data_batch[:10]
+    test_data_batch = test_data_batch[:10]
     # xxx
 
     if args.train_from != '':
