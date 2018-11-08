@@ -254,7 +254,7 @@ def calc_au(model, test_data_batch, meta_optimizer, delta=0.01):
     """
     means = []
     for batch_data in test_data_batch:
-        mean, _ = vae.encoder.sa_forward(batch_data, meta_optimizer)
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
 
         means.append(mean)
 

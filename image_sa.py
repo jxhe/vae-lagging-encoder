@@ -179,7 +179,7 @@ def calc_au(model, test_loader, meta_optimizer, delta=0.01):
     means = []
     for datum in test_loader:
         batch_data, _ = datum
-        mean, _ = vae.encoder.sa_forward(batch_data, meta_optimizer)
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
         means.append(mean)
 
     means = torch.cat(means, dim=0)
