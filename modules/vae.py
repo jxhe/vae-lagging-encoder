@@ -277,7 +277,7 @@ class VAE(nn.Module):
             x: [batch_size, *]. The sampled data to estimate mutual info
         """
 
-        return self.encoder.calc_mi(x)
+        return self.encoder.calc_mi(x, meta_optimizer)
 
 
 
