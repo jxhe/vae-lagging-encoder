@@ -62,9 +62,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%d_%d_%d" % \
+    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples, args.beta,
-             args.jobid, args.taskid)
+             args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
@@ -89,36 +89,36 @@ def init_config():
 
     return args
 
-def test_ais(model, test_data_batch, mode_split, args):
-    model.decoder.dropout_in.eval()
-    model.decoder.dropout_out.eval()
+# def test_ais(model, test_data_batch, mode_split, args):
+#     model.decoder.dropout_in.eval()
+#     model.decoder.dropout_out.eval()
 
-    report_kl_loss = report_rec_loss = 0
-    report_num_words = report_num_sents = 0
-    test_loss = 0
-    for i in np.random.permutation(len(test_data_batch)):
-        batch_data = test_data_batch[i]
-        batch_size, sent_len = batch_data.size()
+#     report_kl_loss = report_rec_loss = 0
+#     report_num_words = report_num_sents = 0
+#     test_loss = 0
+#     for i in np.random.permutation(len(test_data_batch)):
+#         batch_data = test_data_batch[i]
+#         batch_size, sent_len = batch_data.size()
 
-        # not predict start symbol
-        report_num_words += (sent_len - 1) * batch_size
-        report_num_sents += batch_size
-        print("WOOT", batch_size, sent_len)
-        batch_ll = ais_trajectory(model, batch_data, mode='forward',
-         prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
-          n_sample=args.ais_K, modality='text')
-        test_loss += torch.sum(-batch_ll).item()
+#         # not predict start symbol
+#         report_num_words += (sent_len - 1) * batch_size
+#         report_num_sents += batch_size
+#         print("WOOT", batch_size, sent_len)
+#         batch_ll = ais_trajectory(model, batch_data, mode='forward',
+#          prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
+#           n_sample=args.ais_K, modality='text')
+#         test_loss += torch.sum(-batch_ll).item()
 
-    # test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
+#     # test_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
 
-    nll = (test_loss) / report_num_sents
+#     nll = (test_loss) / report_num_sents
 
-    ppl = np.exp(nll * report_num_sents / report_num_words)
-    print("SENTS, WORDS", report_num_sents, report_num_words)
-    print('%s AIS --- nll: %.4f, ppl: %.4f' % \
-           (mode_split, nll, ppl))
-    sys.stdout.flush()
-    return nll, ppl
+#     ppl = np.exp(nll * report_num_sents / report_num_words)
+#     print("SENTS, WORDS", report_num_sents, report_num_words)
+#     print('%s AIS --- nll: %.4f, ppl: %.4f' % \
+#            (mode_split, nll, ppl))
+#     sys.stdout.flush()
+#     return nll, ppl
 
 
 def test(model, test_data_batch, mode, args, verbose=True):
@@ -217,22 +217,22 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
-def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
-    #### Compare ELBOvsIWvsAIS on Same Data
-    small_test_data_batch = small_test_data.create_data_batch(batch_size=20,
-                                                  device=device,
-                                                  batch_first=True)
-    ###ais###
-    nll_ais, ppl_ais = test_ais(vae, small_test_data_batch, "10%TEST", args)
-    #########
-    vae.eval()
-    with torch.no_grad():
-        loss_elbo, nll_elbo, kl_elbo, ppl_elbo, mutual_info = test(vae, small_test_data_batch, "10%TEST", args)
-    #########
-    with torch.no_grad():
-        nll_iw, ppl_iw = calc_iwnll(vae, small_test_data_batch, args, ns=20)
-    #########
-    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f\tMIT:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais, mutual_info))
+# def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
+#     #### Compare ELBOvsIWvsAIS on Same Data
+#     small_test_data_batch = small_test_data.create_data_batch(batch_size=20,
+#                                                   device=device,
+#                                                   batch_first=True)
+#     ###ais###
+#     nll_ais, ppl_ais = test_ais(vae, small_test_data_batch, "10%TEST", args)
+#     #########
+#     vae.eval()
+#     with torch.no_grad():
+#         loss_elbo, nll_elbo, kl_elbo, ppl_elbo, mutual_info = test(vae, small_test_data_batch, "10%TEST", args)
+#     #########
+#     with torch.no_grad():
+#         nll_iw, ppl_iw = calc_iwnll(vae, small_test_data_batch, args, ns=20)
+#     #########
+#     print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f,\t Perp Elbo:%.4f,\tIW:%.4f,\tAIS:%.4f\tMIT:%.4f'%(nll_elbo, nll_iw, nll_ais, ppl_elbo, ppl_iw, ppl_ais, mutual_info))
 
 
 def make_savepath(args):
