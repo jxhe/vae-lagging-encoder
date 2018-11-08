@@ -161,6 +161,25 @@ def test(model, test_data_batch, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
+def calc_au(model, test_data_batch, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for batch_data in test_data_batch:
+        mean, _ = model.encode_stats(batch_data)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / ns
+
+    return (au_var >= delta).sum().item()
+
 def calc_iwnll(model, test_data_batch, args, ns=100):
     report_nll_loss = 0
     report_num_words = report_num_sents = 0
@@ -307,19 +326,15 @@ def main(args):
     if args.eval:
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
-
-        small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
-        test_elbo_iw_ais_equal(vae, small_test_data, args, device)
-        return
         vae.eval()
-
         with torch.no_grad():
             test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                           device=device,
                                                           batch_first=True)
 
             test(vae, test_data_batch, "TEST", args)
-
+            au = calc_au(vae, test_data_batch)
+            print("%d active units" % au)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,
