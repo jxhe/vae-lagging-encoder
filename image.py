@@ -63,6 +63,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    seed_set = [783435, 101, 202, 303, 404]
+    args.seed = seed_set[args.taskid]
+
     id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
@@ -176,6 +179,26 @@ def calc_mi(model, test_loader):
         mi += mutual_info * batch_size
 
     return mi / num_examples
+
+def calc_au(model, test_loader, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        mean, _ = model.encode_stats(batch_data)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item()
 
 def calc_iwnll(model, test_loader, args):
 
@@ -421,13 +444,14 @@ def main(args):
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
+                        au = calc_au(vae, val_data_batch)
 
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                           'time elapsed %.2fs' %
+                           'au %d, time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_examples, mi,
-                           report_rec_loss / report_num_examples, time.time() - start))
+                           report_rec_loss / report_num_examples, au, time.time() - start))
                 else:
                      print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
@@ -462,6 +486,8 @@ def main(args):
 
         with torch.no_grad():
             loss, nll, kl = test(vae, val_loader, "VAL", args)
+            au = calc_au(vae, val_data_batch)
+            print("%d active units" % au)
 
         if loss < best_loss:
             print('update best loss')

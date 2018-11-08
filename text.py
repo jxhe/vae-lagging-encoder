@@ -63,6 +63,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    seed_set = [783435, 101, 202, 303, 404]
+    args.seed = seed_set[args.taskid]
+
     id_ = "%s_burn%d_constlen_ns%d_kls%.2f_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
@@ -502,12 +505,13 @@ def main(args):
                 if burn_flag or epoch == 0:
                     vae.eval()
                     mi = calc_mi(vae, val_data_batch)
+                    au = calc_au(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                           'time elapsed %.2fs' %
+                           'au %d, time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi,
-                           report_rec_loss / report_num_sents, time.time() - start))
+                           report_rec_loss / report_num_sents, au, time.time() - start))
                 else:
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
