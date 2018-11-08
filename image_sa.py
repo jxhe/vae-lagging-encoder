@@ -210,7 +210,7 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
         # XXX change batch size for eval.
         # GET RID OF META OPTIMIZER
         # loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=100)
-        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=20)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=5)#20
 
         report_nll_loss += loss.sum().item()
 
@@ -267,11 +267,11 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
-    # xxx small
-    x_train = x_train[:500,:,:,:]
-    x_val = x_val[:500,:,:,:]
-    x_test = x_test[:500,:,:,:]
-    # xxx
+    # # xxx small
+    # x_train = x_train[:500,:,:,:]
+    # x_val = x_val[:500,:,:,:]
+    # x_test = x_test[:500,:,:,:]
+    # # xxx
     x_train = x_train.to(device)
     x_val = x_val.to(device)
     x_test = x_test.to(device)

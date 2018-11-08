@@ -87,8 +87,8 @@ def omni_savae_seeds(sub_exp=None):
     args.extra_name = ''
     #########
     args = default_image(args)
-    args.seed = 7
-    args.epoch = 1
+    args.seed = [783435, 101, 202, 303, 404]
+    args.kl_start = .1
     return BaseExperiment(args)
 
 

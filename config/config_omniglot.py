@@ -22,7 +22,6 @@ params_v2={
     'latent_feature_map': 4,
     'batch_size': 50,
     'epochs': 1000,
-    'save_path': '',
     'log_niter': 100,
     'test_nepoch': 5,
     'data_file': 'omniglot_data/omniglot.pt'
