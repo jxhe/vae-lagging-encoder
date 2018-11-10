@@ -529,6 +529,7 @@ def main(args):
                 vae.eval()
                 cur_mi = calc_mi(vae, val_data_batch)
                 vae.train()
+                print("pre mi:.4%f. cur mi:.4%f" % (pre_mi, cur_mi))
                 if cur_mi - pre_mi < 0:
                     burn_flag = False
                     print("STOP BURNING")
