@@ -1,15 +1,15 @@
 import argparse
 import torch
 import numpy as np
-# from experiments.reproduce import *
-from experiments.omniglot import *
-from experiments.yahoo import *
+from experiments.review_beta import *
+# from experiments.omniglot import *
+# from experiments.yahoo import *
 # from my_paths import paths
 # from saver.model_saver import ModelSaver
 # from loggers.logger import TrainLogger
 # from text import main
-from image import main as main_image
-from text import main as main_text
+from image_beta import main as main_image
+from text_beta import main as main_text
 # from image_v import main
 
 def parse_args():
