@@ -453,12 +453,13 @@ def main(args):
                 if burn_flag or epoch == 0:
                     vae.eval()
                     mi = calc_mi(vae, val_data_batch)
+                    au = calc_au(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                           'time elapsed %.2fs' %
+                           'au %d, time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi,
-                           report_rec_loss / report_num_sents, time.time() - start))
+                           report_rec_loss / report_num_sents, au, time.time() - start))
                 else:
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
@@ -487,6 +488,8 @@ def main(args):
         vae.eval()
         with torch.no_grad():
             loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
+            au = calc_au(vae, val_data_batch)
+            print("%d active units" % au)
 
         if loss < best_loss:
             print('update best loss')
@@ -530,6 +533,8 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
+        au = calc_au(vae, test_data_batch)
+        print("%d active units" % au)
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,

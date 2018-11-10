@@ -99,7 +99,7 @@ def text_beta_seeds(sub_exp=None):
     #########
     args.model = 'betavae'#doesn't matter
     args.mode = 'test'#doesn't matter
-    args.exp_name = 'debug_review_beta_seeds' #/dataset/exp_name
+    args.exp_name = 'review_beta_seeds' #/dataset/exp_name
     args.description = 'uncertainty'
     args.question = ''
     args.extra_name = ''
