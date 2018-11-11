@@ -178,7 +178,7 @@ def calc_au(model, test_data_batch, delta=0.01):
 
     au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
 
-    return (au_var >= delta).sum().item()
+    return (au_var >= delta).sum().item(), au_var
 
 def calc_iwnll(model, test_data_batch, args, ns=100):
     report_nll_loss = 0
@@ -332,8 +332,9 @@ def main(args):
                                                           batch_first=True)
 
             test(vae, test_data_batch, "TEST", args)
-            au = calc_au(vae, test_data_batch)
+            au, au_var = calc_au(vae, test_data_batch)
             print("%d active units" % au)
+            print(au_var)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,
@@ -453,7 +454,7 @@ def main(args):
                 if burn_flag or epoch == 0:
                     vae.eval()
                     mi = calc_mi(vae, val_data_batch)
-                    au = calc_au(vae, val_data_batch)
+                    au, _ = calc_au(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
@@ -488,8 +489,9 @@ def main(args):
         vae.eval()
         with torch.no_grad():
             loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
-            au = calc_au(vae, val_data_batch)
+            au, au_var = calc_au(vae, val_data_batch)
             print("%d active units" % au)
+            print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -533,8 +535,9 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
-        au = calc_au(vae, test_data_batch)
+        au, au_var = calc_au(vae, test_data_batch)
         print("%d active units" % au)
+        print(au_var)
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
