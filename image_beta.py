@@ -174,6 +174,26 @@ def calc_mi(model, test_loader):
 
     return mi / num_examples
 
+def calc_au(model, test_loader, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        mean, _ = model.encode_stats(batch_data)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item(), au_var
+
 def calc_iwnll(model, test_loader, args):
 
     report_nll_loss = 0
@@ -387,13 +407,14 @@ def main(args):
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
+                        au, _ = calc_au(vae, val_loader)
 
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                           'time elapsed %.2fs' %
+                           'au %d, time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_examples, mi,
-                           report_rec_loss / report_num_examples, time.time() - start))
+                           report_rec_loss / report_num_examples, au, time.time() - start))
                 else:
                      print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
@@ -428,6 +449,9 @@ def main(args):
 
         with torch.no_grad():
             loss, nll, kl = test(vae, val_loader, "VAL", args)
+            au, au_var = calc_au(vae, val_loader)
+            print("%d active units" % au)
+            print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -465,6 +489,9 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl = test(vae, test_loader, "TEST", args)
+        au, au_var = calc_au(vae, test_loader)
+        print("%d active units" % au)
+        print(au_var)
 
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 
