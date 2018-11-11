@@ -40,8 +40,10 @@ def init_config():
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
     parser.add_argument('--load_path', type=str, default='')
 
-    # beta-VAE
-    parser.add_argument('--beta', type=float, default=1, help='beta-VAE')
+    # annealing paramters
+    parser.add_argument('--warm_up', type=int, default=10)
+    parser.add_argument('--kl_start', type=float, default=1.0)
+    parser.add_argument('--kl_hold', type=int, default=0)
 
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
@@ -62,8 +64,12 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%d_%d_%d_%d" % \
-            (args.dataset, args.burn, args.nsamples, args.beta,
+    seed_set = [783435, 101, 202, 303, 404]
+    args.seed = seed_set[args.taskid]
+
+    id_ = "%s_burn%d_ns%d_kls%.2f_klh%d_warm%d_%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples,
+             args.kl_start, args.kl_hold, args.warm_up, 
              args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -161,25 +167,6 @@ def test(model, test_data_batch, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_au(model, test_data_batch, delta=0.01):
-    """compute the number of active units
-    """
-    means = []
-    for batch_data in test_data_batch:
-        mean, _ = model.encode_stats(batch_data)
-        means.append(mean)
-
-    means = torch.cat(means, dim=0)
-    au_mean = means.mean(0, keepdim=True)
-
-    # (batch_size, nz)
-    au_var = means - au_mean
-    ns = au_var.size(0)
-
-    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
-
-    return (au_var >= delta).sum().item(), au_var
-
 def calc_iwnll(model, test_data_batch, args, ns=100):
     report_nll_loss = 0
     report_num_words = report_num_sents = 0
@@ -217,6 +204,26 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
+def calc_au(model, test_data_batch, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for batch_data in test_data_batch:
+        mean, _ = model.encode_stats(batch_data)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item(), au_var
+
+
 # def test_elbo_iw_ais_equal(vae, small_test_data, args, device):
 #     #### Compare ELBOvsIWvsAIS on Same Data
 #     small_test_data_batch = small_test_data.create_data_batch(batch_size=20,
@@ -241,8 +248,9 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_constlen_ns%d_Beta%s_%d" % \
-            (args.dataset, args.burn, args.nsamples, str(args.beta), args.seed)
+    id_ = "%s_burn%d_constlen_ns%d_kls%.2f_warm%d_%d_%d_%d" % \
+            (args.dataset, args.burn, args.nsamples,
+             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
 
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -266,6 +274,48 @@ def seed(args):
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
         torch.backends.cudnn.deterministic = True
+
+def sample_sentences(vae, vocab, device, num_sentences):
+    vae.eval()
+    sampled_sents = []
+    for i in range(num_sentences):
+        z = vae.sample_from_prior(1)
+        z = z.view(1,1,-1)
+        start = vocab.word2id['<s>']
+        # START = torch.tensor([[[start]]])
+        START = torch.tensor([[start]])
+        end = vocab.word2id['</s>']
+        START = START.to(device)
+        z = z.to(device)
+        vae.eval()
+        sentence = vae.decoder.sample_text(START, z, end, device)
+        decoded_sentence = vocab.decode_sentence(sentence)
+        sampled_sents.append(decoded_sentence)
+    for i, sent in enumerate(sampled_sents):
+        print(i,":",' '.join(sent))
+
+def visualize_latent(args, vae, device, test_data):
+    f = open('yelp_embeddings_z','w')
+    g = open('yelp_embeddings_labels','w')
+
+    test_data_batch, test_label_batch = test_data.create_data_batch_labels(batch_size=args.batch_size, device=device, batch_first=True)
+    for i in range(len(test_data_batch)):
+        batch_data = test_data_batch[i]
+        batch_label = test_label_batch[i]
+        batch_size, sent_len = batch_data.size()
+        means, _ = vae.encoder.forward(batch_data)
+        for i in range(batch_size):
+            mean = means[i,:].cpu().detach().numpy().tolist()
+            for val in mean:
+                f.write(str(val)+'\t')
+            f.write('\n')
+        for label in batch_label:
+            g.write(label+'\n')
+        fo
+        print(mean.size())
+        print(logvar.size())
+        fooo
+
 
 
 def main(args):
@@ -360,6 +410,9 @@ def main(args):
     vae.train()
     start = time.time()
 
+    kl_weight = args.kl_start
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
+
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
                                                     batch_first=True)
@@ -371,8 +424,6 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
-
-    kl_weight = args.beta
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
@@ -384,6 +435,11 @@ def main(args):
             report_num_words += (sent_len - 1) * batch_size
 
             report_num_sents += batch_size
+
+            # kl_weight = 1.0
+            # anneal after kl_hold iterations
+            if iter_ >= args.kl_hold:
+                kl_weight = min(1.0, kl_weight + anneal_rate)
 
             sub_iter = 1
             batch_data_enc = batch_data
@@ -426,7 +482,7 @@ def main(args):
                 #     break
 
             # print(sub_iter)
-            print("sub_iter", sub_iter)
+
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
 
@@ -478,6 +534,7 @@ def main(args):
                 vae.eval()
                 cur_mi = calc_mi(vae, val_data_batch)
                 vae.train()
+                print("pre mi:%.4f. cur mi:%.4f" % (pre_mi, cur_mi))
                 if cur_mi - pre_mi < 0:
                     burn_flag = False
                     print("STOP BURNING")
