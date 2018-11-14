@@ -10,20 +10,21 @@ import argparse
 
 def default_image(args):
     args.dataset = 'omniglot'
+    args.nsamples = 1
+    args.iw_nsamples = 500
 
     # select mode
     args.eval=False
     args.load_path = ''
-    args.save_path = ''
+    # args.save_path = ''#in config
 
-    # annealing paramters
-    args.warm_up = 10
-    args.ngpu = 1
-    args.gpu_ids = 0
+    args.burn = 0
+    # args.ngpu = 1
+    # args.gpu_ids = 0
 
     # others
     # args.seed=783435
-    args.train_from = ''
+    # args.train_from = ''
     # these are for slurm purpose to save model
     # args.jobid=0
     # args.taskid=0
