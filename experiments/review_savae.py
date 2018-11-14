@@ -101,7 +101,7 @@ def text_savae_seeds(sub_exp=None):
     #########
     args.model = 'savae'#doesn't matter
     args.mode = 'test'#doesn't matter
-    args.exp_name = 'review_savae_seeds' #/dataset/exp_name
+    args.exp_name = 'review_savae_anneal_seeds' #/dataset/exp_name
     args.description = 'uncertainty'
     args.question = ''
     args.extra_name = ''
