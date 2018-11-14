@@ -198,7 +198,7 @@ def calc_au(model, test_loader, delta=0.01):
 
     au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
 
-    return (au_var >= delta).sum().item()
+    return (au_var >= delta).sum().item(), au_var
 
 def calc_iwnll(model, test_loader, args):
 
@@ -444,7 +444,7 @@ def main(args):
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
-                        au = calc_au(vae, val_data_batch)
+                        au, _ = calc_au(vae, val_loader)
 
                     vae.train()
 
@@ -486,8 +486,9 @@ def main(args):
 
         with torch.no_grad():
             loss, nll, kl = test(vae, val_loader, "VAL", args)
-            au = calc_au(vae, val_data_batch)
+            au, au_var = calc_au(vae, val_loader)
             print("%d active units" % au)
+            print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -525,6 +526,9 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl = test(vae, test_loader, "TEST", args)
+        au, au_var = calc_au(vae, test_loader)
+        print("%d active units" % au)
+        print(au_var)
 
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 

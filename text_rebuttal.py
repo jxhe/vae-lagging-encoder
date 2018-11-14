@@ -43,6 +43,7 @@ def init_config():
     # annealing paramters
     parser.add_argument('--warm_up', type=int, default=10)
     parser.add_argument('--kl_start', type=float, default=1.0)
+    parser.add_argument('--kl_hold', type=int, default=0)
 
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
@@ -66,9 +67,10 @@ def init_config():
     seed_set = [783435, 101, 202, 303, 404]
     args.seed = seed_set[args.taskid]
 
-    id_ = "%s_burn%d_constlen_ns%d_kls%.2f_warm%d_%d_%d_%d" % \
+    id_ = "%s_burn%d_ns%d_kls%.2f_klh%d_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
+             args.kl_start, args.kl_hold, args.warm_up, 
+             args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
@@ -205,29 +207,19 @@ def calc_mi(model, test_data_batch):
 def calc_au(model, test_data_batch, delta=0.01):
     """compute the number of active units
     """
-    cnt = 0
+    means = []
     for batch_data in test_data_batch:
         mean, _ = model.encode_stats(batch_data)
-        if cnt == 0:
-            means_sum = mean.sum(dim=0, keepdim=True)
-        else:
-            means_sum = means_sum + mean.sum(dim=0, keepdim=True)
-        cnt += mean.size(0)
+        means.append(mean)
 
-    # (1, nz)
-    mean_mean = means_sum / cnt
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
 
-    cnt = 0
-    for batch_data in test_data_batch:
-        mean, _ = model.encode_stats(batch_data)
-        if cnt == 0:
-            var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
-        else:
-            var_sum = var_sum + ((mean - mean_mean) ** 2).sum(dim=0)
-        cnt += mean.size(0)
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
 
-    # (nz)
-    au_var = var_sum / (cnt - 1)
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
 
     return (au_var >= delta).sum().item(), au_var
 
@@ -445,7 +437,9 @@ def main(args):
             report_num_sents += batch_size
 
             # kl_weight = 1.0
-            kl_weight = min(1.0, kl_weight + anneal_rate)
+            # anneal after kl_hold iterations
+            if iter_ >= args.kl_hold:
+                kl_weight = min(1.0, kl_weight + anneal_rate)
 
             sub_iter = 1
             batch_data_enc = batch_data
@@ -515,9 +509,8 @@ def main(args):
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
                 if burn_flag or epoch == 0:
                     vae.eval()
-                    with torch.no_grad():
-                        mi = calc_mi(vae, val_data_batch)
-                        au, _ = calc_au(vae, val_data_batch)
+                    mi = calc_mi(vae, val_data_batch)
+                    au, _ = calc_au(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \

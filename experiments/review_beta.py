@@ -86,7 +86,7 @@ def omni_beta_seeds(sub_exp=None):
     args = default_image(args)
     #########
     args.seed = [783435, 101, 202, 303, 404]
-    args.beta = []
+    args.beta = [0.2, 0.4, 0.6, 0.8]
     return BaseExperiment(args)
 
 

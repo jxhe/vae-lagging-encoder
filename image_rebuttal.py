@@ -8,6 +8,7 @@ import numpy as np
 
 import torch
 import torch.utils.data
+from torchvision.utils import save_image
 from torch import nn, optim
 
 from modules import ResNetEncoderV2, PixelCNNDecoderV2
@@ -37,8 +38,10 @@ def init_config():
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
     parser.add_argument('--load_path', type=str, default='')
 
-    # beta-VAE
-    parser.add_argument('--beta', type=float, default=1, help='beta-VAE')
+    # annealing paramters
+    parser.add_argument('--warm_up', type=int, default=10)
+    parser.add_argument('--kl_start', type=float, default=1.0)
+    parser.add_argument('--kl_hold', type=int, default=0)
 
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
@@ -46,6 +49,7 @@ def init_config():
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--sample_from', type=str, default='', help='load model and perform sampling')
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -60,9 +64,12 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_ns%d_%d_%d" % \
+    seed_set = [783435, 101, 202, 303, 404]
+    args.seed = seed_set[args.taskid]
+
+    id_ = "%s_burn%d_ns%d_kls%.1f_klh%d_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
-             args.jobid, args.taskid)
+             args.kl_start, args.kl_hold, args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
 
@@ -83,44 +90,44 @@ def init_config():
     return args
 
 
-def test_ais(model, test_loader, mode_split, args):
-    for x in model.modules():
-        x.eval()
+# def test_ais(model, test_loader, mode_split, args):
+#     for x in model.modules():
+#         x.eval()
 
-    test_loss = 0
-    report_num_examples = 0
-    for datum in test_loader:
-        batch_data, _ = datum
-        batch_size = batch_data.size(0)
+#     test_loss = 0
+#     report_num_examples = 0
+#     for datum in test_loader:
+#         batch_data, _ = datum
+#         batch_size = batch_data.size(0)
 
-        report_num_examples += batch_size
+#         report_num_examples += batch_size
 
-        batch_ll = ais_trajectory(model, batch_data, mode='forward',
-         prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
-          n_sample=args.ais_K, modality='image')
-        test_loss += torch.sum(-batch_ll).item()
+#         batch_ll = ais_trajectory(model, batch_data, mode='forward',
+#          prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
+#           n_sample=args.ais_K, modality='image')
+#         test_loss += torch.sum(-batch_ll).item()
 
 
-    nll = (test_loss) / report_num_examples
+#     nll = (test_loss) / report_num_examples
 
-    print('%s AIS --- nll: %.4f' % \
-           (mode_split, nll))
-    sys.stdout.flush()
-    return nll
+#     print('%s AIS --- nll: %.4f' % \
+#            (mode_split, nll))
+#     sys.stdout.flush()
+#     return nll
 
-def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
-    nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
-    #########
-    vae.eval()
-    with torch.no_grad():
-        loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
-    #########
-    with torch.no_grad():
-        nll_iw = calc_iwnll(vae, small_test_loader, args)
-    #########
-    #
+# def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
+#     nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
+#     #########
+#     vae.eval()
+#     with torch.no_grad():
+#         loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
+#     #########
+#     with torch.no_grad():
+#         nll_iw = calc_iwnll(vae, small_test_loader, args)
+#     #########
+#     #
 
-    print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
+#     print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
 
 
 
@@ -192,7 +199,7 @@ def calc_au(model, test_loader, delta=0.01):
 
     au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
 
-    return (au_var >= delta).sum().item(), au_var
+    return (au_var >= delta).sum().item()
 
 def calc_iwnll(model, test_loader, args):
 
@@ -224,9 +231,9 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "betaVAE_%s_burn%d_ns%d_Beta%s_seed_%d" % \
-        (args.dataset, args.burn, args.nsamples, str(args.beta),
-         args.seed)
+    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_seed_%d" % \
+        (args.dataset, args.burn, args.nsamples,
+         args.kl_start, args.warm_up, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -300,6 +307,33 @@ def main(args):
 
     vae = VAE(encoder, decoder, args).to(device)
 
+    if args.sample_from != '':
+        save_dir = "samples/%s" % args.dataset
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # data_id = np.random.permutation(len(x_test))
+        # data = x_test[data_id[:400]]
+        # sample_x = torch.bernoulli(data)
+        # sample_probs = data
+        # image_file = 'sample_binary_from_true.png'
+        # save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        # image_file = 'sample_cont_from_true.png'
+        # save_image(sample_probs.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        # return
+
+        vae.load_state_dict(torch.load(args.sample_from))
+        vae.eval()
+        with torch.no_grad():
+            sample_z = vae.sample_from_prior(400).to(device)
+            sample_x, sample_probs = vae.decode(sample_z, False)
+        image_file = 'sample_binary_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
+        save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+        image_file = 'sample_cont_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
+        save_image(sample_probs.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
+
+        return
+
     if args.eval:
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
@@ -311,7 +345,6 @@ def main(args):
         small_test_data = torch.utils.data.TensorDataset(small_x_test, small_y_test)
         small_test_loader = torch.utils.data.DataLoader(small_test_data, batch_size=args.batch_size, shuffle=True)
         test_elbo_iw_ais_equal(vae, small_test_loader, args, device)
-        return
         vae.eval()
         with torch.no_grad():
             test(vae, test_loader, "TEST", args)
@@ -331,7 +364,8 @@ def main(args):
     vae.train()
     start = time.time()
 
-    kl_weight = args.beta
+    kl_weight = args.kl_start
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * len(train_loader))
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
@@ -342,6 +376,12 @@ def main(args):
             batch_size = batch_data.size(0)
 
             report_num_examples += batch_size
+
+            # kl_weight = 1.0
+            # anneal after kl_hold iterations
+            if iter_ >= args.kl_hold:
+                kl_weight = min(1.0, kl_weight + anneal_rate)
+
             sub_iter = 1
             batch_data_enc = batch_data
             burn_num_examples = 0
@@ -407,7 +447,7 @@ def main(args):
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
-                        au, _ = calc_au(vae, val_loader)
+                        au = calc_au(vae, val_data_batch)
 
                     vae.train()
 
@@ -449,9 +489,8 @@ def main(args):
 
         with torch.no_grad():
             loss, nll, kl = test(vae, val_loader, "VAL", args)
-            au, au_var = calc_au(vae, val_loader)
+            au = calc_au(vae, val_data_batch)
             print("%d active units" % au)
-            print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -489,9 +528,6 @@ def main(args):
     vae.eval()
     with torch.no_grad():
         loss, nll, kl = test(vae, test_loader, "TEST", args)
-        au, au_var = calc_au(vae, test_loader)
-        print("%d active units" % au)
-        print(au_var)
 
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 
