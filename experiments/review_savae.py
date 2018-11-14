@@ -101,7 +101,7 @@ def text_savae_seeds(sub_exp=None):
     #########
     args.model = 'savae'#doesn't matter
     args.mode = 'test'#doesn't matter
-    args.exp_name = 'review_savae_seeds' #/dataset/exp_name
+    args.exp_name = 'review_savae_anneal_seeds' #/dataset/exp_name
     args.description = 'uncertainty'
     args.question = ''
     args.extra_name = ''
@@ -112,9 +112,9 @@ def text_savae_seeds(sub_exp=None):
     if sub_exp == 'yahoo':
         args.label = False
         args.dataset = 'yahoo'
-        args.kl_start = .1
 
     args = default_text(args)
+    args.kl_start = .1
     args.seed = [783435, 101, 202, 303, 404]
 
     return BaseExperiment(args)
