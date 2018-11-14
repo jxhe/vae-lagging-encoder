@@ -425,7 +425,7 @@ def main(args):
                 #     break
 
             # print(sub_iter)
-            print("sub_iter", sub_iter)
+            # print("sub_iter", sub_iter)
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
 
