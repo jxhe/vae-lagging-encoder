@@ -147,7 +147,7 @@ def test(vae, test_loader, meta_optimizer, mode, args):
         report_rec_loss += rc_svi.sum().item()
         report_kl_loss += kl_svi.sum().item()
 
-    mutual_info = calc_mi(vae, test_loader)
+    mutual_info = calc_mi(vae, test_loader, meta_optimizer)
 
     test_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
 
@@ -161,17 +161,37 @@ def test(vae, test_loader, meta_optimizer, mode, args):
 
     return test_loss, nll, kl
 
-def calc_mi(model, test_loader):
+def calc_mi(model, test_loader, meta_optimizer):
     mi = 0
     num_examples = 0
     for datum in test_loader:
         batch_data, _ = datum
         batch_size = batch_data.size(0)
         num_examples += batch_size
-        mutual_info = model.calc_mi_q(batch_data)
+        mutual_info = model.calc_mi_q(batch_data, meta_optimizer)
         mi += mutual_info * batch_size
 
     return mi / num_examples
+
+def calc_au(model, test_loader, meta_optimizer, delta=0.01):
+    """compute the number of active units
+    """
+    means = []
+    for datum in test_loader:
+        batch_data, _ = datum
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
+        means.append(mean)
+
+    means = torch.cat(means, dim=0)
+    au_mean = means.mean(0, keepdim=True)
+
+    # (batch_size, nz)
+    au_var = means - au_mean
+    ns = au_var.size(0)
+
+    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+
+    return (au_var >= delta).sum().item()
 
 def calc_iwnll(model, test_loader, meta_optimizer, args):
 
@@ -189,8 +209,7 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
 
         # XXX change batch size for eval.
         # GET RID OF META OPTIMIZER
-        loss = model.nll_iw_no_meta(batch_data, nsamples=args.iw_nsamples, ns=10)
-        # loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=100)
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=2)#20
 
         report_nll_loss += loss.sum().item()
 
@@ -247,11 +266,11 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
-    # xxx
+    # # xxx small
     # x_train = x_train[:500,:,:,:]
     # x_val = x_val[:500,:,:,:]
     # x_test = x_test[:500,:,:,:]
-    # xxx
+    # # xxx
     x_train = x_train.to(device)
     x_val = x_val.to(device)
     x_test = x_test.to(device)
@@ -296,10 +315,10 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=10, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-        test_no_meta(vae, test_loader, "TEST", args)
-        # test(vae, test_loader, meta_optimizer, "TEST", args)
+        # test_no_meta(vae, test_loader, "TEST", args)
+        test(vae, test_loader, meta_optimizer, "TEST", args)
         calc_iwnll(vae, test_loader, meta_optimizer, args)
         # vae.eval()
         # with torch.no_grad():
@@ -388,6 +407,8 @@ def main(args):
 
 
         loss, nll, kl = test(vae, val_loader, meta_optimizer, "VAL", args)
+        au = calc_au(vae, val_loader, meta_optimizer)
+        print('%d active units' % au)
         # vae.eval()
         # with torch.no_grad():
 
@@ -424,9 +445,9 @@ def main(args):
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
     loss, nll, kl = test(vae, test_loader, meta_optimizer, "TEST", args)
+    au = calc_au(vae, test_loader, meta_optimizer)
+    print('%d active units' % au)
     # with torch.no_grad():
-
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=True)
 
     calc_iwnll(vae, test_loader, meta_optimizer, args)
     # vae.eval()

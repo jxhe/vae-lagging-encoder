@@ -2,7 +2,7 @@ import argparse
 import torch
 import numpy as np
 # from experiments.reproduce import *
-from experiments.savae import *
+from experiments.review_savae import *
 # from my_paths import paths
 # from saver.model_saver import ModelSaver
 # from loggers.logger import TrainLogger
@@ -49,7 +49,7 @@ def setup(cluster, configs):
     print("Running {} Jobs on {} resources".format(len(configs), cluster.num_resources))
     for i, task in enumerate(configs):
         if i % cluster.num_resources == (cluster.resource_id-1):
-            if task.dataset in ['yahoo', 'synthetic', 'ptb']:
+            if task.dataset in ['yahoo', 'yelp', 'synthetic', 'ptb']:
                 main_text(task)
             elif task.dataset == 'omniglot':
                 main_image(task)
