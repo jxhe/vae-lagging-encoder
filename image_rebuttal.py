@@ -64,8 +64,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    seed_set = [783435, 101, 202, 303, 404]
-    args.seed = seed_set[args.taskid]
+    # seed_set = [783435, 101, 202, 303, 404]
+    # args.seed = seed_set[args.taskid]
 
     id_ = "%s_burn%d_ns%d_kls%.1f_klh%d_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,

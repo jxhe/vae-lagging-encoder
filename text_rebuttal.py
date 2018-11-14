@@ -41,7 +41,7 @@ def init_config():
     parser.add_argument('--load_path', type=str, default='')
 
     # annealing paramters
-    parser.add_argument('--warm_up', type=int, default=10)
+    parser.add_argument('--warm_up', type=int, default=30)
     parser.add_argument('--kl_start', type=float, default=1.0)
     parser.add_argument('--kl_hold', type=int, default=0)
 
@@ -64,8 +64,8 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    seed_set = [783435, 101, 202, 303, 404]
-    args.seed = seed_set[args.taskid]
+    # seed_set = [783435, 101, 202, 303, 404]
+    # args.seed = seed_set[args.taskid]
 
     id_ = "%s_burn%d_ns%d_kls%.2f_klh%d_warm%d_%d_%d_%d" % \
             (args.dataset, args.burn, args.nsamples,
@@ -411,7 +411,7 @@ def main(args):
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * 1000.0)
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
