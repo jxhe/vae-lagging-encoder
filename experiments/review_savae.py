@@ -113,8 +113,30 @@ def text_savae_seeds(sub_exp=None):
         args.label = False
         args.dataset = 'yahoo'
 
+    if sub_exp == 'yahoo_cont_101':
+        args.label = False
+        args.dataset = 'yahoo'
+    if sub_exp == 'yahoo_cont_202':
+        args.label = False
+        args.dataset = 'yahoo'
+    if sub_exp == 'yahoo_cont_783435':
+        args.label = False
+        args.dataset = 'yahoo'
+
+
     args = default_text(args)
     args.kl_start = .1
-    args.seed = [783435, 101, 202, 303, 404]
+
+    if sub_exp == 'yahoo_cont_101':
+        args.train_from = '/home/dspokoyn/projects/vae-mode-collapse/models/yahoo/review_savae_anneal_seeds/yahoo_savae_ns1_kls0.1_warm10_seed_101.pt'
+        args.seed = 101
+    if sub_exp == 'yahoo_cont_202':
+        args.train_from = '/home/dspokoyn/projects/vae-mode-collapse/models/yahoo/review_savae_anneal_seeds/yahoo_savae_ns1_kls0.1_warm10_seed_202.pt'
+        args.seed = 202
+    if sub_exp == 'yahoo_cont_783435':
+        args.train_from = '/home/dspokoyn/projects/vae-mode-collapse/models/yahoo/review_savae_anneal_seeds/yahoo_savae_ns1_kls0.1_warm10_seed_783435.pt'
+        args.seed = 783435
+
+    # args.seed = [783435, 101, 202, 303, 404]
 
     return BaseExperiment(args)

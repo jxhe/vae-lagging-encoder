@@ -296,6 +296,8 @@ def make_savepath(args):
             (args.dataset, args.nsamples,
              args.kl_start, args.warm_up, args.seed)
 
+    if args.train_from != '':
+        id_ += '_cont'
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -332,6 +334,8 @@ def main(args):
             nn.init.xavier_normal_(tensor)
     if args.save_path == '':
         make_savepath(args)
+        seed(args)
+    if args.train_from != '':
         seed(args)
 
     if args.cuda:
@@ -442,6 +446,8 @@ def main(args):
         loss, nll, kl, ppl, _ = test(vae, val_data_batch, meta_optimizer, "VAL", args)
         best_loss = opt_dict["best_loss"] = loss
         torch.save(vae.state_dict(), args.save_path)
+        print(args.train_from)
+        print(args.save_path)
         vae.train()
 
     for epoch in range(args.epochs):
