@@ -207,19 +207,29 @@ def calc_mi(model, test_data_batch):
 def calc_au(model, test_data_batch, delta=0.01):
     """compute the number of active units
     """
-    means = []
+    cnt = 0
     for batch_data in test_data_batch:
         mean, _ = model.encode_stats(batch_data)
-        means.append(mean)
+        if cnt == 0:
+            means_sum = mean.sum(dim=0, keepdim=True)
+        else:
+            means_sum = means_sum + mean.sum(dim=0, keepdim=True)
+        cnt += mean.size(0)
 
-    means = torch.cat(means, dim=0)
-    au_mean = means.mean(0, keepdim=True)
+    # (1, nz)
+    mean_mean = means_sum / cnt
 
-    # (batch_size, nz)
-    au_var = means - au_mean
-    ns = au_var.size(0)
+    cnt = 0
+    for batch_data in test_data_batch:
+        mean, _ = model.encode_stats(batch_data)
+        if cnt == 0:
+            var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
+        else:
+            var_sum = var_sum + ((mean - mean_mean) ** 2).sum(dim=0)
+        cnt += mean.size(0)
 
-    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+    # (nz)
+    au_var = var_sum / (cnt - 1)
 
     return (au_var >= delta).sum().item(), au_var
 
@@ -509,8 +519,9 @@ def main(args):
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
                 if burn_flag or epoch == 0:
                     vae.eval()
-                    mi = calc_mi(vae, val_data_batch)
-                    au, _ = calc_au(vae, val_data_batch)
+                    with torch.no_grad():
+                        mi = calc_mi(vae, val_data_batch)
+                        au, _ = calc_au(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
