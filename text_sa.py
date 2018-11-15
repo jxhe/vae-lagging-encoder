@@ -85,6 +85,11 @@ def init_config():
     else:
         args.label = False
 
+    if 'label' in params:
+        args.label = params['label']
+    else:
+        args.label = False
+
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.cuda:
@@ -388,7 +393,7 @@ def main(args):
 
     if args.eval:
         kl_weight = 1.0
-        # small_test_data = MonoTextData(args.small_test_data, vocab=vocab)
+        # small_test_data = MonoTextData(args.small_test_data, label=args.label, vocab=vocab)
         print('begin evaluation')
         vae.load_state_dict(torch.load(args.load_path))
 
