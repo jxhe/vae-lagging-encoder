@@ -427,11 +427,11 @@ def main(args):
                                                     device=device,
                                                     batch_first=True)
 
-    val_data_batch = val_data.create_data_batch(batch_size=16,
+    val_data_batch = val_data.create_data_batch(batch_size=args.batch_size,
                                                 device=device,
                                                 batch_first=True)
 
-    test_data_batch = test_data.create_data_batch(batch_size=16,
+    test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
     for epoch in range(args.epochs):
