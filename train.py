@@ -2,6 +2,7 @@ import argparse
 import torch
 import numpy as np
 from experiments.review_vae_anneal import *
+from experiments.review_pixel import *
 # from experiments.omniglot import *
 # from experiments.yahoo import *
 # from my_paths import paths
@@ -11,6 +12,7 @@ from experiments.review_vae_anneal import *
 # from image_beta import main as main_image
 # from text_beta import main as main_text
 from text_rebuttal import main as main_text
+from pixel_cnn import main as main_image
 # from image_v import main
 
 def parse_args():

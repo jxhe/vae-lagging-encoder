@@ -108,9 +108,8 @@ def make_savepath(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_seed_%d" % \
-        (args.dataset, args.burn, args.nsamples,
-         args.kl_start, args.warm_up, args.seed)
+    id_ = "%s_seed_%d" % \
+        (args.dataset, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
     args.save_path = save_path
@@ -225,8 +224,8 @@ def main(args):
 
             dec_optimizer.zero_grad()
 
-            z = torch.zeros(batch_size, 1, args.nz)
-            z = z.to(device)
+            # z = torch.zeros(batch_size, 1, args.nz)
+            # z = z.to(device)
             z=None
             loss = decoder.reconstruct_error(batch_data, z)
             report_nll_loss += loss.sum().item()
