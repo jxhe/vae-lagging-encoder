@@ -63,7 +63,7 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    seed_set = [783435, 101, 202, 303, 404]
+    seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
     args.seed = seed_set[args.taskid]
 
     id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
@@ -337,16 +337,13 @@ def main(args):
         print('begin evaluation')
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
-        small_test_indices = load_indices_omniglot()
-        small_x_test = x_test[small_test_indices, :,:,:]
-        small_x_test = small_x_test.to(device)
-        small_y_test = x_train.new_zeros(small_x_test.size(0), y_size)
-        small_test_data = torch.utils.data.TensorDataset(small_x_test, small_y_test)
-        small_test_loader = torch.utils.data.DataLoader(small_test_data, batch_size=args.batch_size, shuffle=True)
-        test_elbo_iw_ais_equal(vae, small_test_loader, args, device)
         vae.eval()
         with torch.no_grad():
             test(vae, test_loader, "TEST", args)
+            au, au_var = calc_au(vae, test_loader)
+            print("%d active units" % au)
+            print(au_var)
+            
             calc_iwnll(vae, test_loader, args)
 
         return
