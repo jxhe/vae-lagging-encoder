@@ -176,20 +176,30 @@ def calc_mi(model, test_loader, meta_optimizer):
 def calc_au(model, test_loader, meta_optimizer, delta=0.01):
     """compute the number of active units
     """
-    means = []
+    cnt = 0
     for datum in test_loader:
         batch_data, _ = datum
         mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
-        means.append(mean)
+        if cnt == 0:
+            means_sum = mean.sum(dim=0, keepdim=True)
+        else:
+            means_sum = means_sum + mean.sum(dim=0, keepdim=True)
 
-    means = torch.cat(means, dim=0)
-    au_mean = means.mean(0, keepdim=True)
+        cnt += mean.size(0)
 
-    # (batch_size, nz)
-    au_var = means - au_mean
-    ns = au_var.size(0)
+    mean_mean = means_sum / cnt
 
-    au_var = (au_var ** 2).sum(dim=0) / (ns - 1)
+    cnt = 0
+    for datum in test_loader:
+        batch_data, _ = datum
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)       
+        if cnt == 0:
+            var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
+        else:
+            var_sum = var_sum + ((mean - mean_mean) ** 2).sum(dim=0)
+        cnt += mean.size(0)
+
+    au_var = var_sum / (cnt - 1)
 
     return (au_var >= delta).sum().item()
 
@@ -319,6 +329,8 @@ def main(args):
         vae.load_state_dict(torch.load(args.load_path))
         # test_no_meta(vae, test_loader, "TEST", args)
         test(vae, test_loader, meta_optimizer, "TEST", args)
+        au = calc_au(vae, val_loader, meta_optimizer)
+        print('%d active units' % au)
         calc_iwnll(vae, test_loader, meta_optimizer, args)
         # vae.eval()
         # with torch.no_grad():
