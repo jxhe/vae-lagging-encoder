@@ -365,7 +365,7 @@ def main(args):
     start = time.time()
 
     kl_weight = args.kl_start
-    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * len(train_loader))
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * 1000.0)
 
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
