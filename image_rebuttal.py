@@ -447,7 +447,7 @@ def main(args):
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
-                        au = calc_au(vae, val_data_batch)
+                        au = calc_au(vae, val_loader)
 
                     vae.train()
 
@@ -489,7 +489,7 @@ def main(args):
 
         with torch.no_grad():
             loss, nll, kl = test(vae, val_loader, "VAL", args)
-            au = calc_au(vae, val_data_batch)
+            au = calc_au(vae, val_loader)
             print("%d active units" % au)
 
         if loss < best_loss:
