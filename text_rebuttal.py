@@ -45,6 +45,10 @@ def init_config():
     parser.add_argument('--kl_start', type=float, default=1.0)
     parser.add_argument('--kl_hold', type=int, default=0)
 
+    # different learning rates experiments
+    parser.add_argument('--enc_lr', type=float, default=1.0)
+
+
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
                          help='apply burning when nonzero, reduce to vanilla VAE when burn is 0')
@@ -350,7 +354,7 @@ def main(args):
 
     print(args)
 
-    opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
+    opt_dict = {"not_improved": 0, "enc_lr": 1., "dec_lr": 1., "best_loss": 1e4}
 
     train_data = MonoTextData(args.train_data, label=args.label)
 
@@ -404,9 +408,10 @@ def main(args):
         return
 
     if args.optim == 'sgd':
-        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0, momentum=args.momentum)
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=args.enc_lr, momentum=args.momentum)
         dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0, momentum=args.momentum)
-        opt_dict['lr'] = 1.0
+        opt_dict['enc_lr'] = args.enc_lr
+        opt_dict['dec_lr'] = 1.
     else:
         enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.5, 0.999))
         dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.5, 0.999))
@@ -574,16 +579,18 @@ def main(args):
             if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
                 opt_dict["best_loss"] = loss
                 opt_dict["not_improved"] = 0
-                opt_dict["lr"] = opt_dict["lr"] * lr_decay
+                opt_dict["enc_lr"] = opt_dict["enc_lr"] * lr_decay
+                opt_dict["dec_lr"] = opt_dict["dec_lr"] * lr_decay
                 vae.load_state_dict(torch.load(args.save_path))
-                print('new lr: %f' % opt_dict["lr"])
+                print('new enc lr: %f' % opt_dict["enc_lr"])
+                print('new dec lr: %f' % opt_dict["dec_lr"])
                 decay_cnt += 1
                 if args.optim == 'sgd':
-                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["enc_lr"], momentum=args.momentum)
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["dec_lr"], momentum=args.momentum)
                 else:
-                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
-                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["enc_lr"], betas=(0.5, 0.999))
+                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["dec_lr"], betas=(0.5, 0.999))
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
