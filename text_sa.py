@@ -213,7 +213,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=3):
+def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=2):
     model.decoder.dropout_in.eval()
     model.decoder.dropout_out.eval()
 
