@@ -413,7 +413,7 @@ def main(args):
         # test_data_batch = test_data_batch[:100]
         # test_data_batch = [test_sample.unsqueeze(0) for batch in test_data_batch for test_sample in batch]
 
-        calc_iwnll(vae, test_data_batch, meta_optimizer, args)
+        calc_iwnll(vae, test_data_batch, meta_optimizer, args, ns=2)
 
         return
 

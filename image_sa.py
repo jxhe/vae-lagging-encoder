@@ -219,7 +219,7 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
 
         # XXX change batch size for eval.
         # GET RID OF META OPTIMIZER
-        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=2)#20
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=15)#20
 
         report_nll_loss += loss.sum().item()
 
@@ -325,6 +325,7 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
+        kl_weight = 1.
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
         # test_no_meta(vae, test_loader, "TEST", args)
