@@ -48,6 +48,8 @@ def init_config():
     # different learning rates experiments
     parser.add_argument('--enc_lr', type=float, default=1.0)
 
+    # explore with-in model comparison
+    parser.add_argument('--enc_iter', type=int, default=10)
 
     # inference parameters
     parser.add_argument('--burn', type=int, default=0,
@@ -456,12 +458,12 @@ def main(args):
             if iter_ >= args.kl_hold:
                 kl_weight = min(1.0, kl_weight + anneal_rate)
 
-            sub_iter = 1
+            sub_iter = 0
             batch_data_enc = batch_data
             burn_num_words = 0
             burn_pre_loss = 1e4
             burn_cur_loss = 0
-            while burn_flag and sub_iter < 100:
+            while burn_flag and sub_iter < args.enc_iter:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
@@ -483,13 +485,6 @@ def main(args):
                 id_ = np.random.random_integers(0, len(train_data_batch) - 1)
 
                 batch_data_enc = train_data_batch[id_]
-
-                if sub_iter % 10 == 0:
-                    burn_cur_loss = burn_cur_loss / burn_num_words
-                    if burn_pre_loss - burn_cur_loss < 0:
-                        break
-                    burn_pre_loss = burn_cur_loss
-                    burn_cur_loss = burn_num_words = 0
 
                 sub_iter += 1
 
