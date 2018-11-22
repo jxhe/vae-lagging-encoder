@@ -64,6 +64,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
+    args.seed = seed_set[args.taskid]
+
     id_ = "%s_savae_nref%d_kls%.1f_warm%d_%d_%d" % \
             (args.dataset, args.svi_steps,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
@@ -219,7 +222,7 @@ def calc_iwnll(model, test_loader, meta_optimizer, args):
 
         # XXX change batch size for eval.
         # GET RID OF META OPTIMIZER
-        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=2)#20
+        loss = model.nll_iw(batch_data, meta_optimizer, nsamples=args.iw_nsamples, ns=3)#20
 
         report_nll_loss += loss.sum().item()
 
@@ -325,9 +328,12 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
-        kl_weight = 1.0
+        kl_weight = 1.
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
+        calc_iwnll(vae, test_loader, meta_optimizer, args)
+
+        return
         # test_no_meta(vae, test_loader, "TEST", args)
         test(vae, test_loader, meta_optimizer, "TEST", args)
         au = calc_au(vae, val_loader, meta_optimizer)

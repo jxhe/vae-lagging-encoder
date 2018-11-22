@@ -66,6 +66,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
+    args.seed = seed_set[args.taskid]
+
     id_ = "%s_savae_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
             (args.dataset, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
@@ -213,7 +216,7 @@ def test(model, test_data_batch, meta_optimizer, mode, args, verbose=True):
 
     return test_loss, nll, kl, ppl, mutual_info
 
-def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=3):
+def calc_iwnll(model, test_data_batch, meta_optimizer, args, ns=2):
     model.decoder.dropout_in.eval()
     model.decoder.dropout_out.eval()
 
@@ -413,7 +416,7 @@ def main(args):
         # test_data_batch = test_data_batch[:100]
         # test_data_batch = [test_sample.unsqueeze(0) for batch in test_data_batch for test_sample in batch]
 
-        calc_iwnll(vae, test_data_batch, meta_optimizer, args)
+        calc_iwnll(vae, test_data_batch, meta_optimizer, args, ns=2)
 
         return
 
