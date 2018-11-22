@@ -64,6 +64,9 @@ def init_config():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
+    seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
+    args.seed = seed_set[args.taskid]
+
     id_ = "%s_savae_nref%d_kls%.1f_warm%d_%d_%d" % \
             (args.dataset, args.svi_steps,
              args.kl_start, args.warm_up, args.jobid, args.taskid)
@@ -192,7 +195,7 @@ def calc_au(model, test_loader, meta_optimizer, delta=0.01):
     cnt = 0
     for datum in test_loader:
         batch_data, _ = datum
-        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)       
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
         if cnt == 0:
             var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
         else:
