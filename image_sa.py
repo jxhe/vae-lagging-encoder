@@ -192,7 +192,7 @@ def calc_au(model, test_loader, meta_optimizer, delta=0.01):
     cnt = 0
     for datum in test_loader:
         batch_data, _ = datum
-        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)       
+        mean, _ = model.encoder.sa_forward(batch_data, meta_optimizer)
         if cnt == 0:
             var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
         else:
@@ -325,6 +325,7 @@ def main(args):
 
     if args.eval:
         print('begin evaluation')
+        kl_weight = 1.0
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
         vae.load_state_dict(torch.load(args.load_path))
         # test_no_meta(vae, test_loader, "TEST", args)
