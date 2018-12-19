@@ -10,7 +10,7 @@ params={
     'epochs': 1000,
     'log_niter': 100,
     'test_nepoch': 5,
-    'data_file': 'omniglot_data/omniglot.pt'
+    'data_file': 'dataset/omniglot_data/omniglot.pt'
 }
 
 params_v2={
@@ -25,7 +25,7 @@ params_v2={
     'save_path': '',
     'log_niter': 100,
     'test_nepoch': 5,
-    'data_file': 'omniglot_data/omniglot.pt',
+    'data_file': 'dataset/omniglot_data/omniglot.pt',
     'ais_prior': 'normal',
     'ais_T': 500,
     'ais_K': 2
