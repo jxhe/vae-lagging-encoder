@@ -6,7 +6,6 @@ params={
     'ni': 50,
     'enc_nh': 50,
     'dec_nh': 50,
-    'log_niter': 100,
     'dec_dropout_in': 0.5,
     'dec_dropout_out': 0.5,
     'epochs': 50,

@@ -6,7 +6,6 @@ params={
     'ni': 512,
     'enc_nh': 1024,
     'dec_nh': 1024,
-    'log_niter': 200,
     'dec_dropout_in': 0.5,
     'dec_dropout_out': 0.5,
     'batch_size': 32,

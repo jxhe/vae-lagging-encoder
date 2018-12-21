@@ -23,7 +23,7 @@ def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
 
     # model hyperparameters
-    parser.add_argument('--dataset', choices=['omniglot'], required=True, help='dataset to use')
+    parser.add_argument('--dataset', type=str, required=True, help='dataset to use')
 
     # optimization parameters
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
@@ -217,6 +217,8 @@ def main(args):
     print('Test data: %d batches' % len(test_loader))
     sys.stdout.flush()
 
+    log_niter = len(train_loader)//5
+
     encoder = ResNetEncoderV2(args)
     decoder = PixelCNNDecoderV2(args)
 
@@ -340,7 +342,7 @@ def main(args):
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
 
-            if iter_ % args.log_niter == 0:
+            if iter_ % log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
                 if aggressive_flag or epoch == 0:
                     vae.eval()

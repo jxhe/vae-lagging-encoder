@@ -271,6 +271,8 @@ def main(args):
     print('dropped sentences: %d' % train_data.dropped)
     sys.stdout.flush()
 
+    log_niter = (len(train_data)//args.batch_size)//10
+
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
@@ -411,7 +413,7 @@ def main(args):
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
 
-            if iter_ % args.log_niter == 0:
+            if iter_ % log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
                 if aggressive_flag or epoch == 0:
                     vae.eval()
