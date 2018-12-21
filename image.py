@@ -97,8 +97,7 @@ def test(model, test_loader, mode, args):
         report_num_examples += batch_size
 
 
-        loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
-        # print(mix_prob)
+        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
 
         assert(not loss_rc.requires_grad)
 
@@ -251,7 +250,7 @@ def main(args):
             au, au_var = calc_au(vae, test_loader)
             print("%d active units" % au)
             print(au_var)
-            
+
             calc_iwnll(vae, test_loader, args)
 
         return

@@ -11,8 +11,8 @@ params={
     'batch_size': 32,
     'epochs': 100,
     'test_nepoch': 5,
-    'train_data': 'dataset/yelp_data/yelp.train.txt',
-    'val_data': 'dataset/yelp_data/yelp.valid.txt',
-    'test_data': 'dataset/yelp_data/yelp.test.txt',
+    'train_data': 'datasets/yelp_data/yelp.train.txt',
+    'val_data': 'datasets/yelp_data/yelp.valid.txt',
+    'test_data': 'datasets/yelp_data/yelp.test.txt',
     'label':True
 }

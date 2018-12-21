@@ -11,7 +11,7 @@ params={
     'epochs': 50,
     'batch_size': 16,
     'test_nepoch': 1,
-    'train_data': 'dataset/synthetic-data/synthetic_train.txt',
-    'val_data': 'dataset/synthetic-data/synthetic_test.txt',
-    'test_data': 'dataset/synthetic-data/synthetic_test.txt'
+    'train_data': 'datasets/synthetic_data/synthetic_train.txt',
+    'val_data': 'datasets/synthetic_data/synthetic_test.txt',
+    'test_data': 'datasets/synthetic_data/synthetic_test.txt'
 }
