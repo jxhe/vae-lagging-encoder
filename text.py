@@ -403,7 +403,7 @@ def main(args):
             burn_num_words = 0
             burn_pre_loss = 1e4
             burn_cur_loss = 0
-            while burn_flag and sub_iter < 100:
+            while aggressive_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
