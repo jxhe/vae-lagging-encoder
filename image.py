@@ -12,11 +12,7 @@ from torchvision.utils import save_image
 from torch import nn, optim
 
 from modules import ResNetEncoderV2, PixelCNNDecoderV2
-# from modules import ResNetEncoder, PixelCNNDecoder
 from modules import VAE
-from loggers.logger import Logger
-from eval_ais.ais import ais_trajectory
-from make_small_test_script import load_indices_omniglot
 
 clip_grad = 5.0
 decay_epoch = 20
@@ -43,8 +39,8 @@ def init_config():
     parser.add_argument('--kl_start', type=float, default=1.0)
 
     # inference parameters
-    parser.add_argument('--burn', type=int, default=0,
-                         help='number of epochs to performe multi-step update')
+    parser.add_argument('--aggressive', type=int, default=0,
+                         help='apply aggressive training when nonzero, reduce to vanilla VAE when aggressive is 0')
 
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
@@ -66,8 +62,8 @@ def init_config():
     seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
     args.seed = seed_set[args.taskid]
 
-    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
-            (args.dataset, args.burn, args.nsamples,
+    id_ = "%s_aggressive%d_ns%d_kls%.1f_warm%d_%d_%d_%d" % \
+            (args.dataset, args.aggressive, args.nsamples,
              args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -87,47 +83,6 @@ def init_config():
         torch.backends.cudnn.deterministic = True
 
     return args
-
-
-# def test_ais(model, test_loader, mode_split, args):
-#     for x in model.modules():
-#         x.eval()
-
-#     test_loss = 0
-#     report_num_examples = 0
-#     for datum in test_loader:
-#         batch_data, _ = datum
-#         batch_size = batch_data.size(0)
-
-#         report_num_examples += batch_size
-
-#         batch_ll = ais_trajectory(model, batch_data, mode='forward',
-#          prior=args.ais_prior, schedule=np.linspace(0., 1., args.ais_T),
-#           n_sample=args.ais_K, modality='image')
-#         test_loss += torch.sum(-batch_ll).item()
-
-
-#     nll = (test_loss) / report_num_examples
-
-#     print('%s AIS --- nll: %.4f' % \
-#            (mode_split, nll))
-#     sys.stdout.flush()
-#     return nll
-
-# def test_elbo_iw_ais_equal(vae, small_test_loader, args, device):
-#     nll_ais = test_ais(vae, small_test_loader, "SMALL%TEST", args)
-#     #########
-#     vae.eval()
-#     with torch.no_grad():
-#         loss_elbo, nll_elbo, kl_elbo = test(vae, small_test_loader, "SMALL%TEST", args)
-#     #########
-#     with torch.no_grad():
-#         nll_iw = calc_iwnll(vae, small_test_loader, args)
-#     #########
-#     #
-
-#     print('TEST: NLL Elbo:%.4f, IW:%.4f, AIS:%.4f'%(nll_elbo, nll_iw, nll_ais))
-
 
 
 def test(model, test_loader, mode, args):
@@ -224,38 +179,6 @@ def calc_iwnll(model, test_loader, args):
     sys.stdout.flush()
     return nll
 
-def make_savepath(args):
-    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    id_ = "%s_burn%d_ns%d_kls%.1f_warm%d_seed_%d" % \
-        (args.dataset, args.burn, args.nsamples,
-         args.kl_start, args.warm_up, args.seed)
-
-    save_path = os.path.join(save_dir, id_ + '.pt')
-    args.save_path = save_path
-
-    if args.eval == 1:
-        # f = open(args.save_path[:-2]+'_log_test', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_test' + args.extra_name)
-    else:
-        # f = open(args.save_path[:-2]+'_log_val', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_val' + args.extra_name)
-    sys.stdout = Logger(log_path)
-
-    if args.load_path == '':
-        args.load_path = args.save_path
-    # sys.stdout = open(log_path, 'a')
-
-def seed(args):
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.cuda:
-        torch.cuda.manual_seed(args.seed)
-        torch.backends.cudnn.deterministic = True
-
 def main(args):
     if args.save_path == '':
         make_savepath(args)
@@ -273,10 +196,6 @@ def main(args):
 
     all_data = torch.load(args.data_file)
     x_train, x_val, x_test = all_data
-
-    # x_train = x_train[:500]
-    # x_val = x_val[:500]
-    # x_test = x_test[:500]
 
     x_train = x_train.to(device)
     x_val = x_val.to(device)
@@ -298,9 +217,6 @@ def main(args):
     print('Test data: %d batches' % len(test_loader))
     sys.stdout.flush()
 
-    # if args.model == 'autoreg':
-    #     args.latent_feature_map = 0
-
     encoder = ResNetEncoderV2(args)
     decoder = PixelCNNDecoderV2(args)
 
@@ -310,16 +226,6 @@ def main(args):
         save_dir = "samples/%s" % args.dataset
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-
-        # data_id = np.random.permutation(len(x_test))
-        # data = x_test[data_id[:400]]
-        # sample_x = torch.bernoulli(data)
-        # sample_probs = data
-        # image_file = 'sample_binary_from_true.png'
-        # save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
-        # image_file = 'sample_cont_from_true.png'
-        # save_image(sample_probs.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
-        # return
 
         vae.load_state_dict(torch.load(args.sample_from))
         vae.eval()
@@ -356,7 +262,7 @@ def main(args):
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
     decay_cnt = pre_mi = best_mi = mi_not_improved =0
-    burn_flag = True if args.burn else False
+    aggressive_flag = True if args.aggressive else False
     vae.train()
     start = time.time()
 
@@ -381,14 +287,13 @@ def main(args):
             burn_num_examples = 0
             burn_pre_loss = 1e4
             burn_cur_loss = 0
-            while burn_flag and sub_iter < 100:
+            while aggressive_flag and sub_iter < 100:
 
                 enc_optimizer.zero_grad()
                 dec_optimizer.zero_grad()
 
                 burn_num_examples += batch_data_enc.size(0)
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
-                # print(mix_prob[0])
+                loss, loss_rc, loss_kl = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
 
                 burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
@@ -417,7 +322,7 @@ def main(args):
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+            loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -427,7 +332,7 @@ def main(args):
             loss_rc = loss_rc.sum()
             loss_kl = loss_kl.sum()
 
-            if not burn_flag:
+            if not aggressive_flag:
                 enc_optimizer.step()
 
             dec_optimizer.step()
@@ -437,7 +342,7 @@ def main(args):
 
             if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_examples
-                if burn_flag or epoch == 0:
+                if aggressive_flag or epoch == 0:
                     vae.eval()
                     with torch.no_grad():
                         mi = calc_mi(vae, val_loader)
@@ -461,14 +366,14 @@ def main(args):
 
             iter_ += 1
 
-            if burn_flag and (iter_ % len(train_loader)) == 0:
+            if aggressive_flag and (iter_ % len(train_loader)) == 0:
                 vae.eval()
                 cur_mi = calc_mi(vae, val_loader)
                 vae.train()
                 if cur_mi - best_mi < 0:
                     mi_not_improved += 1
                     if mi_not_improved == 5:
-                        burn_flag = False
+                        aggressive_flag = False
                         print("STOP BURNING")
 
                 else:

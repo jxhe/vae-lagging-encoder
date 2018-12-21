@@ -58,35 +58,14 @@ class VAE(nn.Module):
             Tensor2: reconstruction loss shape [batch]
             Tensor3: KL loss shape [batch]
         """
-        # if self.args.enc_type == 'mix':
-        #     # reinforce loss
-
-        #     # z: (batch, nsamples, nz)
-        #     # KL: (batch, nsamples)
-        #     # log_posterior: (batch, nsamples)
-        #     # mix_prob: (batch, nsamples)
-        #     z, (KL, log_posterior, mix_prob) = self.encode(x, nsamples)
-
-        #     # (batch, nsamples)
-        #     reconstruct_err = self.decoder.reconstruct_error(x, z)
-
-        #     # this is actually the negative learning signal
-        #     learning_signal = (reconstruct_err + kl_weight * KL +
-        #                        self.baseline.log_probability(x).unsqueeze(1)).detach()
-
-        #     encoder_loss = (learning_signal * log_posterior).mean(dim=1)
-        #     decoder_loss = reconstruct_err.mean(dim=1)
-
-        #     return encoder_loss + decoder_loss, reconstruct_err.mean(dim=1), KL.mean(dim=1), mix_prob
-
-        # else:
+        
         z, KL = self.encode(x, nsamples)
 
         # (batch)
         reconstruct_err = self.decoder.reconstruct_error(x, z).mean(dim=1)
 
 
-        return reconstruct_err + kl_weight * KL, reconstruct_err, KL, None
+        return reconstruct_err + kl_weight * KL, reconstruct_err, KL
 
     def nll_iw(self, x, nsamples, ns=100):
         """compute the importance weighting estimate of the log-likelihood

@@ -12,9 +12,6 @@ from torch import nn, optim
 from data import MonoTextData
 from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
-from modules import generate_grid
-from loggers.logger import Logger
-from eval_ais.ais import ais_trajectory
 
 clip_grad = 5.0
 decay_epoch = 2
@@ -29,8 +26,6 @@ def init_config():
     parser.add_argument('--dataset', type=str, required=True, help='dataset to use')
 
     # optimization parameters
-    parser.add_argument('--optim', type=str, default='sgd', help='')
-
     parser.add_argument('--momentum', type=float, default=0, help='sgd momentum')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
     parser.add_argument('--iw_nsamples', type=int, default=500,
@@ -107,8 +102,7 @@ def test(model, test_data_batch, mode, args, verbose=True):
         report_num_sents += batch_size
 
 
-        loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
-        # print(mix_prob)
+        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
 
         assert(not loss_rc.requires_grad)
 
@@ -201,39 +195,6 @@ def calc_au(model, test_data_batch, delta=0.01):
     return (au_var >= delta).sum().item(), au_var
 
 
-def make_savepath(args):
-    save_dir = "models/{}/{}".format(args.dataset, args.exp_name)
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    id_ = "%s_aggressive%d_constlen_ns%d_kls%.2f_warm%d_%d_%d_%d" % \
-            (args.dataset, args.aggressive, args.nsamples,
-             args.kl_start, args.warm_up, args.jobid, args.taskid, args.seed)
-
-
-    save_path = os.path.join(save_dir, id_ + '.pt')
-    args.save_path = save_path
-
-    if args.eval == 1:
-        # f = open(args.save_path[:-2]+'_log_test', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_test' + args.extra_name)
-    else:
-        # f = open(args.save_path[:-2]+'_log_val', 'a')
-        log_path = os.path.join(save_dir, id_ + '_log_val' + args.extra_name)
-    sys.stdout = Logger(log_path)
-
-    if args.load_path == '':
-        args.load_path = args.save_path
-    # sys.stdout = open(log_path, 'a')
-
-def seed(args):
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.cuda:
-        torch.cuda.manual_seed(args.seed)
-        torch.backends.cudnn.deterministic = True
-
 def sample_sentences(vae, vocab, device, num_sentences):
     vae.eval()
     sampled_sents = []
@@ -290,10 +251,6 @@ def main(args):
         def __call__(self, tensor):
             nn.init.xavier_normal_(tensor)
 
-    if args.save_path == '':
-        make_savepath(args)
-        seed(args)
-
     if args.cuda:
         print('using cuda')
 
@@ -320,8 +277,6 @@ def main(args):
     if args.enc_type == 'lstm':
         encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
         args.enc_nh = args.dec_nh
-    elif args.enc_type == 'mix':
-        encoder = MixLSTMEncoder(args, vocab_size, model_init, emb_init)
     else:
         raise ValueError("the specified encoder type is not supported")
 
@@ -352,14 +307,9 @@ def main(args):
 
         return
 
-    if args.optim == 'sgd':
-        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0, momentum=args.momentum)
-        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0, momentum=args.momentum)
-        opt_dict['lr'] = 1.0
-    else:
-        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.5, 0.999))
-        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.5, 0.999))
-        opt_dict['lr'] = 0.001
+    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0, momentum=args.momentum)
+    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0, momentum=args.momentum)
+    opt_dict['lr'] = 1.0
 
     iter_ = decay_cnt = 0
     best_loss = 1e4
@@ -411,8 +361,7 @@ def main(args):
                 burn_batch_size, burn_sents_len = batch_data_enc.size()
                 burn_num_words += (burn_sents_len - 1) * burn_batch_size
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
-                # print(mix_prob[0])
+                loss, loss_rc, loss_kl = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
 
                 burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
@@ -444,7 +393,7 @@ def main(args):
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+            loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -525,12 +474,9 @@ def main(args):
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
                 decay_cnt += 1
-                if args.optim == 'sgd':
-                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-                else:
-                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
-                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
+            
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
