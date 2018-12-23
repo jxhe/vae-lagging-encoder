@@ -11,7 +11,7 @@ params={
     'batch_size': 32,
     'epochs': 100,
     'test_nepoch': 5,
-    'train_data': 'dataset/yahoo_data/yahoo.train.txt',
-    'val_data': 'dataset/yahoo_data/yahoo.valid.txt',
-    'test_data': 'dataset/yahoo_data/yahoo.test.txt'
+    'train_data': 'datasets/yahoo_data/yahoo.train.txt',
+    'val_data': 'datasets/yahoo_data/yahoo.valid.txt',
+    'test_data': 'datasets/yahoo_data/yahoo.test.txt'
 }

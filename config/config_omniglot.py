@@ -8,5 +8,5 @@ params={
     'batch_size': 50,
     'epochs': 1000,
     'test_nepoch': 5,
-    'data_file': 'dataset/omniglot_data/omniglot.pt'
+    'data_file': 'datasets/omniglot_data/omniglot.pt'
 }
