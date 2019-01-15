@@ -249,7 +249,7 @@ def main(args):
             test(vae, test_loader, "TEST", args)
             au, au_var = calc_au(vae, test_loader)
             print("%d active units" % au)
-            print(au_var)
+            # print(au_var)
 
             calc_iwnll(vae, test_loader, args)
 
@@ -391,7 +391,7 @@ def main(args):
             loss, nll, kl = test(vae, val_loader, "VAL", args)
             au, au_var = calc_au(vae, val_loader)
             print("%d active units" % au)
-            print(au_var)
+            # print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -431,7 +431,7 @@ def main(args):
         loss, nll, kl = test(vae, test_loader, "TEST", args)
         au, au_var = calc_au(vae, test_loader)
         print("%d active units" % au)
-        print(au_var)
+        # print(au_var)
 
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=50, shuffle=True)
 

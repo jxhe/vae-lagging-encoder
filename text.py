@@ -300,7 +300,7 @@ def main(args):
             test(vae, test_data_batch, "TEST", args)
             au, au_var = calc_au(vae, test_data_batch)
             print("%d active units" % au)
-            print(au_var)
+            # print(au_var)
 
             test_data_batch = test_data.create_data_batch(batch_size=1,
                                                           device=device,
@@ -457,7 +457,7 @@ def main(args):
             loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
             au, au_var = calc_au(vae, val_data_batch)
             print("%d active units" % au)
-            print(au_var)
+            # print(au_var)
 
         if loss < best_loss:
             print('update best loss')
@@ -500,7 +500,7 @@ def main(args):
         loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
         au, au_var = calc_au(vae, test_data_batch)
         print("%d active units" % au)
-        print(au_var)
+        # print(au_var)
 
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
