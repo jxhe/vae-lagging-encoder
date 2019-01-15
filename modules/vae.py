@@ -137,19 +137,17 @@ class VAE(nn.Module):
 
         return self.decoder.log_probability(x, z)
 
-    def eval_true_posterior_dist(self, x, zrange, log_prior):
+    def eval_log_model_posterior(self, x, grid_z):
         """perform grid search to calculate the true posterior
-         (actually the complete likelihood), this function computes
-         the complete likelihood over a popultation, i.e. P(Z, X)
+         this function computes p(z|x)
         Args:
-            zrange: tensor
+            grid_z: tensor
                 different z points that will be evaluated, with
                 shape (k^2, nz), where k=(zmax - zmin)/pace
-            log_prior: tenor
-                the prior log density with shape (k^2)
 
         Returns: Tensor
-            Tensor: the most significant mode, shape [batch_size]
+            Tensor: the log posterior distribution log p(z|x) with
+                    shape [batch_size, K^2]
         """
         try:
             batch_size = x.size(0)
@@ -157,25 +155,15 @@ class VAE(nn.Module):
             batch_size = x[0].size(0)
 
         # (batch_size, k^2, nz)
-        zrange = zrange.repeat(batch_size, 1, 1)
+        grid_z = grid_z.unsqueeze(0).expand(batch_size, *grid_z.size()).contiguous()
 
         # (batch_size, k^2)
-        log_gen = self.decoder.log_probability(x, zrange)
+        log_comp = self.eval_complete_ll(x, grid_z)
 
+        # normalize to posterior
+        log_posterior = log_comp - log_sum_exp(log_comp, dim=1, keepdim=True)
 
-        # (batch_size, k^2)
-        log_comp = log_gen + log_prior
-
-        # (batch_size)
-        _, loc = log_comp.max(dim=1)
-
-        # (batch_size)
-        return loc
-
-    def sample_from_prior(self, nsamples):
-
-        return torch.randn(nsamples, self.nz)
-
+        return log_posterior
 
     def sample_from_inference(self, x, nsamples=1):
         """perform sampling from inference net
@@ -224,6 +212,37 @@ class VAE(nn.Module):
 
         return torch.cat(samples, dim=1)
 
+    def calc_model_posterior_mean(self, x, grid_z):
+        """compute the mean value of model posterior, i.e. E_{z ~ p(z|x)}[z]
+        Args:
+            grid_z: different z points that will be evaluated, with
+                    shape (k^2, nz), where k=(zmax - zmin)/pace
+            x: [batch, *]
+
+        Returns: Tensor1
+            Tensor1: the mean value tensor with shape [batch, nz]
+
+        """
+
+        # [batch, K^2]
+        log_posterior = self.eval_log_model_posterior(x, grid_z)
+        posterior = log_posterior.exp()
+
+        # [batch, nz]
+        return torch.mul(posterior.unsqueeze(2), grid_z.unsqueeze(0)).sum(1)
+
+    def calc_infer_mean(self, x):
+        """
+        Returns: Tensor1
+            Tensor1: the mean of inference distribution, with shape [batch, nz]
+        """
+
+        mean, logvar = self.encoder.forward(x)
+
+        return mean
+
+
+
     def eval_inference_dist(self, x, z, param=None):
         """
         Returns: Tensor
@@ -241,14 +260,3 @@ class VAE(nn.Module):
         """
 
         return self.encoder.calc_mi(x)
-
-
-    # def eval_inference_mode(self, x):
-    #     """compute the mode points in the inference distribution
-    #     (in Gaussian case)
-    #     Returns: Tensor
-    #         Tensor: the posterior mode points with shape (*, nz)
-    #     """
-    #     return self.encoder.eval_inference_mode(x)
-
-
