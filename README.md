@@ -1,4 +1,4 @@
-# VAE-lagging-encoder
+# Training Encoders More Leads to a Better VAE Model
 
 This is PyTorch implementation of the [paper](http://arxiv.org/abs/1901.05534):
 
@@ -8,7 +8,7 @@ Junxian He, Daniel Spokoyny, Graham Neubig, Taylor Berg-Kirkpatrick
 ICLR 2019
 ```
 
-The code performs aggressive training of inference network to mitigate the issue of posterior collapse in VAE and obtain better generative modeling performance.
+The code seperates updates of encoder and decoder in VAE, and performs more updates of encoder. This new training procedure mitigates the issue of posterior collapse in VAE and obtain a better VAE model.
 
 Please contact junxianh@cs.cmu.edu if you have any questions.
 
