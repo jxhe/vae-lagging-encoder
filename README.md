@@ -8,7 +8,7 @@ Junxian He, Daniel Spokoyny, Graham Neubig, Taylor Berg-Kirkpatrick
 ICLR 2019
 ```
 
-The code seperates updates of encoder and decoder in VAE, and performs more updates of encoder. This new training procedure mitigates the issue of posterior collapse in VAE and obtain a better VAE model.
+The code seperates updates of encoder and decoder in VAE, and performs more updates of encoder. This new training procedure mitigates the issue of posterior collapse in VAE and obtains a better VAE model.
 
 Please contact junxianh@cs.cmu.edu if you have any questions.
 
