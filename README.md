@@ -1,6 +1,6 @@
 # VAE-lagging-encoder
 
-This is PyTorch implementation of the [paper](https://openreview.net/forum?id=rylDfnCqF7):
+This is PyTorch implementation of the [paper](http://arxiv.org/abs/1901.05534):
 
 ```
 Lagging Inference Networks and Posterior Collapse in Variational Autoencoders
@@ -30,7 +30,7 @@ Downloaded data is located in `./datasets/`.
 
 ## Usage
 
-Example script to train VAE on text data:
+Example script to train VAE on text data (training uses GPU when available):
 ```
 python text.py --dataset yahoo --aggressive 1 --warm_up 10 --kl_start 0.1
 ```
@@ -55,9 +55,8 @@ To run the code on your own text/image dataset, you need to create a new configu
 @inproceedings{he2018lagging,
 title={Lagging Inference Networks and Posterior Collapse in Variational Autoencoders},
 author={Junxian He and Daniel Spokoyny and Graham Neubig and Taylor Berg-Kirkpatrick},
-booktitle={International Conference on Learning Representations},
-year={2019},
-url={https://openreview.net/forum?id=rylDfnCqF7},
+booktitle={Proceedings of ICLR},
+year={2019}
 }
 ```
 
