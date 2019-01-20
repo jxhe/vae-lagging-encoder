@@ -1,4 +1,4 @@
-# Training Encoders More Leads to a Better VAE Model
+# Aggressive Training of Inference Network
 
 This is PyTorch implementation of the [paper](http://arxiv.org/abs/1901.05534):
 
@@ -8,7 +8,7 @@ Junxian He, Daniel Spokoyny, Graham Neubig, Taylor Berg-Kirkpatrick
 ICLR 2019
 ```
 
-The code seperates updates of encoder and decoder in VAE, and performs more updates of encoder. This new training procedure mitigates the issue of posterior collapse in VAE and obtains a better VAE model.
+The code seperates optimization of encoder and decoder in VAE, and performs more steps of encoder update in each iteration. This new training procedure mitigates the issue of posterior collapse in VAE and leads to a better VAE model.
 
 Please contact junxianh@cs.cmu.edu if you have any questions.
 
