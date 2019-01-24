@@ -207,7 +207,9 @@ def plot_multiple(model, plot_data, grid_z,
 
     # [*, 2]
     infer_posterior_mean = torch.cat(infer_posterior_mean, 0)
+
     save_path = os.path.join(args.plot_dir, 'aggr%d_iter%d_multiple.pickle' % (args.aggressive, iter_))
+
     save_data = {'posterior': infer_posterior_mean[:,0].cpu().numpy(),
                  'inference': infer_posterior_mean[:,1].cpu().numpy(),
                  'kl': report_loss_kl / report_num_sample,
@@ -247,7 +249,6 @@ def main(args):
         print('using cuda')
 
     print(args)
-
 
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
@@ -326,14 +327,15 @@ def main(args):
                                                   device=device,
                                                   batch_first=True)
 
-    # plot_data_, _ = plot_data
-    # train_data_batch = torch.chunk(plot_data_, round(args.num_plot / args.batch_size))
-
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
         for i in np.random.permutation(len(train_data_batch)):
-            batch_data = train_data_batch[i]
+            if args.plot_mode == "single":
+                batch_data, _ = plot_data
+
+            else:
+                batch_data = train_data_batch[i]
             batch_size, sent_len = batch_data.size()
 
             # not predict start symbol
@@ -367,9 +369,13 @@ def main(args):
 
                 enc_optimizer.step()
 
-                id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+                if args.plot_mode == "single":
+                    batch_data_enc, _ = plot_data
 
-                batch_data_enc = train_data_batch[id_]
+                else:
+                    id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+
+                    batch_data_enc = train_data_batch[id_]
 
                 if sub_iter % 15 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
@@ -472,9 +478,8 @@ def main(args):
         print('kl weight %.4f' % kl_weight)
         print('epoch: %d, VAL' % epoch)
 
-        if args.plot_mode != '':
-            with torch.no_grad():
-                plot_fn(vae, plot_data, grid_z, iter_, args)
+        with torch.no_grad():
+            plot_fn(vae, plot_data, grid_z, iter_, args)
 
         vae.eval()
         with torch.no_grad():
@@ -490,7 +495,7 @@ def main(args):
 
         if loss > opt_dict["best_loss"]:
             opt_dict["not_improved"] += 1
-            if opt_dict["not_improved"] >= decay_epoch and epoch >=15:
+            if opt_dict["not_improved"] >= decay_epoch:
                 opt_dict["best_loss"] = loss
                 opt_dict["not_improved"] = 0
                 opt_dict["lr"] = opt_dict["lr"] * lr_decay
@@ -525,6 +530,7 @@ def main(args):
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
     vae.eval()
+
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)
