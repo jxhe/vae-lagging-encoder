@@ -12,8 +12,8 @@ from torch import nn, optim
 
 from data import MonoTextData
 
-from modules import LSTMEncoder, LSTMDecoder, MixLSTMEncoder
-from modules import VAE, VisPlotter
+from modules import LSTMEncoder, LSTMDecoder
+from modules import VAE
 from modules import generate_grid
 
 clip_grad = 5.0
@@ -35,17 +35,17 @@ def init_config():
         help="multiple denotes plotting multiple points, single denotes potting single point, \
         both of which have corresponding figures in the paper")
 
-    parser.add_argument('--zmin', type=float, default=-20.0, 
+    parser.add_argument('--zmin', type=float, default=-20.0,
         help="boundary to approximate mean of model posterior p(z|x)")
     parser.add_argument('--zmax', type=float, default=20.0,
         help="boundary to approximate mean of model posterior p(z|x)")
-    parser.add_argument('--dz', type=float, default=0.1, 
+    parser.add_argument('--dz', type=float, default=0.1,
         help="granularity to approximate mean of model posterior p(z|x)")
 
     parser.add_argument('--num_plot', type=int, default=500,
         help='number of sampled points to be ploted')
 
-    parser.add_argument('--plot_niter', type=int, default=200, 
+    parser.add_argument('--plot_niter', type=int, default=200,
         help="plot every plot_niter iterations")
 
 
@@ -54,7 +54,7 @@ def init_config():
     parser.add_argument('--kl_start', type=float, default=1.0)
 
     # inference parameters
-    parser.add_argument('--aggressive', type=int, default=0, 
+    parser.add_argument('--aggressive', type=int, default=0,
         help='apply aggressive training when nonzero, reduce to vanilla VAE when aggressive is 0')
 
     # others
@@ -70,6 +70,10 @@ def init_config():
     args = parser.parse_args()
     args.cuda = torch.cuda.is_available()
 
+    args.dataset = "synthetic"
+    if args.plot_mode == "single":
+        args.num_plot = 50
+
     save_dir = "models/%s" % args.dataset
     plot_dir = "plot_data/%s" % args.plot_mode
 
@@ -82,7 +86,7 @@ def init_config():
     args.plot_dir = plot_dir
 
     id_ = "%s_aggressive%d_kls%.2f_warm%d_%d_%d_%d" % \
-            (args.dataset, args.aggressive, args.kl_start, 
+            (args.dataset, args.aggressive, args.kl_start,
              args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -118,8 +122,7 @@ def test(model, test_data_batch, mode, args):
         report_num_sents += batch_size
 
 
-        loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
-        # print(mix_prob)
+        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
 
         assert(not loss_rc.requires_grad)
 
@@ -218,7 +221,7 @@ def plot_single(infer_mean, posterior_mean, args):
     infer_mean = torch.cat(infer_mean, 1)
     posterior_mean = torch.cat(posterior_mean, 1)
 
-    
+
     save_path = os.path.join(args.plot_dir, 'aggr%d_single.pickle' % args.aggressive)
     save_data = {'posterior': posterior_mean.cpu().numpy(),
                  'inference': infer_mean.cpu().numpy(),
@@ -261,6 +264,8 @@ def main(args):
     print('dropped sentences: %d' % train_data.dropped)
     sys.stdout.flush()
 
+    log_niter = (len(train_data)//args.batch_size)//10
+
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
@@ -294,21 +299,20 @@ def main(args):
     kl_weight = args.kl_start
     anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
 
-    if args.plot_mode != '':
-        plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
+    plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
 
-        if args.plot_mode == 'multiple':
-            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
-            plot_fn = plot_multiple
+    if args.plot_mode == 'multiple':
+        grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
+        plot_fn = plot_multiple
 
-        elif args.plot_mode == 'single':
-            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
-            plot_fn = plot_single
-            posterior_mean = []
-            infer_mean = []
+    elif args.plot_mode == 'single':
+        grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
+        plot_fn = plot_single
+        posterior_mean = []
+        infer_mean = []
 
-            posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
-            infer_mean.append(vae.calc_infer_mean(plot_data[0]))
+        posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
+        infer_mean.append(vae.calc_infer_mean(plot_data[0]))
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -329,10 +333,7 @@ def main(args):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
         for i in np.random.permutation(len(train_data_batch)):
-            if args.plot_mode == 'single':
-                batch_data, _ = plot_data
-            else:
-                batch_data = train_data_batch[i]
+            batch_data = train_data_batch[i]
             batch_size, sent_len = batch_data.size()
 
             # not predict start symbol
@@ -356,8 +357,7 @@ def main(args):
                 burn_batch_size, burn_sents_len = batch_data_enc.size()
                 burn_num_words += (burn_sents_len - 1) * burn_batch_size
 
-                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
-                # print(mix_prob[0])
+                loss, loss_rc, loss_kl = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
 
                 burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
@@ -367,13 +367,9 @@ def main(args):
 
                 enc_optimizer.step()
 
-                if args.plot_mode == 'single':
-                    batch_data_enc, _ = plot_data
+                id_ = np.random.random_integers(0, len(train_data_batch) - 1)
 
-                else:
-                    id_ = np.random.random_integers(0, len(train_data_batch) - 1)
-
-                    batch_data_enc = train_data_batch[id_]
+                batch_data_enc = train_data_batch[id_]
 
                 if sub_iter % 15 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
@@ -397,7 +393,7 @@ def main(args):
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+            loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -425,7 +421,7 @@ def main(args):
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
 
-            if iter_ % args.log_niter == 0:
+            if iter_ % log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
                 if aggressive_flag or epoch == 0:
                     vae.eval()
@@ -453,14 +449,14 @@ def main(args):
                     if args.plot_mode == 'single' and iter_ != 0:
                         plot_fn(infer_mean, posterior_mean, args)
                         return
-                    else:
+                    elif args.plot_mode == "multiple":
                         plot_fn(vae, plot_data, grid_z,
                                 iter_, args)
                 vae.train()
 
             iter_ += 1
 
-            if aggressive_flag and (iter_ % len(train_data_batch) / 2) == 0:
+            if aggressive_flag and (iter_ % len(train_data_batch)) == 0:
                 vae.eval()
                 cur_mi = calc_mi(vae, val_data_batch)
                 vae.train()
@@ -478,8 +474,7 @@ def main(args):
 
         if args.plot_mode != '':
             with torch.no_grad():
-                plot_fn(vae, plot_data, grid_z,
-                        iter_, args)
+                plot_fn(vae, plot_data, grid_z, iter_, args)
 
         vae.eval()
         with torch.no_grad():
