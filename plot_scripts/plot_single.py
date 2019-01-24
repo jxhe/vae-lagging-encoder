@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    save_dir = "figures/single"
+    save_dir = "plot_figure/single"
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
