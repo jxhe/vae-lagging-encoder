@@ -1,4 +1,5 @@
 import sys
+import pickle
 import os
 import time
 import importlib
@@ -10,40 +11,56 @@ import torch
 from torch import nn, optim
 
 from data import MonoTextData
-from modules import VAE
-from modules import LSTMEncoder, LSTMDecoder
+
+from modules import LSTMEncoder, LSTMDecoder, MixLSTMEncoder
+from modules import VAE, VisPlotter
+from modules import generate_grid
 
 clip_grad = 5.0
 decay_epoch = 2
 lr_decay = 0.5
 max_decay = 5
 
-
 def init_config():
     parser = argparse.ArgumentParser(description='VAE mode collapse study')
 
-    # model hyperparameters
-    parser.add_argument('--dataset', type=str, required=True, help='dataset to use')
-
     # optimization parameters
-    parser.add_argument('--momentum', type=float, default=0, help='sgd momentum')
+    parser.add_argument('--optim', type=str, default='sgd', help='')
     parser.add_argument('--nsamples', type=int, default=1, help='number of samples for training')
     parser.add_argument('--iw_nsamples', type=int, default=500,
                          help='number of samples to compute importance weighted estimate')
 
-    # select mode
-    parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
-    parser.add_argument('--load_path', type=str, default='')
+    # plotting parameters
+    parser.add_argument('--plot_mode', choices=['multiple', 'single'], default='multiple',
+        help="multiple denotes plotting multiple points, single denotes potting single point, \
+        both of which have corresponding figures in the paper")
+
+    parser.add_argument('--zmin', type=float, default=-20.0, 
+        help="boundary to approximate mean of model posterior p(z|x)")
+    parser.add_argument('--zmax', type=float, default=20.0,
+        help="boundary to approximate mean of model posterior p(z|x)")
+    parser.add_argument('--dz', type=float, default=0.1, 
+        help="granularity to approximate mean of model posterior p(z|x)")
+
+    parser.add_argument('--num_plot', type=int, default=500,
+        help='number of sampled points to be ploted')
+
+    parser.add_argument('--plot_niter', type=int, default=200, 
+        help="plot every plot_niter iterations")
+
 
     # annealing paramters
-    parser.add_argument('--warm_up', type=int, default=10, help="number of annealing epochs")
-    parser.add_argument('--kl_start', type=float, default=1.0, help="starting KL weight")
+    parser.add_argument('--warm_up', type=int, default=10)
+    parser.add_argument('--kl_start', type=float, default=1.0)
 
     # inference parameters
-    parser.add_argument('--aggressive', type=int, default=0,
-                         help='apply aggressive training when nonzero, reduce to vanilla VAE when aggressive is 0')
+    parser.add_argument('--aggressive', type=int, default=0, 
+        help='apply aggressive training when nonzero, reduce to vanilla VAE when aggressive is 0')
+
     # others
     parser.add_argument('--seed', type=int, default=783435, metavar='S', help='random seed')
+    parser.add_argument('--save_plot_data', type=str, default='')
+
 
     # these are for slurm purpose to save model
     parser.add_argument('--jobid', type=int, default=0, help='slurm job id')
@@ -54,12 +71,15 @@ def init_config():
     args.cuda = torch.cuda.is_available()
 
     save_dir = "models/%s" % args.dataset
+    plot_dir = "plot_data/%s" % args.plot_mode
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
-    args.seed = seed_set[args.taskid]
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+
+    args.plot_dir = plot_dir
 
     id_ = "%s_aggressive%d_kls%.2f_warm%d_%d_%d_%d" % \
             (args.dataset, args.aggressive, args.kl_start, 
@@ -68,28 +88,24 @@ def init_config():
     save_path = os.path.join(save_dir, id_ + '.pt')
 
     args.save_path = save_path
-    print("save path", args.save_path)
 
     # load config file into args
     config_file = "config.config_%s" % args.dataset
     params = importlib.import_module(config_file).params
+
     args = argparse.Namespace(**vars(args), **params)
 
-    if 'label' in params:
-        args.label = params['label']
-    else:
-        args.label = False
+    args.nz = 1
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
-        torch.backends.cudnn.deterministic = True
 
     return args
 
+def test(model, test_data_batch, mode, args):
 
-def test(model, test_data_batch, mode, args, verbose=True):
     report_kl_loss = report_rec_loss = 0
     report_num_words = report_num_sents = 0
     for i in np.random.permutation(len(test_data_batch)):
@@ -102,7 +118,8 @@ def test(model, test_data_batch, mode, args, verbose=True):
         report_num_sents += batch_size
 
 
-        loss, loss_rc, loss_kl = model.loss(batch_data, 1.0, nsamples=args.nsamples)
+        loss, loss_rc, loss_kl, mix_prob = model.loss(batch_data, 1.0, nsamples=args.nsamples)
+        # print(mix_prob)
 
         assert(not loss_rc.requires_grad)
 
@@ -120,15 +137,16 @@ def test(model, test_data_batch, mode, args, verbose=True):
     nll = (report_kl_loss + report_rec_loss) / report_num_sents
     kl = report_kl_loss / report_num_sents
     ppl = np.exp(nll * report_num_sents / report_num_words)
-    if verbose:
-        print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
-               (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
-                report_rec_loss / report_num_sents, nll, ppl))
-        sys.stdout.flush()
 
-    return test_loss, nll, kl, ppl, mutual_info
+    print('%s --- avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f, nll: %.4f, ppl: %.4f' % \
+           (mode, test_loss, report_kl_loss / report_num_sents, mutual_info,
+            report_rec_loss / report_num_sents, nll, ppl))
+    sys.stdout.flush()
 
-def calc_iwnll(model, test_data_batch, args, ns=100):
+    return test_loss, nll, kl, ppl
+
+def calc_iwnll(model, test_data_batch, args):
+
     report_nll_loss = 0
     report_num_words = report_num_sents = 0
     for id_, i in enumerate(np.random.permutation(len(test_data_batch))):
@@ -141,9 +159,8 @@ def calc_iwnll(model, test_data_batch, args, ns=100):
         report_num_sents += batch_size
         if id_ % (round(len(test_data_batch) / 10)) == 0:
             print('iw nll computing %d0%%' % (id_/(round(len(test_data_batch) / 10))))
-            sys.stdout.flush()
 
-        loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples, ns=ns)
+        loss = model.nll_iw(batch_data, nsamples=args.iw_nsamples)
 
         report_nll_loss += loss.sum().item()
 
@@ -152,7 +169,6 @@ def calc_iwnll(model, test_data_batch, args, ns=100):
 
     print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
     sys.stdout.flush()
-    return nll, ppl
 
 def calc_mi(model, test_data_batch):
     mi = 0
@@ -165,76 +181,49 @@ def calc_mi(model, test_data_batch):
 
     return mi / num_examples
 
-def calc_au(model, test_data_batch, delta=0.01):
-    """compute the number of active units
-    """
-    cnt = 0
-    for batch_data in test_data_batch:
-        mean, _ = model.encode_stats(batch_data)
-        if cnt == 0:
-            means_sum = mean.sum(dim=0, keepdim=True)
-        else:
-            means_sum = means_sum + mean.sum(dim=0, keepdim=True)
-        cnt += mean.size(0)
 
-    # (1, nz)
-    mean_mean = means_sum / cnt
+def plot_multiple(model, plot_data, grid_z,
+                  iter_, args):
 
-    cnt = 0
-    for batch_data in test_data_batch:
-        mean, _ = model.encode_stats(batch_data)
-        if cnt == 0:
-            var_sum = ((mean - mean_mean) ** 2).sum(dim=0)
-        else:
-            var_sum = var_sum + ((mean - mean_mean) ** 2).sum(dim=0)
-        cnt += mean.size(0)
+    plot_data, sents_len = plot_data
+    plot_data_list = torch.chunk(plot_data, round(args.num_plot / args.batch_size))
 
-    # (nz)
-    au_var = var_sum / (cnt - 1)
+    infer_posterior_mean = []
+    report_loss_kl = report_mi = report_num_sample = 0
+    for data in plot_data_list:
+        report_loss_kl += model.KL(data).sum().item()
+        report_num_sample += data.size(0)
+        report_mi += model.calc_mi_q(data) * data.size(0)
 
-    return (au_var >= delta).sum().item(), au_var
+        # [batch, 1]
+        posterior_mean = model.calc_model_posterior_mean(data, grid_z)
 
+        infer_mean = model.calc_infer_mean(data)
 
-def sample_sentences(vae, vocab, device, num_sentences):
-    vae.eval()
-    sampled_sents = []
-    for i in range(num_sentences):
-        z = vae.sample_from_prior(1)
-        z = z.view(1,1,-1)
-        start = vocab.word2id['<s>']
-        # START = torch.tensor([[[start]]])
-        START = torch.tensor([[start]])
-        end = vocab.word2id['</s>']
-        START = START.to(device)
-        z = z.to(device)
-        vae.eval()
-        sentence = vae.decoder.sample_text(START, z, end, device)
-        decoded_sentence = vocab.decode_sentence(sentence)
-        sampled_sents.append(decoded_sentence)
-    for i, sent in enumerate(sampled_sents):
-        print(i,":",' '.join(sent))
+        infer_posterior_mean.append(torch.cat([posterior_mean, infer_mean], 1))
 
-def visualize_latent(args, vae, device, test_data):
-    f = open('yelp_embeddings_z','w')
-    g = open('yelp_embeddings_labels','w')
+    # [*, 2]
+    infer_posterior_mean = torch.cat(infer_posterior_mean, 0)
+    save_path = os.path.join(args.plot_dir, 'aggr%d_iter%d_multiple.pickle' % (args.aggressive, iter_))
+    save_data = {'posterior': infer_posterior_mean[:,0].cpu().numpy(),
+                 'inference': infer_posterior_mean[:,1].cpu().numpy(),
+                 'kl': report_loss_kl / report_num_sample,
+                 'mi': report_mi / report_num_sample
+                 }
+    pickle.dump(save_data, open(save_path, 'wb'))
 
-    test_data_batch, test_label_batch = test_data.create_data_batch_labels(batch_size=args.batch_size, device=device, batch_first=True)
-    for i in range(len(test_data_batch)):
-        batch_data = test_data_batch[i]
-        batch_label = test_label_batch[i]
-        batch_size, sent_len = batch_data.size()
-        means, _ = vae.encoder.forward(batch_data)
-        for i in range(batch_size):
-            mean = means[i,:].cpu().detach().numpy().tolist()
-            for val in mean:
-                f.write(str(val)+'\t')
-            f.write('\n')
-        for label in batch_label:
-            g.write(label+'\n')
-        fo
-        print(mean.size())
-        print(logvar.size())
-        fooo
+def plot_single(infer_mean, posterior_mean, args):
+
+    # [batch, time]
+    infer_mean = torch.cat(infer_mean, 1)
+    posterior_mean = torch.cat(posterior_mean, 1)
+
+    
+    save_path = os.path.join(args.plot_dir, 'aggr%d_single.pickle' % args.aggressive)
+    save_data = {'posterior': posterior_mean.cpu().numpy(),
+                 'inference': infer_mean.cpu().numpy(),
+                 }
+    pickle.dump(save_data, open(save_path, 'wb'))
 
 
 
@@ -256,31 +245,27 @@ def main(args):
 
     print(args)
 
+
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
-    train_data = MonoTextData(args.train_data, label=args.label)
+    train_data = MonoTextData(args.train_data)
 
     vocab = train_data.vocab
     vocab_size = len(vocab)
 
-    val_data = MonoTextData(args.val_data, label=args.label, vocab=vocab)
-    test_data = MonoTextData(args.test_data, label=args.label, vocab=vocab)
+    val_data = MonoTextData(args.val_data, vocab=vocab)
+    test_data = MonoTextData(args.test_data, vocab=vocab)
 
     print('Train data: %d samples' % len(train_data))
     print('finish reading datasets, vocab size is %d' % len(vocab))
     print('dropped sentences: %d' % train_data.dropped)
     sys.stdout.flush()
 
-    log_niter = (len(train_data)//args.batch_size)//10
-
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
-    if args.enc_type == 'lstm':
-        encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
-        args.enc_nh = args.dec_nh
-    else:
-        raise ValueError("the specified encoder type is not supported")
+    encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
+    args.enc_nh = args.dec_nh
 
     decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
@@ -288,41 +273,42 @@ def main(args):
     args.device = device
     vae = VAE(encoder, decoder, args).to(device)
 
-    if args.eval:
-        print('begin evaluation')
-        vae.load_state_dict(torch.load(args.load_path))
-        vae.eval()
-        with torch.no_grad():
-            test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
-                                                          device=device,
-                                                          batch_first=True)
 
-            test(vae, test_data_batch, "TEST", args)
-            au, au_var = calc_au(vae, test_data_batch)
-            print("%d active units" % au)
-            # print(au_var)
-
-            test_data_batch = test_data.create_data_batch(batch_size=1,
-                                                          device=device,
-                                                          batch_first=True)
-            calc_iwnll(vae, test_data_batch, args)
-
-        return
-
-    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0, momentum=args.momentum)
-    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0, momentum=args.momentum)
-    opt_dict['lr'] = 1.0
+    if args.optim == 'sgd':
+        enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=1.0)
+        dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=1.0)
+        opt_dict['lr'] = 1.0
+    else:
+        enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+        dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=0.001, betas=(0.9, 0.999))
+        opt_dict['lr'] = 0.001
 
     iter_ = decay_cnt = 0
     best_loss = 1e4
     best_kl = best_nll = best_ppl = 0
-    pre_mi = 0
+    pre_mi = -1
     aggressive_flag = True if args.aggressive else False
     vae.train()
     start = time.time()
 
     kl_weight = args.kl_start
     anneal_rate = (1.0 - args.kl_start) / (args.warm_up * (len(train_data) / args.batch_size))
+
+    if args.plot_mode != '':
+        plot_data = train_data.data_sample(nsample=args.num_plot, device=device, batch_first=True)
+
+        if args.plot_mode == 'multiple':
+            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
+            plot_fn = plot_multiple
+
+        elif args.plot_mode == 'single':
+            grid_z = generate_grid(args.zmin, args.zmax, args.dz, device, ndim=1)
+            plot_fn = plot_single
+            posterior_mean = []
+            infer_mean = []
+
+            posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
+            infer_mean.append(vae.calc_infer_mean(plot_data[0]))
 
     train_data_batch = train_data.create_data_batch(batch_size=args.batch_size,
                                                     device=device,
@@ -335,11 +321,18 @@ def main(args):
     test_data_batch = test_data.create_data_batch(batch_size=args.batch_size,
                                                   device=device,
                                                   batch_first=True)
+
+    # plot_data_, _ = plot_data
+    # train_data_batch = torch.chunk(plot_data_, round(args.num_plot / args.batch_size))
+
     for epoch in range(args.epochs):
         report_kl_loss = report_rec_loss = 0
         report_num_words = report_num_sents = 0
         for i in np.random.permutation(len(train_data_batch)):
-            batch_data = train_data_batch[i]
+            if args.plot_mode == 'single':
+                batch_data, _ = plot_data
+            else:
+                batch_data = train_data_batch[i]
             batch_size, sent_len = batch_data.size()
 
             # not predict start symbol
@@ -363,7 +356,8 @@ def main(args):
                 burn_batch_size, burn_sents_len = batch_data_enc.size()
                 burn_num_words += (burn_sents_len - 1) * burn_batch_size
 
-                loss, loss_rc, loss_kl = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
+                loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data_enc, kl_weight, nsamples=args.nsamples)
+                # print(mix_prob[0])
 
                 burn_cur_loss += loss.sum().item()
                 loss = loss.mean(dim=-1)
@@ -373,9 +367,13 @@ def main(args):
 
                 enc_optimizer.step()
 
-                id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+                if args.plot_mode == 'single':
+                    batch_data_enc, _ = plot_data
 
-                batch_data_enc = train_data_batch[id_]
+                else:
+                    id_ = np.random.random_integers(0, len(train_data_batch) - 1)
+
+                    batch_data_enc = train_data_batch[id_]
 
                 if sub_iter % 15 == 0:
                     burn_cur_loss = burn_cur_loss / burn_num_words
@@ -386,16 +384,20 @@ def main(args):
 
                 sub_iter += 1
 
-                # if sub_iter >= 30:
-                #     break
 
-            # print(sub_iter)
+            if args.plot_mode == 'single' and epoch == 0 and aggressive_flag:
+                vae.eval()
+                with torch.no_grad():
+                    posterior_mean.append(posterior_mean[-1])
+                    infer_mean.append(vae.calc_infer_mean(plot_data[0]))
+                vae.train()
+
 
             enc_optimizer.zero_grad()
             dec_optimizer.zero_grad()
 
 
-            loss, loss_rc, loss_kl = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
+            loss, loss_rc, loss_kl, mix_prob = vae.loss(batch_data, kl_weight, nsamples=args.nsamples)
 
             loss = loss.mean(dim=-1)
 
@@ -409,23 +411,31 @@ def main(args):
                 enc_optimizer.step()
 
             dec_optimizer.step()
+            if args.plot_mode == 'single' and epoch == 0:
+                vae.eval()
+                with torch.no_grad():
+                    posterior_mean.append(vae.calc_model_posterior_mean(plot_data[0], grid_z))
+
+                    if aggressive_flag:
+                        infer_mean.append(infer_mean[-1])
+                    else:
+                        infer_mean.append(vae.calc_infer_mean(plot_data[0]))
+                vae.train()
 
             report_rec_loss += loss_rc.item()
             report_kl_loss += loss_kl.item()
 
-            if iter_ % log_niter == 0:
+            if iter_ % args.log_niter == 0:
                 train_loss = (report_rec_loss  + report_kl_loss) / report_num_sents
                 if aggressive_flag or epoch == 0:
                     vae.eval()
-                    with torch.no_grad():
-                        mi = calc_mi(vae, val_data_batch)
-                        au, _ = calc_au(vae, val_data_batch)
+                    mi = calc_mi(vae, val_data_batch)
                     vae.train()
 
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, mi: %.4f, recon: %.4f,' \
-                           'au %d, time elapsed %.2fs' %
+                           'time elapsed %.2fs' %
                            (epoch, iter_, train_loss, report_kl_loss / report_num_sents, mi,
-                           report_rec_loss / report_num_sents, au, time.time() - start))
+                           report_rec_loss / report_num_sents, time.time() - start))
                 else:
                     print('epoch: %d, iter: %d, avg_loss: %.4f, kl: %.4f, recon: %.4f,' \
                            'time elapsed %.2fs' %
@@ -437,27 +447,43 @@ def main(args):
                 report_rec_loss = report_kl_loss = 0
                 report_num_words = report_num_sents = 0
 
+            if iter_ % args.plot_niter == 0 and epoch == 0:
+                vae.eval()
+                with torch.no_grad():
+                    if args.plot_mode == 'single' and iter_ != 0:
+                        plot_fn(infer_mean, posterior_mean, args)
+                        return
+                    else:
+                        plot_fn(vae, plot_data, grid_z,
+                                iter_, args)
+                vae.train()
+
             iter_ += 1
 
-            if aggressive_flag and (iter_ % len(train_data_batch)) == 0:
+            if aggressive_flag and (iter_ % len(train_data_batch) / 2) == 0:
                 vae.eval()
                 cur_mi = calc_mi(vae, val_data_batch)
                 vae.train()
-                print("pre mi:%.4f. cur mi:%.4f" % (pre_mi, cur_mi))
                 if cur_mi - pre_mi < 0:
                     aggressive_flag = False
                     print("STOP BURNING")
 
                 pre_mi = cur_mi
 
+
+                # return
+
         print('kl weight %.4f' % kl_weight)
+        print('epoch: %d, VAL' % epoch)
+
+        if args.plot_mode != '':
+            with torch.no_grad():
+                plot_fn(vae, plot_data, grid_z,
+                        iter_, args)
 
         vae.eval()
         with torch.no_grad():
-            loss, nll, kl, ppl, mi = test(vae, val_data_batch, "VAL", args)
-            au, au_var = calc_au(vae, val_data_batch)
-            print("%d active units" % au)
-            # print(au_var)
+            loss, nll, kl, ppl = test(vae, val_data_batch, "VAL", args)
 
         if loss < best_loss:
             print('update best loss')
@@ -476,9 +502,12 @@ def main(args):
                 vae.load_state_dict(torch.load(args.save_path))
                 print('new lr: %f' % opt_dict["lr"])
                 decay_cnt += 1
-                enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-                dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-            
+                if args.optim == 'sgd':
+                    enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"])
+                    dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"])
+                else:
+                    enc_optimizer = optim.Adam(vae.encoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
+                    dec_optimizer = optim.Adam(vae.decoder.parameters(), lr=opt_dict["lr"], betas=(0.5, 0.999))
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss
@@ -488,20 +517,19 @@ def main(args):
 
         if epoch % args.test_nepoch == 0:
             with torch.no_grad():
-                loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
+                loss, nll, kl, ppl = test(vae, test_data_batch, "TEST", args)
 
         vae.train()
 
+    print('best_loss: %.4f, kl: %.4f, nll: %.4f, ppl: %.4f' \
+          % (best_loss, best_kl, best_nll, best_ppl))
+
+    sys.stdout.flush()
+
+
     # compute importance weighted estimate of log p(x)
     vae.load_state_dict(torch.load(args.save_path))
-
     vae.eval()
-    with torch.no_grad():
-        loss, nll, kl, ppl, _ = test(vae, test_data_batch, "TEST", args)
-        au, au_var = calc_au(vae, test_data_batch)
-        print("%d active units" % au)
-        # print(au_var)
-
     test_data_batch = test_data.create_data_batch(batch_size=1,
                                                   device=device,
                                                   batch_first=True)

@@ -1,7 +1,6 @@
 import visdom
 import numpy as np
 
-
 class VisPlotter(object):
     """A plotter class based on visdom"""
     def __init__(self, server='http://localhost', env='main', contour_layout=None):
@@ -42,6 +41,46 @@ class VisPlotter(object):
 
         self.vis._send({'data': traces, 'layout': layout,
                         'win': win, 'opts': opts})
+
+    def plot_scatter(self, data, labels, legend, zmin, zmax, dz, win, name):
+        """
+        """
+        self.vis.scatter(X=np.array(data),
+                         Y=np.array(labels).astype(int),
+                         win=win,
+                         opts=dict(
+                            title=name,
+                            legend=legend,
+                            xtickmin=zmin,
+                            xtickmax=zmax,
+                            xtickstep=0.5,
+                            ytickmin=zmin,
+                            ytickmax=zmax,
+                            ytickstep=0.5,
+                            markersize=3))
+
+    def plot_line(self, batch_x, batch_y, zmin, zmax, dz):
+        """
+        Args:
+            batch_x: [batch, time_s]
+            batch_y: [batch, time_s]
+        """
+        for id_, (x, y) in enumerate(zip(batch_x, batch_y)):
+            win_name = "sample %d" % id_
+            self.vis.line(X=np.array(x),
+                          Y=np.array(y),
+                          win=win_name,
+                          opts=dict(
+                            title=win_name,
+                            markers=True,
+                            xtickmin=zmin,
+                            xtickmax=zmax,
+                            xtickstep=0.5,
+                            ytickmin=zmin,
+                            ytickmax=zmax,
+                            ytickstep=0.5,
+                            markersize=3))
+
 
     def plot_text(self):
         self.vis.text('Hello, world!')
