@@ -1,0 +1,1145 @@
+save path models/yelp/yelp_burn1_constlen_ns1_kls1.00_warm10_87562_1.pt
+using cuda
+Namespace(ais_K=3, ais_T=500, ais_prior='normal', batch_size=32, burn=1, cuda=True, dataset='yelp', dec_dropout_in=0.5, dec_dropout_out=0.5, dec_nh=1024, dec_type='lstm', enc_nh=1024, enc_type='lstm', epochs=100, eval=False, iw_nsamples=500, jobid=87562, kl_start=1.0, label=True, load_path='', log_niter=200, momentum=0, ni=512, nsamples=1, nz=32, optim='sgd', save_path='models/yelp/yelp_burn1_constlen_ns1_kls1.00_warm10_87562_1.pt', seed=783435, small_test_data='yahoo_data/yahoo_10percent.test.txt', taskid=1, test_data='yelp_data/yelp.test.txt', test_nepoch=5, train_data='yelp_data/yelp.train.txt', val_data='yelp_data/yelp.valid.txt', warm_up=10)
+Train data: 100000 samples
+finish reading datasets, vocab size is 19997
+dropped sentences: 0
+epoch: 0, iter: 0, avg_loss: 435.7407, kl: 0.0001, mi: -0.0807, recon: 435.7406,time elapsed 7.73s
+epoch: 0, iter: 200, avg_loss: 674.9796, kl: 8.9184, mi: 0.0743, recon: 666.0612,time elapsed 820.74s
+epoch: 0, iter: 400, avg_loss: 587.8487, kl: 7.1008, mi: 0.0294, recon: 580.7478,time elapsed 1526.63s
+epoch: 0, iter: 600, avg_loss: 548.6317, kl: 4.6902, mi: -0.0121, recon: 543.9416,time elapsed 2203.71s
+epoch: 0, iter: 800, avg_loss: 560.6000, kl: 3.0574, mi: 0.3812, recon: 557.5426,time elapsed 2846.52s
+epoch: 0, iter: 1000, avg_loss: 511.6037, kl: 2.6911, mi: 0.5329, recon: 508.9125,time elapsed 3503.49s
+epoch: 0, iter: 1200, avg_loss: 489.8864, kl: 3.1044, mi: 1.1698, recon: 486.7820,time elapsed 4118.66s
+epoch: 0, iter: 1400, avg_loss: 489.0083, kl: 2.7783, mi: 1.3410, recon: 486.2301,time elapsed 4713.89s
+epoch: 0, iter: 1600, avg_loss: 475.3119, kl: 2.9248, mi: 1.6375, recon: 472.3871,time elapsed 5319.40s
+poch: 0, iter: 1800, avg_loss: 493.0765, kl: 3.2651, mi: 1.7493, recon: 489.8114,time elapsed 5948.93s
+epoch: 0, iter: 2000, avg_loss: 477.1191, kl: 3.3398, mi: 1.9199, recon: 473.7792,time elapsed 6540.20s
+epoch: 0, iter: 2200, avg_loss: 472.3909, kl: 3.4359, mi: 1.9399, recon: 468.9550,time elapsed 7129.44s
+epoch: 0, iter: 2400, avg_loss: 479.7382, kl: 3.6375, mi: 1.8550, recon: 476.1006,time elapsed 7758.40s
+epoch: 0, iter: 2600, avg_loss: 450.9533, kl: 3.5984, mi: 2.1059, recon: 447.3550,time elapsed 8341.29s
+epoch: 0, iter: 2800, avg_loss: 477.1101, kl: 3.7943, mi: 2.1941, recon: 473.3157,time elapsed 8925.90s
+epoch: 0, iter: 3000, avg_loss: 435.2387, kl: 3.8149, mi: 2.1935, recon: 431.4238,time elapsed 9524.71s
+epoch: 0, iter: 3200, avg_loss: 438.0792, kl: 3.9723, mi: 2.2232, recon: 434.1070,time elapsed 10112.75s
+kl weight 1.0000
+VAL --- avg_loss: 438.1920, kl: 3.8495, mi: 2.1795, recon: 434.3425, nll: 438.1920, ppl: 91.0101
+update best loss
+TEST --- avg_loss: 435.1768, kl: 3.8336, mi: 2.1889, recon: 431.3433, nll: 435.1768, ppl: 90.2285
+epoch: 1, iter: 3400, avg_loss: 452.6138, kl: 4.0981, mi: 2.3813, recon: 448.5157,time elapsed 10771.27s
+epoch: 1, iter: 3600, avg_loss: 470.1112, kl: 4.3004, mi: 2.2851, recon: 465.8108,time elapsed 11364.48s
+epoch: 1, iter: 3800, avg_loss: 441.7742, kl: 4.2815, mi: 2.4044, recon: 437.4927,time elapsed 11931.39s
+epoch: 1, iter: 4000, avg_loss: 460.2439, kl: 4.3992, mi: 2.4591, recon: 455.8448,time elapsed 12524.00s
+epoch: 1, iter: 4200, avg_loss: 453.7590, kl: 4.3711, mi: 2.4376, recon: 449.3879,time elapsed 13119.39s
+epoch: 1, iter: 4400, avg_loss: 427.8454, kl: 4.3963, mi: 2.4364, recon: 423.4491,time elapsed 13711.63s
+epoch: 1, iter: 4600, avg_loss: 423.5466, kl: 4.4650, mi: 2.5152, recon: 419.0816,time elapsed 14300.41s
+epoch: 1, iter: 4800, avg_loss: 416.4962, kl: 4.5390, mi: 2.6193, recon: 411.9571,time elapsed 14908.28s
+epoch: 1, iter: 5000, avg_loss: 437.4080, kl: 4.6499, mi: 2.5900, recon: 432.7580,time elapsed 15487.26s
+epoch: 1, iter: 5200, avg_loss: 435.1405, kl: 4.7137, mi: 2.4957, recon: 430.4269,time elapsed 16076.58s
+epoch: 1, iter: 5400, avg_loss: 422.3620, kl: 4.6614, mi: 2.5638, recon: 417.7006,time elapsed 16655.37s
+epoch: 1, iter: 5600, avg_loss: 434.1690, kl: 4.7579, mi: 2.6329, recon: 429.4111,time elapsed 17237.37s
+epoch: 1, iter: 5800, avg_loss: 428.5688, kl: 4.8348, mi: 2.6277, recon: 423.7340,time elapsed 17819.35s
+epoch: 1, iter: 6000, avg_loss: 449.6640, kl: 4.9586, mi: 2.5191, recon: 444.7053,time elapsed 18412.59s
+epoch: 1, iter: 6200, avg_loss: 450.9381, kl: 4.9995, mi: 2.6726, recon: 445.9387,time elapsed 19018.29s
+epoch: 1, iter: 6400, avg_loss: 442.4144, kl: 4.9528, mi: 2.6267, recon: 437.4615,time elapsed 19607.25s
+kl weight 1.0000
+VAL --- avg_loss: 413.8161, kl: 5.1312, mi: 2.5632, recon: 408.6849, nll: 413.8161, ppl: 70.8123
+update best loss
+epoch: 2, iter: 6600, avg_loss: 437.9661, kl: 4.9818, mi: 2.7164, recon: 432.9843,time elapsed 20231.97s
+epoch: 2, iter: 6800, avg_loss: 430.9743, kl: 4.9232, mi: 2.6181, recon: 426.0511,time elapsed 20818.46s
+epoch: 2, iter: 7000, avg_loss: 443.5243, kl: 5.1613, mi: 2.6973, recon: 438.3630,time elapsed 21407.42s
+epoch: 2, iter: 7200, avg_loss: 447.0992, kl: 5.1392, mi: 2.6836, recon: 441.9600,time elapsed 21990.39s
+epoch: 2, iter: 7400, avg_loss: 392.3797, kl: 4.8471, mi: 2.6481, recon: 387.5326,time elapsed 22584.85s
+epoch: 2, iter: 7600, avg_loss: 438.2383, kl: 5.1163, mi: 2.7489, recon: 433.1220,time elapsed 23163.64s
+epoch: 2, iter: 7800, avg_loss: 407.0154, kl: 5.0212, mi: 2.6772, recon: 401.9942,time elapsed 23767.83s
+epoch: 2, iter: 8000, avg_loss: 413.6277, kl: 5.1092, mi: 2.7438, recon: 408.5185,time elapsed 24356.02s
+epoch: 2, iter: 8200, avg_loss: 416.3132, kl: 5.0759, mi: 2.6471, recon: 411.2373,time elapsed 24939.88s
+epoch: 2, iter: 8400, avg_loss: 419.0758, kl: 5.0633, mi: 2.7195, recon: 414.0124,time elapsed 25544.59s
+epoch: 2, iter: 8600, avg_loss: 443.0356, kl: 5.2387, mi: 2.7354, recon: 437.7969,time elapsed 26172.56s
+epoch: 2, iter: 8800, avg_loss: 425.6804, kl: 5.1354, mi: 2.6556, recon: 420.5450,time elapsed 26759.95s
+epoch: 2, iter: 9000, avg_loss: 419.8138, kl: 5.1440, mi: 2.7879, recon: 414.6698,time elapsed 27349.66s
+epoch: 2, iter: 9200, avg_loss: 425.5783, kl: 5.3046, mi: 2.6961, recon: 420.2737,time elapsed 27959.28s
+epoch: 2, iter: 9400, avg_loss: 420.7134, kl: 5.2885, mi: 2.7473, recon: 415.4249,time elapsed 28527.98s
+epoch: 2, iter: 9600, avg_loss: 430.7615, kl: 5.3767, mi: 2.8068, recon: 425.3848,time elapsed 29126.05s
+kl weight 1.0000
+VAL --- avg_loss: 402.8958, kl: 5.3190, mi: 2.8768, recon: 397.5768, nll: 402.8958, ppl: 63.2827
+update best loss
+epoch: 3, iter: 9800, avg_loss: 409.0780, kl: 5.2636, mi: 2.6565, recon: 403.8144,time elapsed 29739.39s
+epoch: 3, iter: 10000, avg_loss: 411.2372, kl: 5.2308, mi: 2.8477, recon: 406.0064,time elapsed 30298.57s
+epoch: 3, iter: 10200, avg_loss: 422.1022, kl: 5.3402, mi: 2.8434, recon: 416.7619,time elapsed 30895.65s
+epoch: 3, iter: 10400, avg_loss: 404.0280, kl: 5.2275, mi: 2.6094, recon: 398.8005,time elapsed 31441.80s
+epoch: 3, iter: 10600, avg_loss: 419.9650, kl: 5.3442, mi: 2.8175, recon: 414.6208,time elapsed 32026.61s
+epoch: 3, iter: 10800, avg_loss: 402.9720, kl: 5.2572, mi: 2.8404, recon: 397.7148,time elapsed 32594.90s
+epoch: 3, iter: 11000, avg_loss: 430.0197, kl: 5.4396, mi: 2.8193, recon: 424.5800,time elapsed 33179.04s
+epoch: 3, iter: 11200, avg_loss: 416.0620, kl: 5.3791, mi: 2.7743, recon: 410.6829,time elapsed 33765.07s
+epoch: 3, iter: 11400, avg_loss: 394.7045, kl: 5.2647, mi: 2.7560, recon: 389.4398,time elapsed 34336.80s
+epoch: 3, iter: 11600, avg_loss: 424.4053, kl: 5.5005, mi: 2.8499, recon: 418.9048,time elapsed 34942.08s
+epoch: 3, iter: 11800, avg_loss: 416.4466, kl: 5.4693, mi: 2.7809, recon: 410.9773,time elapsed 35500.54s
+epoch: 3, iter: 12000, avg_loss: 439.0098, kl: 5.6433, mi: 2.7882, recon: 433.3665,time elapsed 36094.24s
+epoch: 3, iter: 12200, avg_loss: 437.0547, kl: 5.6053, mi: 2.8773, recon: 431.4494,time elapsed 36680.47s
+epoch: 3, iter: 12400, avg_loss: 434.5969, kl: 5.5225, mi: 2.8591, recon: 429.0744,time elapsed 37269.21s
+epoch: 3, iter: 12600, avg_loss: 403.5632, kl: 5.3918, mi: 2.8860, recon: 398.1715,time elapsed 37840.74s
+epoch: 3, iter: 12800, avg_loss: 403.9598, kl: 5.3920, mi: 2.8455, recon: 398.5678,time elapsed 38416.55s
+kl weight 1.0000
+VAL --- avg_loss: 398.1408, kl: 5.6337, mi: 2.8564, recon: 392.5071, nll: 398.1408, ppl: 60.2597
+update best loss
+epoch: 4, iter: 13000, avg_loss: 401.8129, kl: 5.4706, mi: 2.8616, recon: 396.3422,time elapsed 39021.04s
+epoch: 4, iter: 13200, avg_loss: 409.3465, kl: 5.5403, mi: 2.8781, recon: 403.8062,time elapsed 39613.89s
+epoch: 4, iter: 13400, avg_loss: 410.2533, kl: 5.5226, mi: 2.7477, recon: 404.7307,time elapsed 40197.64s
+epoch: 4, iter: 13600, avg_loss: 446.8910, kl: 5.7329, mi: 2.9181, recon: 441.1580,time elapsed 40780.25s
+epoch: 4, iter: 13800, avg_loss: 377.5196, kl: 5.2970, mi: 2.8679, recon: 372.2226,time elapsed 41349.41s
+epoch: 4, iter: 14000, avg_loss: 398.1364, kl: 5.4786, mi: 2.8039, recon: 392.6578,time elapsed 41919.80s
+epoch: 4, iter: 14200, avg_loss: 412.6425, kl: 5.5748, mi: 2.8589, recon: 407.0677,time elapsed 42529.54s
+epoch: 4, iter: 14400, avg_loss: 424.1218, kl: 5.6093, mi: 2.8812, recon: 418.5125,time elapsed 43105.82s
+epoch: 4, iter: 14600, avg_loss: 412.4483, kl: 5.5977, mi: 2.7661, recon: 406.8506,time elapsed 43688.40s
+epoch: 4, iter: 14800, avg_loss: 399.2631, kl: 5.4906, mi: 2.9015, recon: 393.7725,time elapsed 44273.06s
+epoch: 4, iter: 15000, avg_loss: 428.1338, kl: 5.6541, mi: 2.8259, recon: 422.4797,time elapsed 44873.47s
+epoch: 4, iter: 15200, avg_loss: 423.1084, kl: 5.6226, mi: 2.9372, recon: 417.4857,time elapsed 45452.75s
+epoch: 4, iter: 15400, avg_loss: 407.8141, kl: 5.5725, mi: 2.8353, recon: 402.2416,time elapsed 46046.80s
+epoch: 4, iter: 15600, avg_loss: 410.7942, kl: 5.6587, mi: 2.8387, recon: 405.1354,time elapsed 46620.87s
+epoch: 4, iter: 15800, avg_loss: 393.7137, kl: 5.5437, mi: 2.8446, recon: 388.1700,time elapsed 47212.01s
+epoch: 4, iter: 16000, avg_loss: 436.0983, kl: 5.8547, mi: 2.8057, recon: 430.2435,time elapsed 47804.14s
+kl weight 1.0000
+VAL --- avg_loss: 393.2683, kl: 5.8331, mi: 2.8358, recon: 387.4352, nll: 393.2683, ppl: 57.3116
+update best loss
+epoch: 5, iter: 16200, avg_loss: 391.2128, kl: 5.5917, mi: 2.9363, recon: 385.6211,time elapsed 48421.97s
+epoch: 5, iter: 16400, avg_loss: 421.7316, kl: 5.7316, mi: 2.9273, recon: 416.0000,time elapsed 48992.15s
+epoch: 5, iter: 16600, avg_loss: 411.7334, kl: 5.7141, mi: 2.9359, recon: 406.0193,time elapsed 49593.45s
+epoch: 5, iter: 16800, avg_loss: 408.6423, kl: 5.6975, mi: 2.9263, recon: 402.9448,time elapsed 50174.97s
+epoch: 5, iter: 17000, avg_loss: 413.0893, kl: 5.6526, mi: 2.8846, recon: 407.4367,time elapsed 50761.10s
+epoch: 5, iter: 17200, avg_loss: 425.7797, kl: 5.8067, mi: 2.9459, recon: 419.9729,time elapsed 51352.58s
+epoch: 5, iter: 17400, avg_loss: 388.7188, kl: 5.5509, mi: 2.7944, recon: 383.1679,time elapsed 51916.99s
+epoch: 5, iter: 17600, avg_loss: 398.6218, kl: 5.6650, mi: 2.8329, recon: 392.9568,time elapsed 52508.14s
+epoch: 5, iter: 17800, avg_loss: 423.1572, kl: 5.7682, mi: 2.9430, recon: 417.3890,time elapsed 53104.76s
+epoch: 5, iter: 18000, avg_loss: 417.4996, kl: 5.6912, mi: 2.8374, recon: 411.8084,time elapsed 53695.12s
+epoch: 5, iter: 18200, avg_loss: 401.0799, kl: 5.6322, mi: 2.9446, recon: 395.4478,time elapsed 54283.16s
+epoch: 5, iter: 18400, avg_loss: 393.4641, kl: 5.6257, mi: 2.9920, recon: 387.8384,time elapsed 54874.52s
+epoch: 5, iter: 18600, avg_loss: 403.4908, kl: 5.7044, mi: 2.8221, recon: 397.7864,time elapsed 55464.48s
+epoch: 5, iter: 18800, avg_loss: 408.4166, kl: 5.6965, mi: 2.8832, recon: 402.7201,time elapsed 56073.30s
+epoch: 5, iter: 19000, avg_loss: 403.4778, kl: 5.6476, mi: 2.8915, recon: 397.8302,time elapsed 56663.41s
+epoch: 5, iter: 19200, avg_loss: 410.6515, kl: 5.7096, mi: 2.9122, recon: 404.9419,time elapsed 57233.58s
+STOP BURNING
+kl weight 1.0000
+VAL --- avg_loss: 391.6937, kl: 5.7996, mi: 2.9492, recon: 385.8941, nll: 391.6937, ppl: 56.3901
+update best loss
+TEST --- avg_loss: 389.0958, kl: 5.7808, mi: 2.9328, recon: 383.3151, nll: 389.0958, ppl: 56.0133
+epoch: 6, iter: 19400, avg_loss: 450.6143, kl: 5.6542, recon: 444.9601,time elapsed 57599.83s
+epoch: 6, iter: 19600, avg_loss: 425.6725, kl: 5.4847, recon: 420.1878,time elapsed 57621.67s
+epoch: 6, iter: 19800, avg_loss: 412.6025, kl: 5.2652, recon: 407.3373,time elapsed 57642.83s
+epoch: 6, iter: 20000, avg_loss: 423.0925, kl: 5.3684, recon: 417.7241,time elapsed 57664.53s
+epoch: 6, iter: 20200, avg_loss: 387.5834, kl: 5.1635, recon: 382.4199,time elapsed 57684.68s
+epoch: 6, iter: 20400, avg_loss: 385.6737, kl: 5.0686, recon: 380.6051,time elapsed 57704.62s
+epoch: 6, iter: 20600, avg_loss: 392.9014, kl: 5.1513, recon: 387.7501,time elapsed 57724.94s
+epoch: 6, iter: 20800, avg_loss: 405.9343, kl: 5.2531, recon: 400.6812,time elapsed 57745.82s
+epoch: 6, iter: 21000, avg_loss: 390.3309, kl: 5.0679, recon: 385.2629,time elapsed 57765.87s
+epoch: 6, iter: 21200, avg_loss: 391.4128, kl: 5.1172, recon: 386.2956,time elapsed 57786.11s
+epoch: 6, iter: 21400, avg_loss: 387.3333, kl: 5.0502, recon: 382.2831,time elapsed 57806.18s
+epoch: 6, iter: 21600, avg_loss: 413.7595, kl: 5.1324, recon: 408.6271,time elapsed 57827.32s
+epoch: 6, iter: 21800, avg_loss: 409.4014, kl: 5.1883, recon: 404.2131,time elapsed 57848.38s
+epoch: 6, iter: 22000, avg_loss: 381.7120, kl: 5.0027, recon: 376.7093,time elapsed 57868.24s
+epoch: 6, iter: 22200, avg_loss: 416.5448, kl: 5.2192, recon: 411.3256,time elapsed 57889.41s
+epoch: 6, iter: 22400, avg_loss: 427.1075, kl: 5.3739, recon: 421.7335,time elapsed 57911.23s
+kl weight 1.0000
+VAL --- avg_loss: 387.9305, kl: 5.0046, mi: 2.8092, recon: 382.9260, nll: 387.9305, ppl: 54.2473
+update best loss
+epoch: 7, iter: 22600, avg_loss: 384.8077, kl: 5.1307, recon: 379.6770,time elapsed 57949.98s
+epoch: 7, iter: 22800, avg_loss: 401.7373, kl: 5.2303, recon: 396.5070,time elapsed 57970.66s
+epoch: 7, iter: 23000, avg_loss: 428.5877, kl: 5.3543, recon: 423.2334,time elapsed 57992.29s
+epoch: 7, iter: 23200, avg_loss: 402.8364, kl: 5.2174, recon: 397.6190,time elapsed 58012.98s
+epoch: 7, iter: 23400, avg_loss: 405.5174, kl: 5.2125, recon: 400.3049,time elapsed 58033.90s
+epoch: 7, iter: 23600, avg_loss: 397.1281, kl: 5.1169, recon: 392.0112,time elapsed 58054.37s
+epoch: 7, iter: 23800, avg_loss: 393.3629, kl: 5.1718, recon: 388.1912,time elapsed 58074.54s
+epoch: 7, iter: 24000, avg_loss: 381.6399, kl: 5.0103, recon: 376.6296,time elapsed 58094.43s
+epoch: 7, iter: 24200, avg_loss: 397.0978, kl: 5.1390, recon: 391.9589,time elapsed 58114.85s
+epoch: 7, iter: 24400, avg_loss: 411.2164, kl: 5.1754, recon: 406.0411,time elapsed 58135.89s
+epoch: 7, iter: 24600, avg_loss: 387.8139, kl: 5.0121, recon: 382.8018,time elapsed 58155.80s
+epoch: 7, iter: 24800, avg_loss: 415.7476, kl: 5.1762, recon: 410.5714,time elapsed 58176.97s
+epoch: 7, iter: 25000, avg_loss: 382.8924, kl: 4.9935, recon: 377.8989,time elapsed 58196.75s
+epoch: 7, iter: 25200, avg_loss: 423.2491, kl: 5.2192, recon: 418.0299,time elapsed 58218.30s
+epoch: 7, iter: 25400, avg_loss: 420.8214, kl: 5.1929, recon: 415.6285,time elapsed 58239.77s
+epoch: 7, iter: 25600, avg_loss: 391.6002, kl: 4.9456, recon: 386.6546,time elapsed 58259.96s
+kl weight 1.0000
+VAL --- avg_loss: 383.7766, kl: 5.1165, mi: 2.8726, recon: 378.6602, nll: 383.7766, ppl: 51.9764
+update best loss
+epoch: 8, iter: 25800, avg_loss: 430.4058, kl: 5.4259, recon: 424.9798,time elapsed 58298.58s
+epoch: 8, iter: 26000, avg_loss: 393.1664, kl: 5.0994, recon: 388.0670,time elapsed 58319.05s
+epoch: 8, iter: 26200, avg_loss: 406.0325, kl: 5.1873, recon: 400.8452,time elapsed 58339.98s
+epoch: 8, iter: 26400, avg_loss: 399.8930, kl: 5.0795, recon: 394.8136,time elapsed 58360.38s
+epoch: 8, iter: 26600, avg_loss: 380.2729, kl: 5.0429, recon: 375.2301,time elapsed 58380.16s
+epoch: 8, iter: 26800, avg_loss: 421.0931, kl: 5.2908, recon: 415.8023,time elapsed 58401.72s
+epoch: 8, iter: 27000, avg_loss: 407.9188, kl: 5.1507, recon: 402.7681,time elapsed 58422.73s
+epoch: 8, iter: 27200, avg_loss: 380.9247, kl: 4.9741, recon: 375.9506,time elapsed 58442.58s
+epoch: 8, iter: 27400, avg_loss: 387.2356, kl: 5.0636, recon: 382.1721,time elapsed 58462.35s
+epoch: 8, iter: 27600, avg_loss: 384.9581, kl: 5.0713, recon: 379.8868,time elapsed 58482.35s
+epoch: 8, iter: 27800, avg_loss: 410.6767, kl: 5.1516, recon: 405.5250,time elapsed 58503.42s
+epoch: 8, iter: 28000, avg_loss: 398.3716, kl: 5.0719, recon: 393.2997,time elapsed 58523.96s
+epoch: 8, iter: 28200, avg_loss: 405.4490, kl: 5.0996, recon: 400.3495,time elapsed 58544.86s
+epoch: 8, iter: 28400, avg_loss: 386.8224, kl: 4.9818, recon: 381.8406,time elapsed 58564.90s
+epoch: 8, iter: 28600, avg_loss: 405.8460, kl: 5.0324, recon: 400.8137,time elapsed 58585.81s
+epoch: 8, iter: 28800, avg_loss: 406.2608, kl: 5.0469, recon: 401.2139,time elapsed 58606.70s
+kl weight 1.0000
+VAL --- avg_loss: 383.3635, kl: 4.8776, mi: 2.7440, recon: 378.4859, nll: 383.3635, ppl: 51.7558
+update best loss
+epoch: 9, iter: 29000, avg_loss: 327.0095, kl: 4.6254, recon: 322.3841,time elapsed 58645.17s
+epoch: 9, iter: 29200, avg_loss: 398.5943, kl: 5.0619, recon: 393.5324,time elapsed 58665.94s
+epoch: 9, iter: 29400, avg_loss: 389.8022, kl: 5.0353, recon: 384.7669,time elapsed 58686.28s
+epoch: 9, iter: 29600, avg_loss: 397.0647, kl: 5.0884, recon: 391.9763,time elapsed 58706.98s
+epoch: 9, iter: 29800, avg_loss: 360.5447, kl: 4.8072, recon: 355.7375,time elapsed 58725.99s
+epoch: 9, iter: 30000, avg_loss: 415.7198, kl: 5.2258, recon: 410.4941,time elapsed 58747.64s
+epoch: 9, iter: 30200, avg_loss: 428.8581, kl: 5.2116, recon: 423.6465,time elapsed 58769.54s
+epoch: 9, iter: 30400, avg_loss: 391.3981, kl: 4.9830, recon: 386.4152,time elapsed 58790.02s
+epoch: 9, iter: 30600, avg_loss: 402.8945, kl: 5.0316, recon: 397.8630,time elapsed 58810.99s
+epoch: 9, iter: 30800, avg_loss: 392.8574, kl: 4.9865, recon: 387.8709,time elapsed 58831.51s
+epoch: 9, iter: 31000, avg_loss: 394.8565, kl: 4.9933, recon: 389.8632,time elapsed 58852.11s
+epoch: 9, iter: 31200, avg_loss: 407.5705, kl: 5.0495, recon: 402.5210,time elapsed 58872.96s
+epoch: 9, iter: 31400, avg_loss: 391.4813, kl: 4.9365, recon: 386.5448,time elapsed 58893.32s
+epoch: 9, iter: 31600, avg_loss: 383.3959, kl: 4.8710, recon: 378.5249,time elapsed 58913.33s
+epoch: 9, iter: 31800, avg_loss: 409.2720, kl: 5.0392, recon: 404.2328,time elapsed 58934.46s
+epoch: 9, iter: 32000, avg_loss: 403.9238, kl: 4.9956, recon: 398.9282,time elapsed 58955.51s
+kl weight 1.0000
+VAL --- avg_loss: 381.0391, kl: 4.7831, mi: 2.6442, recon: 376.2560, nll: 381.0391, ppl: 50.5321
+update best loss
+epoch: 10, iter: 32200, avg_loss: 344.8879, kl: 4.7923, recon: 340.0956,time elapsed 58994.52s
+epoch: 10, iter: 32400, avg_loss: 392.4146, kl: 4.9764, recon: 387.4382,time elapsed 59015.23s
+epoch: 10, iter: 32600, avg_loss: 410.7847, kl: 5.0972, recon: 405.6874,time elapsed 59036.56s
+epoch: 10, iter: 32800, avg_loss: 399.9660, kl: 4.9892, recon: 394.9767,time elapsed 59057.63s
+epoch: 10, iter: 33000, avg_loss: 385.6038, kl: 4.9108, recon: 380.6930,time elapsed 59077.84s
+epoch: 10, iter: 33200, avg_loss: 387.9322, kl: 4.9806, recon: 382.9516,time elapsed 59098.44s
+epoch: 10, iter: 33400, avg_loss: 399.3880, kl: 5.0039, recon: 394.3841,time elapsed 59119.29s
+epoch: 10, iter: 33600, avg_loss: 374.0680, kl: 4.8874, recon: 369.1806,time elapsed 59139.13s
+epoch: 10, iter: 33800, avg_loss: 397.8869, kl: 4.9601, recon: 392.9268,time elapsed 59160.07s
+epoch: 10, iter: 34000, avg_loss: 398.4963, kl: 5.0172, recon: 393.4791,time elapsed 59180.87s
+epoch: 10, iter: 34200, avg_loss: 393.0336, kl: 4.9220, recon: 388.1116,time elapsed 59201.30s
+epoch: 10, iter: 34400, avg_loss: 396.5926, kl: 4.8942, recon: 391.6984,time elapsed 59222.00s
+epoch: 10, iter: 34600, avg_loss: 394.3313, kl: 4.9233, recon: 389.4080,time elapsed 59242.62s
+epoch: 10, iter: 34800, avg_loss: 390.9767, kl: 4.8773, recon: 386.0994,time elapsed 59263.09s
+epoch: 10, iter: 35000, avg_loss: 414.7132, kl: 5.0595, recon: 409.6537,time elapsed 59284.41s
+epoch: 10, iter: 35200, avg_loss: 411.4133, kl: 5.0332, recon: 406.3801,time elapsed 59305.67s
+kl weight 1.0000
+VAL --- avg_loss: 381.8647, kl: 4.9729, mi: 2.7865, recon: 376.8918, nll: 381.8647, ppl: 50.9634
+TEST --- avg_loss: 379.2940, kl: 4.9467, mi: 2.7823, recon: 374.3473, nll: 379.2940, ppl: 50.6116
+epoch: 11, iter: 35400, avg_loss: 401.1931, kl: 5.0694, recon: 396.1237,time elapsed 59360.54s
+epoch: 11, iter: 35600, avg_loss: 422.2475, kl: 5.0974, recon: 417.1501,time elapsed 59382.56s
+epoch: 11, iter: 35800, avg_loss: 410.4434, kl: 5.0797, recon: 405.3637,time elapsed 59403.96s
+epoch: 11, iter: 36000, avg_loss: 377.3152, kl: 4.8987, recon: 372.4165,time elapsed 59423.67s
+epoch: 11, iter: 36200, avg_loss: 398.8299, kl: 4.9814, recon: 393.8485,time elapsed 59444.42s
+epoch: 11, iter: 36400, avg_loss: 399.9731, kl: 4.9693, recon: 395.0038,time elapsed 59465.38s
+epoch: 11, iter: 36600, avg_loss: 401.7528, kl: 4.9887, recon: 396.7641,time elapsed 59486.32s
+epoch: 11, iter: 36800, avg_loss: 371.1388, kl: 4.7569, recon: 366.3818,time elapsed 59505.89s
+epoch: 11, iter: 37000, avg_loss: 405.6029, kl: 5.0057, recon: 400.5972,time elapsed 59526.91s
+epoch: 11, iter: 37200, avg_loss: 389.0881, kl: 4.8810, recon: 384.2071,time elapsed 59547.27s
+epoch: 11, iter: 37400, avg_loss: 379.9711, kl: 4.8353, recon: 375.1358,time elapsed 59567.30s
+epoch: 11, iter: 37600, avg_loss: 392.5634, kl: 4.9280, recon: 387.6354,time elapsed 59587.88s
+epoch: 11, iter: 37800, avg_loss: 397.4940, kl: 4.9147, recon: 392.5793,time elapsed 59608.62s
+epoch: 11, iter: 38000, avg_loss: 389.9592, kl: 4.7902, recon: 385.1690,time elapsed 59629.20s
+epoch: 11, iter: 38200, avg_loss: 386.7857, kl: 4.8179, recon: 381.9677,time elapsed 59649.34s
+epoch: 11, iter: 38400, avg_loss: 403.2579, kl: 4.9341, recon: 398.3237,time elapsed 59670.47s
+epoch: 11, iter: 38600, avg_loss: 383.3584, kl: 4.8042, recon: 378.5543,time elapsed 59690.57s
+kl weight 1.0000
+VAL --- avg_loss: 378.3294, kl: 4.6039, mi: 2.6578, recon: 373.7255, nll: 378.3294, ppl: 49.1420
+update best loss
+epoch: 12, iter: 38800, avg_loss: 374.5191, kl: 4.8026, recon: 369.7165,time elapsed 59728.58s
+epoch: 12, iter: 39000, avg_loss: 396.2609, kl: 4.9492, recon: 391.3117,time elapsed 59749.42s
+epoch: 12, iter: 39200, avg_loss: 404.2164, kl: 4.9128, recon: 399.3036,time elapsed 59770.87s
+epoch: 12, iter: 39400, avg_loss: 404.1639, kl: 5.0214, recon: 399.1426,time elapsed 59791.87s
+epoch: 12, iter: 39600, avg_loss: 375.6727, kl: 4.8116, recon: 370.8611,time elapsed 59811.64s
+epoch: 12, iter: 39800, avg_loss: 391.4382, kl: 4.8394, recon: 386.5988,time elapsed 59832.21s
+epoch: 12, iter: 40000, avg_loss: 398.2982, kl: 4.9240, recon: 393.3742,time elapsed 59853.24s
+epoch: 12, iter: 40200, avg_loss: 393.6961, kl: 4.8486, recon: 388.8474,time elapsed 59873.98s
+epoch: 12, iter: 40400, avg_loss: 380.2796, kl: 4.7857, recon: 375.4940,time elapsed 59893.91s
+epoch: 12, iter: 40600, avg_loss: 398.3780, kl: 4.8645, recon: 393.5134,time elapsed 59914.83s
+epoch: 12, iter: 40800, avg_loss: 415.3054, kl: 4.9290, recon: 410.3764,time elapsed 59936.33s
+epoch: 12, iter: 41000, avg_loss: 381.4055, kl: 4.7501, recon: 376.6554,time elapsed 59956.54s
+epoch: 12, iter: 41200, avg_loss: 415.5456, kl: 4.8820, recon: 410.6636,time elapsed 59978.19s
+epoch: 12, iter: 41400, avg_loss: 381.3156, kl: 4.7031, recon: 376.6125,time elapsed 59998.26s
+epoch: 12, iter: 41600, avg_loss: 391.2828, kl: 4.7809, recon: 386.5019,time elapsed 60018.95s
+epoch: 12, iter: 41800, avg_loss: 390.7794, kl: 4.8221, recon: 385.9573,time elapsed 60039.48s
+kl weight 1.0000
+VAL --- avg_loss: 377.1260, kl: 4.9497, mi: 2.7284, recon: 372.1764, nll: 377.1260, ppl: 48.5370
+update best loss
+epoch: 13, iter: 42000, avg_loss: 355.1737, kl: 4.6959, recon: 350.4779,time elapsed 60076.56s
+epoch: 13, iter: 42200, avg_loss: 376.8527, kl: 4.7903, recon: 372.0625,time elapsed 60096.62s
+epoch: 13, iter: 42400, avg_loss: 403.9027, kl: 4.9815, recon: 398.9212,time elapsed 60118.06s
+epoch: 13, iter: 42600, avg_loss: 410.9772, kl: 4.9342, recon: 406.0430,time elapsed 60139.68s
+epoch: 13, iter: 42800, avg_loss: 371.3200, kl: 4.7476, recon: 366.5725,time elapsed 60159.51s
+epoch: 13, iter: 43000, avg_loss: 397.5089, kl: 4.8255, recon: 392.6834,time elapsed 60180.42s
+epoch: 13, iter: 43200, avg_loss: 372.0529, kl: 4.6733, recon: 367.3796,time elapsed 60200.22s
+epoch: 13, iter: 43400, avg_loss: 398.7279, kl: 4.8470, recon: 393.8810,time elapsed 60221.14s
+epoch: 13, iter: 43600, avg_loss: 397.9319, kl: 4.8033, recon: 393.1286,time elapsed 60242.18s
+epoch: 13, iter: 43800, avg_loss: 390.2716, kl: 4.8030, recon: 385.4687,time elapsed 60262.79s
+epoch: 13, iter: 44000, avg_loss: 418.9573, kl: 4.9460, recon: 414.0113,time elapsed 60284.80s
+epoch: 13, iter: 44200, avg_loss: 397.1536, kl: 4.7559, recon: 392.3977,time elapsed 60305.80s
+epoch: 13, iter: 44400, avg_loss: 395.6787, kl: 4.8221, recon: 390.8566,time elapsed 60326.54s
+epoch: 13, iter: 44600, avg_loss: 404.0963, kl: 4.8987, recon: 399.1976,time elapsed 60347.71s
+epoch: 13, iter: 44800, avg_loss: 376.2856, kl: 4.6582, recon: 371.6274,time elapsed 60367.71s
+epoch: 13, iter: 45000, avg_loss: 403.9047, kl: 4.7669, recon: 399.1378,time elapsed 60389.03s
+kl weight 1.0000
+VAL --- avg_loss: 377.7847, kl: 4.7290, mi: 2.7194, recon: 373.0557, nll: 377.7847, ppl: 48.8672
+epoch: 14, iter: 45200, avg_loss: 380.2438, kl: 4.7354, recon: 375.5084,time elapsed 60426.45s
+epoch: 14, iter: 45400, avg_loss: 416.9694, kl: 4.9638, recon: 412.0056,time elapsed 60448.45s
+epoch: 14, iter: 45600, avg_loss: 402.5913, kl: 4.9302, recon: 397.6611,time elapsed 60469.82s
+epoch: 14, iter: 45800, avg_loss: 375.9798, kl: 4.7126, recon: 371.2673,time elapsed 60489.91s
+epoch: 14, iter: 46000, avg_loss: 390.0522, kl: 4.8243, recon: 385.2279,time elapsed 60510.38s
+epoch: 14, iter: 46200, avg_loss: 391.6689, kl: 4.8049, recon: 386.8640,time elapsed 60531.12s
+epoch: 14, iter: 46400, avg_loss: 410.9206, kl: 4.9371, recon: 405.9835,time elapsed 60552.79s
+epoch: 14, iter: 46600, avg_loss: 384.9380, kl: 4.7487, recon: 380.1892,time elapsed 60573.16s
+epoch: 14, iter: 46800, avg_loss: 386.2071, kl: 4.7122, recon: 381.4950,time elapsed 60593.40s
+epoch: 14, iter: 47000, avg_loss: 413.9201, kl: 4.8394, recon: 409.0807,time elapsed 60615.03s
+epoch: 14, iter: 47200, avg_loss: 392.2787, kl: 4.7481, recon: 387.5305,time elapsed 60635.71s
+epoch: 14, iter: 47400, avg_loss: 368.9732, kl: 4.5700, recon: 364.4032,time elapsed 60655.31s
+epoch: 14, iter: 47600, avg_loss: 376.0045, kl: 4.6200, recon: 371.3845,time elapsed 60675.40s
+epoch: 14, iter: 47800, avg_loss: 368.0210, kl: 4.5719, recon: 363.4491,time elapsed 60695.00s
+epoch: 14, iter: 48000, avg_loss: 397.1192, kl: 4.7228, recon: 392.3964,time elapsed 60716.07s
+epoch: 14, iter: 48200, avg_loss: 405.4040, kl: 4.7664, recon: 400.6376,time elapsed 60737.19s
+kl weight 1.0000
+VAL --- avg_loss: 375.9452, kl: 4.6408, mi: 2.6374, recon: 371.3044, nll: 375.9452, ppl: 47.9505
+update best loss
+epoch: 15, iter: 48400, avg_loss: 394.6314, kl: 4.7668, recon: 389.8646,time elapsed 60775.40s
+epoch: 15, iter: 48600, avg_loss: 404.9501, kl: 4.8264, recon: 400.1237,time elapsed 60796.54s
+epoch: 15, iter: 48800, avg_loss: 377.4197, kl: 4.7334, recon: 372.6863,time elapsed 60816.54s
+epoch: 15, iter: 49000, avg_loss: 362.5211, kl: 4.6350, recon: 357.8862,time elapsed 60835.79s
+epoch: 15, iter: 49200, avg_loss: 364.3251, kl: 4.5963, recon: 359.7288,time elapsed 60855.40s
+epoch: 15, iter: 49400, avg_loss: 394.2048, kl: 4.7384, recon: 389.4664,time elapsed 60876.24s
+epoch: 15, iter: 49600, avg_loss: 378.5969, kl: 4.6244, recon: 373.9725,time elapsed 60896.26s
+epoch: 15, iter: 49800, avg_loss: 386.4675, kl: 4.6586, recon: 381.8089,time elapsed 60916.81s
+epoch: 15, iter: 50000, avg_loss: 400.4181, kl: 4.7327, recon: 395.6854,time elapsed 60937.95s
+epoch: 15, iter: 50200, avg_loss: 398.5252, kl: 4.7331, recon: 393.7920,time elapsed 60959.01s
+epoch: 15, iter: 50400, avg_loss: 407.9621, kl: 4.6795, recon: 403.2826,time elapsed 60980.33s
+epoch: 15, iter: 50600, avg_loss: 402.7737, kl: 4.7005, recon: 398.0731,time elapsed 61001.64s
+epoch: 15, iter: 50800, avg_loss: 389.3335, kl: 4.6786, recon: 384.6550,time elapsed 61022.38s
+epoch: 15, iter: 51000, avg_loss: 390.4064, kl: 4.5919, recon: 385.8146,time elapsed 61043.20s
+epoch: 15, iter: 51200, avg_loss: 380.6434, kl: 4.5994, recon: 376.0440,time elapsed 61063.29s
+epoch: 15, iter: 51400, avg_loss: 400.9628, kl: 4.8215, recon: 396.1413,time elapsed 61084.49s
+kl weight 1.0000
+VAL --- avg_loss: 374.9509, kl: 4.4117, mi: 2.6381, recon: 370.5393, nll: 374.9509, ppl: 47.4622
+update best loss
+TEST --- avg_loss: 372.4818, kl: 4.3875, mi: 2.5632, recon: 368.0943, nll: 372.4818, ppl: 47.1673
+epoch: 16, iter: 51600, avg_loss: 368.9786, kl: 4.4793, recon: 364.4993,time elapsed 61139.72s
+epoch: 16, iter: 51800, avg_loss: 366.3871, kl: 4.5676, recon: 361.8195,time elapsed 61159.66s
+epoch: 16, iter: 52000, avg_loss: 387.2751, kl: 4.6265, recon: 382.6486,time elapsed 61180.44s
+epoch: 16, iter: 52200, avg_loss: 377.4376, kl: 4.6628, recon: 372.7748,time elapsed 61200.65s
+epoch: 16, iter: 52400, avg_loss: 397.7134, kl: 4.7229, recon: 392.9905,time elapsed 61222.01s
+epoch: 16, iter: 52600, avg_loss: 385.4521, kl: 4.5906, recon: 380.8615,time elapsed 61242.59s
+epoch: 16, iter: 52800, avg_loss: 405.6892, kl: 4.6992, recon: 400.9900,time elapsed 61264.01s
+epoch: 16, iter: 53000, avg_loss: 380.4267, kl: 4.5806, recon: 375.8460,time elapsed 61284.28s
+epoch: 16, iter: 53200, avg_loss: 397.1438, kl: 4.6890, recon: 392.4548,time elapsed 61305.36s
+epoch: 16, iter: 53400, avg_loss: 363.5015, kl: 4.5398, recon: 358.9617,time elapsed 61324.89s
+epoch: 16, iter: 53600, avg_loss: 406.2168, kl: 4.7717, recon: 401.4451,time elapsed 61346.47s
+epoch: 16, iter: 53800, avg_loss: 418.0002, kl: 4.7676, recon: 413.2326,time elapsed 61368.56s
+epoch: 16, iter: 54000, avg_loss: 395.5569, kl: 4.6243, recon: 390.9326,time elapsed 61389.39s
+epoch: 16, iter: 54200, avg_loss: 391.2546, kl: 4.5934, recon: 386.6612,time elapsed 61410.11s
+epoch: 16, iter: 54400, avg_loss: 397.6687, kl: 4.6027, recon: 393.0660,time elapsed 61431.20s
+epoch: 16, iter: 54600, avg_loss: 378.9116, kl: 4.5406, recon: 374.3709,time elapsed 61451.38s
+kl weight 1.0000
+VAL --- avg_loss: 374.6655, kl: 4.2906, mi: 2.6100, recon: 370.3749, nll: 374.6655, ppl: 47.3230
+update best loss
+epoch: 17, iter: 54800, avg_loss: 389.1899, kl: 4.6601, recon: 384.5297,time elapsed 61489.94s
+epoch: 17, iter: 55000, avg_loss: 368.7367, kl: 4.5293, recon: 364.2074,time elapsed 61509.77s
+epoch: 17, iter: 55200, avg_loss: 394.8604, kl: 4.6749, recon: 390.1855,time elapsed 61530.79s
+epoch: 17, iter: 55400, avg_loss: 375.4064, kl: 4.6017, recon: 370.8046,time elapsed 61550.99s
+epoch: 17, iter: 55600, avg_loss: 385.0508, kl: 4.6437, recon: 380.4071,time elapsed 61571.68s
+epoch: 17, iter: 55800, avg_loss: 390.4606, kl: 4.6094, recon: 385.8512,time elapsed 61592.61s
+epoch: 17, iter: 56000, avg_loss: 389.1228, kl: 4.5557, recon: 384.5671,time elapsed 61613.25s
+epoch: 17, iter: 56200, avg_loss: 381.9359, kl: 4.5837, recon: 377.3522,time elapsed 61633.73s
+epoch: 17, iter: 56400, avg_loss: 381.5188, kl: 4.5154, recon: 377.0034,time elapsed 61654.03s
+epoch: 17, iter: 56600, avg_loss: 385.7889, kl: 4.5343, recon: 381.2547,time elapsed 61674.34s
+epoch: 17, iter: 56800, avg_loss: 380.4505, kl: 4.5596, recon: 375.8909,time elapsed 61694.82s
+epoch: 17, iter: 57000, avg_loss: 406.0232, kl: 4.6063, recon: 401.4168,time elapsed 61716.31s
+epoch: 17, iter: 57200, avg_loss: 397.3448, kl: 4.6048, recon: 392.7400,time elapsed 61737.36s
+epoch: 17, iter: 57400, avg_loss: 392.5444, kl: 4.5262, recon: 388.0183,time elapsed 61758.35s
+epoch: 17, iter: 57600, avg_loss: 375.2456, kl: 4.4935, recon: 370.7522,time elapsed 61778.52s
+epoch: 17, iter: 57800, avg_loss: 390.9433, kl: 4.5782, recon: 386.3652,time elapsed 61799.28s
+kl weight 1.0000
+VAL --- avg_loss: 374.5506, kl: 4.3484, mi: 2.6628, recon: 370.2021, nll: 374.5506, ppl: 47.2670
+update best loss
+epoch: 18, iter: 58000, avg_loss: 356.7567, kl: 4.3992, recon: 352.3575,time elapsed 61838.58s
+epoch: 18, iter: 58200, avg_loss: 422.3090, kl: 4.7727, recon: 417.5363,time elapsed 61860.89s
+epoch: 18, iter: 58400, avg_loss: 374.2758, kl: 4.4927, recon: 369.7831,time elapsed 61880.92s
+epoch: 18, iter: 58600, avg_loss: 368.9457, kl: 4.5021, recon: 364.4437,time elapsed 61900.71s
+epoch: 18, iter: 58800, avg_loss: 367.7872, kl: 4.4099, recon: 363.3773,time elapsed 61920.62s
+epoch: 18, iter: 59000, avg_loss: 393.2686, kl: 4.5557, recon: 388.7129,time elapsed 61941.57s
+epoch: 18, iter: 59200, avg_loss: 378.9914, kl: 4.4887, recon: 374.5026,time elapsed 61961.95s
+epoch: 18, iter: 59400, avg_loss: 393.1593, kl: 4.6009, recon: 388.5585,time elapsed 61982.88s
+epoch: 18, iter: 59600, avg_loss: 382.9852, kl: 4.5007, recon: 378.4845,time elapsed 62003.31s
+epoch: 18, iter: 59800, avg_loss: 389.9633, kl: 4.5421, recon: 385.4211,time elapsed 62024.34s
+epoch: 18, iter: 60000, avg_loss: 384.6699, kl: 4.4761, recon: 380.1938,time elapsed 62044.96s
+epoch: 18, iter: 60200, avg_loss: 385.3230, kl: 4.5063, recon: 380.8167,time elapsed 62065.55s
+epoch: 18, iter: 60400, avg_loss: 384.0308, kl: 4.5007, recon: 379.5301,time elapsed 62086.12s
+epoch: 18, iter: 60600, avg_loss: 385.6128, kl: 4.5100, recon: 381.1028,time elapsed 62106.41s
+epoch: 18, iter: 60800, avg_loss: 401.8583, kl: 4.5859, recon: 397.2725,time elapsed 62127.59s
+epoch: 18, iter: 61000, avg_loss: 393.2713, kl: 4.5730, recon: 388.6983,time elapsed 62148.12s
+kl weight 1.0000
+VAL --- avg_loss: 375.3097, kl: 4.6413, mi: 2.6951, recon: 370.6684, nll: 375.3097, ppl: 47.6379
+epoch: 19, iter: 61200, avg_loss: 407.0249, kl: 4.6603, recon: 402.3646,time elapsed 62187.15s
+epoch: 19, iter: 61400, avg_loss: 383.3359, kl: 4.5608, recon: 378.7751,time elapsed 62207.74s
+epoch: 19, iter: 61600, avg_loss: 409.8965, kl: 4.6712, recon: 405.2253,time elapsed 62229.82s
+epoch: 19, iter: 61800, avg_loss: 391.2658, kl: 4.6488, recon: 386.6170,time elapsed 62250.90s
+epoch: 19, iter: 62000, avg_loss: 369.4861, kl: 4.4278, recon: 365.0583,time elapsed 62271.07s
+epoch: 19, iter: 62200, avg_loss: 374.3044, kl: 4.4650, recon: 369.8393,time elapsed 62291.47s
+epoch: 19, iter: 62400, avg_loss: 375.5979, kl: 4.4610, recon: 371.1369,time elapsed 62311.67s
+epoch: 19, iter: 62600, avg_loss: 394.9413, kl: 4.5500, recon: 390.3913,time elapsed 62333.02s
+epoch: 19, iter: 62800, avg_loss: 374.4691, kl: 4.4693, recon: 369.9998,time elapsed 62353.14s
+epoch: 19, iter: 63000, avg_loss: 388.6385, kl: 4.5541, recon: 384.0843,time elapsed 62374.00s
+epoch: 19, iter: 63200, avg_loss: 379.5738, kl: 4.5178, recon: 375.0560,time elapsed 62394.49s
+epoch: 19, iter: 63400, avg_loss: 384.2951, kl: 4.4672, recon: 379.8278,time elapsed 62415.29s
+epoch: 19, iter: 63600, avg_loss: 393.8624, kl: 4.4758, recon: 389.3866,time elapsed 62436.61s
+epoch: 19, iter: 63800, avg_loss: 386.5543, kl: 4.5158, recon: 382.0385,time elapsed 62457.50s
+epoch: 19, iter: 64000, avg_loss: 375.0770, kl: 4.3780, recon: 370.6991,time elapsed 62477.92s
+epoch: 19, iter: 64200, avg_loss: 415.3185, kl: 4.5744, recon: 410.7440,time elapsed 62500.03s
+kl weight 1.0000
+VAL --- avg_loss: 373.5231, kl: 4.3829, mi: 2.6331, recon: 369.1402, nll: 373.5231, ppl: 46.7697
+update best loss
+epoch: 20, iter: 64400, avg_loss: 373.8765, kl: 4.4105, recon: 369.4660,time elapsed 62538.53s
+epoch: 20, iter: 64600, avg_loss: 378.5001, kl: 4.5273, recon: 373.9729,time elapsed 62558.95s
+epoch: 20, iter: 64800, avg_loss: 368.1074, kl: 4.4232, recon: 363.6842,time elapsed 62578.89s
+epoch: 20, iter: 65000, avg_loss: 361.3666, kl: 4.4025, recon: 356.9641,time elapsed 62598.53s
+epoch: 20, iter: 65200, avg_loss: 380.0898, kl: 4.5168, recon: 375.5730,time elapsed 62618.87s
+epoch: 20, iter: 65400, avg_loss: 401.0209, kl: 4.5890, recon: 396.4320,time elapsed 62640.24s
+epoch: 20, iter: 65600, avg_loss: 377.5207, kl: 4.4513, recon: 373.0693,time elapsed 62660.55s
+epoch: 20, iter: 65800, avg_loss: 389.9307, kl: 4.5127, recon: 385.4180,time elapsed 62681.37s
+epoch: 20, iter: 66000, avg_loss: 423.4051, kl: 4.6364, recon: 418.7686,time elapsed 62703.46s
+epoch: 20, iter: 66200, avg_loss: 386.9607, kl: 4.4986, recon: 382.4621,time elapsed 62724.21s
+epoch: 20, iter: 66400, avg_loss: 378.7168, kl: 4.5130, recon: 374.2038,time elapsed 62744.60s
+epoch: 20, iter: 66600, avg_loss: 407.1412, kl: 4.6234, recon: 402.5178,time elapsed 62766.21s
+epoch: 20, iter: 66800, avg_loss: 377.9834, kl: 4.3976, recon: 373.5859,time elapsed 62786.46s
+epoch: 20, iter: 67000, avg_loss: 387.4725, kl: 4.5444, recon: 382.9281,time elapsed 62807.13s
+epoch: 20, iter: 67200, avg_loss: 388.0010, kl: 4.4578, recon: 383.5431,time elapsed 62827.69s
+epoch: 20, iter: 67400, avg_loss: 390.0943, kl: 4.4662, recon: 385.6281,time elapsed 62848.43s
+kl weight 1.0000
+VAL --- avg_loss: 373.3119, kl: 4.4906, mi: 2.6681, recon: 368.8213, nll: 373.3119, ppl: 46.6681
+update best loss
+TEST --- avg_loss: 370.8695, kl: 4.4679, mi: 2.7023, recon: 366.4016, nll: 370.8695, ppl: 46.3870
+epoch: 21, iter: 67600, avg_loss: 410.7028, kl: 4.6109, recon: 406.0919,time elapsed 62903.67s
+epoch: 21, iter: 67800, avg_loss: 374.9485, kl: 4.4542, recon: 370.4943,time elapsed 62923.92s
+epoch: 21, iter: 68000, avg_loss: 381.4756, kl: 4.5051, recon: 376.9705,time elapsed 62944.55s
+epoch: 21, iter: 68200, avg_loss: 371.2839, kl: 4.3701, recon: 366.9139,time elapsed 62964.64s
+epoch: 21, iter: 68400, avg_loss: 399.5968, kl: 4.4735, recon: 395.1233,time elapsed 62986.12s
+epoch: 21, iter: 68600, avg_loss: 401.9185, kl: 4.5360, recon: 397.3824,time elapsed 63007.61s
+epoch: 21, iter: 68800, avg_loss: 394.0641, kl: 4.4599, recon: 389.6042,time elapsed 63028.85s
+epoch: 21, iter: 69000, avg_loss: 376.3995, kl: 4.4171, recon: 371.9824,time elapsed 63049.00s
+epoch: 21, iter: 69200, avg_loss: 404.0575, kl: 4.5636, recon: 399.4939,time elapsed 63070.45s
+epoch: 21, iter: 69400, avg_loss: 410.8896, kl: 4.5809, recon: 406.3087,time elapsed 63092.22s
+epoch: 21, iter: 69600, avg_loss: 374.0017, kl: 4.3994, recon: 369.6023,time elapsed 63112.39s
+epoch: 21, iter: 69800, avg_loss: 374.5947, kl: 4.3888, recon: 370.2059,time elapsed 63132.56s
+epoch: 21, iter: 70000, avg_loss: 388.1896, kl: 4.4136, recon: 383.7761,time elapsed 63153.46s
+epoch: 21, iter: 70200, avg_loss: 389.3099, kl: 4.4378, recon: 384.8720,time elapsed 63174.02s
+epoch: 21, iter: 70400, avg_loss: 351.0282, kl: 4.1900, recon: 346.8382,time elapsed 63192.98s
+epoch: 21, iter: 70600, avg_loss: 381.2290, kl: 4.3608, recon: 376.8682,time elapsed 63213.41s
+kl weight 1.0000
+VAL --- avg_loss: 372.4357, kl: 4.4113, mi: 2.6388, recon: 368.0243, nll: 372.4357, ppl: 46.2490
+update best loss
+epoch: 22, iter: 70800, avg_loss: 413.6134, kl: 4.7288, recon: 408.8845,time elapsed 63251.77s
+epoch: 22, iter: 71000, avg_loss: 393.5440, kl: 4.5348, recon: 389.0092,time elapsed 63273.22s
+epoch: 22, iter: 71200, avg_loss: 376.6818, kl: 4.3351, recon: 372.3467,time elapsed 63293.64s
+epoch: 22, iter: 71400, avg_loss: 381.5374, kl: 4.4114, recon: 377.1260,time elapsed 63314.36s
+epoch: 22, iter: 71600, avg_loss: 399.7688, kl: 4.5026, recon: 395.2662,time elapsed 63336.03s
+epoch: 22, iter: 71800, avg_loss: 375.8205, kl: 4.4236, recon: 371.3969,time elapsed 63356.37s
+epoch: 22, iter: 72000, avg_loss: 391.8229, kl: 4.4945, recon: 387.3284,time elapsed 63377.60s
+epoch: 22, iter: 72200, avg_loss: 370.9788, kl: 4.3620, recon: 366.6168,time elapsed 63397.83s
+epoch: 22, iter: 72400, avg_loss: 354.8805, kl: 4.2030, recon: 350.6774,time elapsed 63417.35s
+epoch: 22, iter: 72600, avg_loss: 390.4328, kl: 4.4764, recon: 385.9564,time elapsed 63438.39s
+epoch: 22, iter: 72800, avg_loss: 395.4553, kl: 4.4679, recon: 390.9874,time elapsed 63459.66s
+epoch: 22, iter: 73000, avg_loss: 389.6540, kl: 4.4368, recon: 385.2173,time elapsed 63480.50s
+epoch: 22, iter: 73200, avg_loss: 381.9429, kl: 4.3857, recon: 377.5572,time elapsed 63501.16s
+epoch: 22, iter: 73400, avg_loss: 369.5247, kl: 4.3240, recon: 365.2007,time elapsed 63521.23s
+epoch: 22, iter: 73600, avg_loss: 397.5387, kl: 4.4589, recon: 393.0798,time elapsed 63542.74s
+epoch: 22, iter: 73800, avg_loss: 384.5317, kl: 4.3643, recon: 380.1674,time elapsed 63563.76s
+epoch: 22, iter: 74000, avg_loss: 400.2142, kl: 4.4219, recon: 395.7923,time elapsed 63585.32s
+kl weight 1.0000
+VAL --- avg_loss: 371.9068, kl: 4.3497, mi: 2.5681, recon: 367.5572, nll: 371.9068, ppl: 45.9980
+update best loss
+epoch: 23, iter: 74200, avg_loss: 386.4144, kl: 4.4768, recon: 381.9375,time elapsed 63623.79s
+epoch: 23, iter: 74400, avg_loss: 402.3010, kl: 4.5684, recon: 397.7326,time elapsed 63645.55s
+epoch: 23, iter: 74600, avg_loss: 376.3393, kl: 4.3684, recon: 371.9709,time elapsed 63666.02s
+epoch: 23, iter: 74800, avg_loss: 399.1758, kl: 4.5201, recon: 394.6556,time elapsed 63687.30s
+epoch: 23, iter: 75000, avg_loss: 362.4673, kl: 4.3398, recon: 358.1275,time elapsed 63707.07s
+epoch: 23, iter: 75200, avg_loss: 404.8617, kl: 4.4714, recon: 400.3902,time elapsed 63728.61s
+epoch: 23, iter: 75400, avg_loss: 371.0054, kl: 4.3208, recon: 366.6846,time elapsed 63748.70s
+epoch: 23, iter: 75600, avg_loss: 374.4184, kl: 4.3249, recon: 370.0935,time elapsed 63769.08s
+epoch: 23, iter: 75800, avg_loss: 399.9223, kl: 4.5000, recon: 395.4223,time elapsed 63790.42s
+epoch: 23, iter: 76000, avg_loss: 388.2224, kl: 4.4548, recon: 383.7676,time elapsed 63811.08s
+epoch: 23, iter: 76200, avg_loss: 387.6910, kl: 4.4397, recon: 383.2512,time elapsed 63831.70s
+epoch: 23, iter: 76400, avg_loss: 372.8808, kl: 4.3402, recon: 368.5406,time elapsed 63851.68s
+epoch: 23, iter: 76600, avg_loss: 387.1801, kl: 4.3683, recon: 382.8118,time elapsed 63872.58s
+epoch: 23, iter: 76800, avg_loss: 387.8848, kl: 4.4043, recon: 383.4805,time elapsed 63893.15s
+epoch: 23, iter: 77000, avg_loss: 383.8551, kl: 4.3482, recon: 379.5069,time elapsed 63913.73s
+epoch: 23, iter: 77200, avg_loss: 363.7327, kl: 4.1923, recon: 359.5404,time elapsed 63933.52s
+kl weight 1.0000
+VAL --- avg_loss: 372.0820, kl: 4.4400, mi: 2.5645, recon: 367.6420, nll: 372.0820, ppl: 46.0810
+epoch: 24, iter: 77400, avg_loss: 394.8918, kl: 4.4797, recon: 390.4122,time elapsed 63971.56s
+epoch: 24, iter: 77600, avg_loss: 393.6706, kl: 4.4369, recon: 389.2337,time elapsed 63992.77s
+epoch: 24, iter: 77800, avg_loss: 402.9847, kl: 4.4512, recon: 398.5335,time elapsed 64014.44s
+epoch: 24, iter: 78000, avg_loss: 372.9448, kl: 4.3403, recon: 368.6045,time elapsed 64034.57s
+epoch: 24, iter: 78200, avg_loss: 378.6163, kl: 4.3564, recon: 374.2600,time elapsed 64054.94s
+epoch: 24, iter: 78400, avg_loss: 388.0803, kl: 4.4095, recon: 383.6708,time elapsed 64075.66s
+epoch: 24, iter: 78600, avg_loss: 343.3069, kl: 4.1812, recon: 339.1257,time elapsed 64094.24s
+epoch: 24, iter: 78800, avg_loss: 403.1546, kl: 4.4605, recon: 398.6941,time elapsed 64115.78s
+epoch: 24, iter: 79000, avg_loss: 368.0329, kl: 4.2652, recon: 363.7676,time elapsed 64135.78s
+epoch: 24, iter: 79200, avg_loss: 389.5418, kl: 4.4065, recon: 385.1353,time elapsed 64156.58s
+epoch: 24, iter: 79400, avg_loss: 388.9139, kl: 4.4065, recon: 384.5073,time elapsed 64177.47s
+epoch: 24, iter: 79600, avg_loss: 382.3634, kl: 4.3080, recon: 378.0554,time elapsed 64197.99s
+epoch: 24, iter: 79800, avg_loss: 369.5794, kl: 4.2555, recon: 365.3239,time elapsed 64217.96s
+epoch: 24, iter: 80000, avg_loss: 379.7449, kl: 4.3506, recon: 375.3944,time elapsed 64238.38s
+epoch: 24, iter: 80200, avg_loss: 377.2892, kl: 4.3605, recon: 372.9287,time elapsed 64258.45s
+epoch: 24, iter: 80400, avg_loss: 392.2699, kl: 4.3537, recon: 387.9161,time elapsed 64279.50s
+kl weight 1.0000
+VAL --- avg_loss: 371.9790, kl: 4.1661, mi: 2.5723, recon: 367.8129, nll: 371.9790, ppl: 46.0321
+new lr: 0.500000
+epoch: 25, iter: 80600, avg_loss: 380.1779, kl: 4.4565, recon: 375.7213,time elapsed 64318.58s
+epoch: 25, iter: 80800, avg_loss: 381.9901, kl: 4.3513, recon: 377.6388,time elapsed 64339.38s
+epoch: 25, iter: 81000, avg_loss: 401.2005, kl: 4.4278, recon: 396.7726,time elapsed 64361.34s
+epoch: 25, iter: 81200, avg_loss: 373.3561, kl: 4.2346, recon: 369.1215,time elapsed 64381.93s
+epoch: 25, iter: 81400, avg_loss: 387.4928, kl: 4.2991, recon: 383.1937,time elapsed 64403.25s
+epoch: 25, iter: 81600, avg_loss: 360.7520, kl: 4.1690, recon: 356.5830,time elapsed 64423.24s
+epoch: 25, iter: 81800, avg_loss: 377.7040, kl: 4.3333, recon: 373.3707,time elapsed 64443.90s
+epoch: 25, iter: 82000, avg_loss: 365.5531, kl: 4.1914, recon: 361.3617,time elapsed 64464.14s
+epoch: 25, iter: 82200, avg_loss: 361.5668, kl: 4.1499, recon: 357.4169,time elapsed 64484.25s
+epoch: 25, iter: 82400, avg_loss: 370.3942, kl: 4.2152, recon: 366.1790,time elapsed 64504.67s
+epoch: 25, iter: 82600, avg_loss: 379.2053, kl: 4.2291, recon: 374.9762,time elapsed 64525.53s
+epoch: 25, iter: 82800, avg_loss: 394.6368, kl: 4.2860, recon: 390.3508,time elapsed 64547.25s
+epoch: 25, iter: 83000, avg_loss: 357.9815, kl: 4.1086, recon: 353.8729,time elapsed 64567.02s
+epoch: 25, iter: 83200, avg_loss: 372.7193, kl: 4.1923, recon: 368.5270,time elapsed 64587.50s
+epoch: 25, iter: 83400, avg_loss: 373.5193, kl: 4.2069, recon: 369.3124,time elapsed 64607.90s
+epoch: 25, iter: 83600, avg_loss: 371.7791, kl: 4.2003, recon: 367.5788,time elapsed 64628.45s
+kl weight 1.0000
+VAL --- avg_loss: 367.1013, kl: 4.2144, mi: 2.6865, recon: 362.8869, nll: 367.1013, ppl: 43.7778
+update best loss
+TEST --- avg_loss: 364.7298, kl: 4.1856, mi: 2.6141, recon: 360.5442, nll: 364.7298, ppl: 43.5321
+epoch: 26, iter: 83800, avg_loss: 350.3583, kl: 4.1245, recon: 346.2338,time elapsed 64683.23s
+epoch: 26, iter: 84000, avg_loss: 381.8080, kl: 4.2864, recon: 377.5217,time elapsed 64703.71s
+epoch: 26, iter: 84200, avg_loss: 386.1382, kl: 4.3088, recon: 381.8293,time elapsed 64725.13s
+epoch: 26, iter: 84400, avg_loss: 380.1563, kl: 4.2963, recon: 375.8600,time elapsed 64746.06s
+epoch: 26, iter: 84600, avg_loss: 371.6388, kl: 4.2170, recon: 367.4218,time elapsed 64766.45s
+epoch: 26, iter: 84800, avg_loss: 378.6481, kl: 4.2794, recon: 374.3687,time elapsed 64787.33s
+epoch: 26, iter: 85000, avg_loss: 378.1640, kl: 4.2295, recon: 373.9345,time elapsed 64808.22s
+epoch: 26, iter: 85200, avg_loss: 360.6819, kl: 4.1795, recon: 356.5024,time elapsed 64828.34s
+epoch: 26, iter: 85400, avg_loss: 377.1812, kl: 4.1857, recon: 372.9955,time elapsed 64849.11s
+epoch: 26, iter: 85600, avg_loss: 378.2737, kl: 4.2491, recon: 374.0247,time elapsed 64870.07s
+epoch: 26, iter: 85800, avg_loss: 392.3194, kl: 4.3432, recon: 387.9762,time elapsed 64891.42s
+epoch: 26, iter: 86000, avg_loss: 375.7344, kl: 4.2443, recon: 371.4901,time elapsed 64912.16s
+epoch: 26, iter: 86200, avg_loss: 362.0385, kl: 4.1487, recon: 357.8898,time elapsed 64932.25s
+epoch: 26, iter: 86400, avg_loss: 372.8725, kl: 4.2426, recon: 368.6299,time elapsed 64952.78s
+epoch: 26, iter: 86600, avg_loss: 348.4885, kl: 4.0330, recon: 344.4555,time elapsed 64972.33s
+epoch: 26, iter: 86800, avg_loss: 362.6179, kl: 4.1554, recon: 358.4625,time elapsed 64992.47s
+kl weight 1.0000
+VAL --- avg_loss: 366.4145, kl: 4.2452, mi: 2.6980, recon: 362.1693, nll: 366.4145, ppl: 43.4693
+update best loss
+epoch: 27, iter: 87000, avg_loss: 376.0576, kl: 4.2535, recon: 371.8041,time elapsed 65031.83s
+epoch: 27, iter: 87200, avg_loss: 393.2808, kl: 4.3937, recon: 388.8871,time elapsed 65053.57s
+epoch: 27, iter: 87400, avg_loss: 387.0795, kl: 4.3198, recon: 382.7597,time elapsed 65074.97s
+epoch: 27, iter: 87600, avg_loss: 362.8837, kl: 4.2023, recon: 358.6814,time elapsed 65094.97s
+epoch: 27, iter: 87800, avg_loss: 350.9039, kl: 4.1268, recon: 346.7770,time elapsed 65114.68s
+epoch: 27, iter: 88000, avg_loss: 392.5104, kl: 4.3403, recon: 388.1701,time elapsed 65136.35s
+epoch: 27, iter: 88200, avg_loss: 387.1058, kl: 4.2475, recon: 382.8584,time elapsed 65157.68s
+epoch: 27, iter: 88400, avg_loss: 378.7798, kl: 4.2196, recon: 374.5603,time elapsed 65178.73s
+epoch: 27, iter: 88600, avg_loss: 389.0800, kl: 4.3176, recon: 384.7624,time elapsed 65200.22s
+epoch: 27, iter: 88800, avg_loss: 370.8298, kl: 4.2165, recon: 366.6134,time elapsed 65220.77s
+epoch: 27, iter: 89000, avg_loss: 378.9512, kl: 4.2215, recon: 374.7297,time elapsed 65241.55s
+epoch: 27, iter: 89200, avg_loss: 366.8249, kl: 4.2339, recon: 362.5910,time elapsed 65261.93s
+epoch: 27, iter: 89400, avg_loss: 362.9963, kl: 4.1677, recon: 358.8286,time elapsed 65281.93s
+epoch: 27, iter: 89600, avg_loss: 356.0059, kl: 4.1330, recon: 351.8730,time elapsed 65301.78s
+epoch: 27, iter: 89800, avg_loss: 354.0296, kl: 4.1019, recon: 349.9277,time elapsed 65321.44s
+epoch: 27, iter: 90000, avg_loss: 362.4474, kl: 4.1703, recon: 358.2771,time elapsed 65341.43s
+kl weight 1.0000
+VAL --- avg_loss: 366.5348, kl: 4.1651, mi: 2.6554, recon: 362.3698, nll: 366.5348, ppl: 43.5232
+epoch: 28, iter: 90200, avg_loss: 388.3088, kl: 4.3681, recon: 383.9407,time elapsed 65379.44s
+epoch: 28, iter: 90400, avg_loss: 367.6620, kl: 4.2278, recon: 363.4342,time elapsed 65399.85s
+epoch: 28, iter: 90600, avg_loss: 379.5970, kl: 4.2366, recon: 375.3604,time elapsed 65421.03s
+epoch: 28, iter: 90800, avg_loss: 357.8457, kl: 4.1872, recon: 353.6585,time elapsed 65440.96s
+epoch: 28, iter: 91000, avg_loss: 367.1912, kl: 4.2588, recon: 362.9323,time elapsed 65461.57s
+epoch: 28, iter: 91200, avg_loss: 378.2300, kl: 4.2392, recon: 373.9908,time elapsed 65482.61s
+epoch: 28, iter: 91400, avg_loss: 391.7646, kl: 4.3387, recon: 387.4259,time elapsed 65504.15s
+epoch: 28, iter: 91600, avg_loss: 386.5624, kl: 4.2944, recon: 382.2679,time elapsed 65525.53s
+epoch: 28, iter: 91800, avg_loss: 373.1000, kl: 4.1873, recon: 368.9127,time elapsed 65546.30s
+epoch: 28, iter: 92000, avg_loss: 361.2856, kl: 4.1466, recon: 357.1390,time elapsed 65566.55s
+epoch: 28, iter: 92200, avg_loss: 363.8245, kl: 4.1672, recon: 359.6573,time elapsed 65587.08s
+epoch: 28, iter: 92400, avg_loss: 336.5876, kl: 4.0596, recon: 332.5280,time elapsed 65606.18s
+epoch: 28, iter: 92600, avg_loss: 388.7334, kl: 4.2864, recon: 384.4470,time elapsed 65627.86s
+epoch: 28, iter: 92800, avg_loss: 371.5636, kl: 4.2032, recon: 367.3604,time elapsed 65648.27s
+epoch: 28, iter: 93000, avg_loss: 375.6194, kl: 4.2440, recon: 371.3754,time elapsed 65669.20s
+epoch: 28, iter: 93200, avg_loss: 372.2702, kl: 4.2102, recon: 368.0600,time elapsed 65690.04s
+kl weight 1.0000
+VAL --- avg_loss: 366.2517, kl: 4.1033, mi: 2.6133, recon: 362.1484, nll: 366.2517, ppl: 43.3966
+update best loss
+epoch: 29, iter: 93400, avg_loss: 356.7668, kl: 4.0969, recon: 352.6699,time elapsed 65727.94s
+epoch: 29, iter: 93600, avg_loss: 371.5892, kl: 4.2982, recon: 367.2910,time elapsed 65748.87s
+epoch: 29, iter: 93800, avg_loss: 366.7427, kl: 4.2587, recon: 362.4840,time elapsed 65769.65s
+epoch: 29, iter: 94000, avg_loss: 365.6592, kl: 4.2044, recon: 361.4548,time elapsed 65790.23s
+epoch: 29, iter: 94200, avg_loss: 381.7181, kl: 4.2833, recon: 377.4348,time elapsed 65811.54s
+epoch: 29, iter: 94400, avg_loss: 363.4916, kl: 4.2101, recon: 359.2814,time elapsed 65832.03s
+epoch: 29, iter: 94600, avg_loss: 376.8636, kl: 4.2911, recon: 372.5725,time elapsed 65853.12s
+epoch: 29, iter: 94800, avg_loss: 370.7359, kl: 4.2466, recon: 366.4893,time elapsed 65873.87s
+epoch: 29, iter: 95000, avg_loss: 370.3750, kl: 4.2487, recon: 366.1263,time elapsed 65894.71s
+epoch: 29, iter: 95200, avg_loss: 378.5926, kl: 4.2665, recon: 374.3260,time elapsed 65915.92s
+epoch: 29, iter: 95400, avg_loss: 362.5180, kl: 4.1581, recon: 358.3598,time elapsed 65935.89s
+epoch: 29, iter: 95600, avg_loss: 368.9084, kl: 4.1960, recon: 364.7124,time elapsed 65956.60s
+epoch: 29, iter: 95800, avg_loss: 395.9003, kl: 4.3244, recon: 391.5758,time elapsed 65978.67s
+epoch: 29, iter: 96000, avg_loss: 354.8193, kl: 4.0784, recon: 350.7410,time elapsed 65998.60s
+epoch: 29, iter: 96200, avg_loss: 361.0426, kl: 4.1628, recon: 356.8798,time elapsed 66018.90s
+epoch: 29, iter: 96400, avg_loss: 377.3779, kl: 4.2010, recon: 373.1769,time elapsed 66039.73s
+kl weight 1.0000
+VAL --- avg_loss: 365.8271, kl: 4.2080, mi: 2.6247, recon: 361.6191, nll: 365.8271, ppl: 43.2073
+update best loss
+epoch: 30, iter: 96600, avg_loss: 394.5717, kl: 4.4301, recon: 390.1416,time elapsed 66078.91s
+epoch: 30, iter: 96800, avg_loss: 371.2453, kl: 4.2161, recon: 367.0292,time elapsed 66099.67s
+epoch: 30, iter: 97000, avg_loss: 349.5366, kl: 4.1087, recon: 345.4278,time elapsed 66119.40s
+epoch: 30, iter: 97200, avg_loss: 384.5578, kl: 4.3135, recon: 380.2443,time elapsed 66140.88s
+epoch: 30, iter: 97400, avg_loss: 362.2161, kl: 4.1935, recon: 358.0226,time elapsed 66161.34s
+epoch: 30, iter: 97600, avg_loss: 348.5690, kl: 4.1086, recon: 344.4603,time elapsed 66181.20s
+epoch: 30, iter: 97800, avg_loss: 376.2575, kl: 4.2740, recon: 371.9834,time elapsed 66202.37s
+epoch: 30, iter: 98000, avg_loss: 365.3051, kl: 4.1916, recon: 361.1135,time elapsed 66222.85s
+epoch: 30, iter: 98200, avg_loss: 355.2244, kl: 4.1464, recon: 351.0780,time elapsed 66242.73s
+epoch: 30, iter: 98400, avg_loss: 375.1044, kl: 4.2381, recon: 370.8663,time elapsed 66263.78s
+epoch: 30, iter: 98600, avg_loss: 366.4408, kl: 4.2574, recon: 362.1834,time elapsed 66284.19s
+epoch: 30, iter: 98800, avg_loss: 366.9069, kl: 4.1913, recon: 362.7157,time elapsed 66304.84s
+epoch: 30, iter: 99000, avg_loss: 380.5122, kl: 4.2889, recon: 376.2233,time elapsed 66326.11s
+epoch: 30, iter: 99200, avg_loss: 385.5943, kl: 4.2672, recon: 381.3271,time elapsed 66347.68s
+epoch: 30, iter: 99400, avg_loss: 375.0746, kl: 4.2092, recon: 370.8653,time elapsed 66368.29s
+epoch: 30, iter: 99600, avg_loss: 381.7633, kl: 4.2574, recon: 377.5060,time elapsed 66389.50s
+kl weight 1.0000
+VAL --- avg_loss: 365.6700, kl: 4.0459, mi: 2.5439, recon: 361.6241, nll: 365.6700, ppl: 43.1375
+update best loss
+TEST --- avg_loss: 363.3066, kl: 4.0204, mi: 2.5985, recon: 359.2862, nll: 363.3066, ppl: 42.8958
+epoch: 31, iter: 99800, avg_loss: 347.4476, kl: 4.0314, recon: 343.4162,time elapsed 66444.96s
+epoch: 31, iter: 100000, avg_loss: 378.2767, kl: 4.2467, recon: 374.0301,time elapsed 66465.93s
+epoch: 31, iter: 100200, avg_loss: 356.7074, kl: 4.1465, recon: 352.5609,time elapsed 66486.09s
+epoch: 31, iter: 100400, avg_loss: 373.1554, kl: 4.2148, recon: 368.9405,time elapsed 66506.94s
+epoch: 31, iter: 100600, avg_loss: 361.1087, kl: 4.1928, recon: 356.9160,time elapsed 66527.19s
+epoch: 31, iter: 100800, avg_loss: 352.1023, kl: 4.1458, recon: 347.9564,time elapsed 66547.08s
+epoch: 31, iter: 101000, avg_loss: 341.9005, kl: 4.1273, recon: 337.7732,time elapsed 66566.50s
+epoch: 31, iter: 101200, avg_loss: 397.4185, kl: 4.2964, recon: 393.1221,time elapsed 66588.51s
+epoch: 31, iter: 101400, avg_loss: 375.1199, kl: 4.2471, recon: 370.8728,time elapsed 66609.49s
+epoch: 31, iter: 101600, avg_loss: 383.0868, kl: 4.2529, recon: 378.8339,time elapsed 66630.69s
+epoch: 31, iter: 101800, avg_loss: 374.7049, kl: 4.1931, recon: 370.5117,time elapsed 66651.54s
+epoch: 31, iter: 102000, avg_loss: 354.2631, kl: 4.1174, recon: 350.1457,time elapsed 66671.40s
+epoch: 31, iter: 102200, avg_loss: 372.8874, kl: 4.1614, recon: 368.7259,time elapsed 66692.22s
+epoch: 31, iter: 102400, avg_loss: 373.3821, kl: 4.1804, recon: 369.2017,time elapsed 66713.08s
+epoch: 31, iter: 102600, avg_loss: 384.2427, kl: 4.2551, recon: 379.9876,time elapsed 66734.40s
+epoch: 31, iter: 102800, avg_loss: 371.9514, kl: 4.1852, recon: 367.7662,time elapsed 66755.24s
+kl weight 1.0000
+VAL --- avg_loss: 365.3694, kl: 4.0789, mi: 2.6355, recon: 361.2905, nll: 365.3694, ppl: 43.0042
+update best loss
+epoch: 32, iter: 103000, avg_loss: 426.1602, kl: 4.4418, recon: 421.7184,time elapsed 66793.94s
+epoch: 32, iter: 103200, avg_loss: 353.4317, kl: 4.1239, recon: 349.3079,time elapsed 66813.88s
+epoch: 32, iter: 103400, avg_loss: 376.3056, kl: 4.2251, recon: 372.0805,time elapsed 66835.29s
+epoch: 32, iter: 103600, avg_loss: 358.0461, kl: 4.1400, recon: 353.9061,time elapsed 66855.56s
+epoch: 32, iter: 103800, avg_loss: 366.7856, kl: 4.1686, recon: 362.6170,time elapsed 66876.41s
+epoch: 32, iter: 104000, avg_loss: 388.2827, kl: 4.2748, recon: 384.0079,time elapsed 66898.00s
+epoch: 32, iter: 104200, avg_loss: 357.8704, kl: 4.1771, recon: 353.6933,time elapsed 66917.98s
+epoch: 32, iter: 104400, avg_loss: 378.1733, kl: 4.2300, recon: 373.9433,time elapsed 66939.22s
+epoch: 32, iter: 104600, avg_loss: 360.7504, kl: 4.1708, recon: 356.5796,time elapsed 66959.37s
+epoch: 32, iter: 104800, avg_loss: 379.8649, kl: 4.2128, recon: 375.6521,time elapsed 66980.60s
+epoch: 32, iter: 105000, avg_loss: 362.3185, kl: 4.1010, recon: 358.2175,time elapsed 67001.13s
+epoch: 32, iter: 105200, avg_loss: 343.2111, kl: 4.0487, recon: 339.1624,time elapsed 67020.63s
+epoch: 32, iter: 105400, avg_loss: 368.7772, kl: 4.0740, recon: 364.7032,time elapsed 67041.34s
+epoch: 32, iter: 105600, avg_loss: 372.7826, kl: 4.1578, recon: 368.6248,time elapsed 67062.30s
+epoch: 32, iter: 105800, avg_loss: 388.1525, kl: 4.2522, recon: 383.9002,time elapsed 67083.92s
+epoch: 32, iter: 106000, avg_loss: 379.6221, kl: 4.1913, recon: 375.4308,time elapsed 67105.33s
+kl weight 1.0000
+VAL --- avg_loss: 365.2940, kl: 4.0727, mi: 2.6146, recon: 361.2213, nll: 365.2940, ppl: 42.9708
+update best loss
+epoch: 33, iter: 106200, avg_loss: 342.6800, kl: 4.0174, recon: 338.6626,time elapsed 67143.27s
+epoch: 33, iter: 106400, avg_loss: 352.6692, kl: 4.1167, recon: 348.5525,time elapsed 67163.30s
+epoch: 33, iter: 106600, avg_loss: 366.1596, kl: 4.1976, recon: 361.9620,time elapsed 67183.76s
+epoch: 33, iter: 106800, avg_loss: 375.0940, kl: 4.2034, recon: 370.8905,time elapsed 67204.77s
+epoch: 33, iter: 107000, avg_loss: 369.6227, kl: 4.1575, recon: 365.4652,time elapsed 67225.57s
+epoch: 33, iter: 107200, avg_loss: 376.2668, kl: 4.1988, recon: 372.0680,time elapsed 67246.61s
+epoch: 33, iter: 107400, avg_loss: 382.9249, kl: 4.2049, recon: 378.7201,time elapsed 67267.99s
+epoch: 33, iter: 107600, avg_loss: 358.9732, kl: 4.0790, recon: 354.8942,time elapsed 67288.04s
+epoch: 33, iter: 107800, avg_loss: 378.4957, kl: 4.2238, recon: 374.2719,time elapsed 67309.33s
+epoch: 33, iter: 108000, avg_loss: 382.4106, kl: 4.1834, recon: 378.2272,time elapsed 67330.88s
+epoch: 33, iter: 108200, avg_loss: 370.8617, kl: 4.1726, recon: 366.6891,time elapsed 67351.59s
+epoch: 33, iter: 108400, avg_loss: 369.1352, kl: 4.1351, recon: 365.0001,time elapsed 67372.25s
+epoch: 33, iter: 108600, avg_loss: 359.6676, kl: 4.1072, recon: 355.5604,time elapsed 67392.39s
+epoch: 33, iter: 108800, avg_loss: 368.0586, kl: 4.1360, recon: 363.9226,time elapsed 67412.95s
+epoch: 33, iter: 109000, avg_loss: 390.8958, kl: 4.2495, recon: 386.6463,time elapsed 67434.56s
+epoch: 33, iter: 109200, avg_loss: 340.2001, kl: 4.0157, recon: 336.1844,time elapsed 67453.80s
+epoch: 33, iter: 109400, avg_loss: 365.8537, kl: 4.1198, recon: 361.7338,time elapsed 67474.24s
+kl weight 1.0000
+VAL --- avg_loss: 365.2631, kl: 4.1733, mi: 2.6432, recon: 361.0898, nll: 365.2631, ppl: 42.9571
+update best loss
+epoch: 34, iter: 109600, avg_loss: 368.4441, kl: 4.1549, recon: 364.2892,time elapsed 67512.33s
+epoch: 34, iter: 109800, avg_loss: 381.5420, kl: 4.2191, recon: 377.3229,time elapsed 67533.81s
+epoch: 34, iter: 110000, avg_loss: 352.6187, kl: 4.0752, recon: 348.5436,time elapsed 67553.69s
+epoch: 34, iter: 110200, avg_loss: 394.8767, kl: 4.2947, recon: 390.5820,time elapsed 67575.60s
+epoch: 34, iter: 110400, avg_loss: 372.0113, kl: 4.2391, recon: 367.7722,time elapsed 67596.23s
+epoch: 34, iter: 110600, avg_loss: 357.2553, kl: 4.0921, recon: 353.1632,time elapsed 67616.39s
+epoch: 34, iter: 110800, avg_loss: 342.9796, kl: 4.0120, recon: 338.9675,time elapsed 67635.82s
+epoch: 34, iter: 111000, avg_loss: 388.4292, kl: 4.1822, recon: 384.2470,time elapsed 67657.53s
+epoch: 34, iter: 111200, avg_loss: 369.4378, kl: 4.1484, recon: 365.2895,time elapsed 67678.23s
+epoch: 34, iter: 111400, avg_loss: 351.7719, kl: 4.0718, recon: 347.7001,time elapsed 67698.14s
+epoch: 34, iter: 111600, avg_loss: 347.3492, kl: 4.0351, recon: 343.3141,time elapsed 67717.72s
+epoch: 34, iter: 111800, avg_loss: 369.4847, kl: 4.1475, recon: 365.3373,time elapsed 67738.24s
+epoch: 34, iter: 112000, avg_loss: 362.7992, kl: 4.1480, recon: 358.6512,time elapsed 67758.53s
+epoch: 34, iter: 112200, avg_loss: 374.9173, kl: 4.1965, recon: 370.7208,time elapsed 67779.21s
+epoch: 34, iter: 112400, avg_loss: 379.9481, kl: 4.1936, recon: 375.7545,time elapsed 67800.31s
+epoch: 34, iter: 112600, avg_loss: 369.0235, kl: 4.1299, recon: 364.8936,time elapsed 67820.66s
+kl weight 1.0000
+VAL --- avg_loss: 365.0128, kl: 4.0843, mi: 2.6603, recon: 360.9284, nll: 365.0128, ppl: 42.8466
+update best loss
+epoch: 35, iter: 112800, avg_loss: 367.0240, kl: 4.1547, recon: 362.8693,time elapsed 67859.77s
+epoch: 35, iter: 113000, avg_loss: 361.2808, kl: 4.1556, recon: 357.1252,time elapsed 67880.23s
+epoch: 35, iter: 113200, avg_loss: 360.9515, kl: 4.1337, recon: 356.8177,time elapsed 67900.97s
+epoch: 35, iter: 113400, avg_loss: 371.0014, kl: 4.1348, recon: 366.8666,time elapsed 67922.12s
+epoch: 35, iter: 113600, avg_loss: 366.0654, kl: 4.1088, recon: 361.9566,time elapsed 67942.94s
+epoch: 35, iter: 113800, avg_loss: 359.5307, kl: 4.1072, recon: 355.4234,time elapsed 67963.32s
+epoch: 35, iter: 114000, avg_loss: 395.9539, kl: 4.2521, recon: 391.7018,time elapsed 67985.40s
+epoch: 35, iter: 114200, avg_loss: 341.1775, kl: 4.0038, recon: 337.1737,time elapsed 68004.86s
+epoch: 35, iter: 114400, avg_loss: 383.8077, kl: 4.1826, recon: 379.6252,time elapsed 68026.43s
+epoch: 35, iter: 114600, avg_loss: 367.4924, kl: 4.1001, recon: 363.3923,time elapsed 68047.27s
+epoch: 35, iter: 114800, avg_loss: 347.6399, kl: 4.0244, recon: 343.6155,time elapsed 68067.21s
+epoch: 35, iter: 115000, avg_loss: 360.2121, kl: 4.0515, recon: 356.1606,time elapsed 68087.56s
+epoch: 35, iter: 115200, avg_loss: 376.6050, kl: 4.1789, recon: 372.4260,time elapsed 68108.59s
+epoch: 35, iter: 115400, avg_loss: 395.9217, kl: 4.2182, recon: 391.7035,time elapsed 68130.83s
+epoch: 35, iter: 115600, avg_loss: 373.4454, kl: 4.1122, recon: 369.3332,time elapsed 68151.96s
+epoch: 35, iter: 115800, avg_loss: 362.4085, kl: 4.0683, recon: 358.3402,time elapsed 68172.45s
+kl weight 1.0000
+VAL --- avg_loss: 365.0692, kl: 4.1030, mi: 2.6460, recon: 360.9662, nll: 365.0692, ppl: 42.8715
+TEST --- avg_loss: 362.6406, kl: 4.0758, mi: 2.6234, recon: 358.5648, nll: 362.6406, ppl: 42.6013
+epoch: 36, iter: 116000, avg_loss: 401.0219, kl: 4.3768, recon: 396.6451,time elapsed 68228.39s
+epoch: 36, iter: 116200, avg_loss: 361.4699, kl: 4.1300, recon: 357.3399,time elapsed 68248.69s
+epoch: 36, iter: 116400, avg_loss: 365.2341, kl: 4.1369, recon: 361.0972,time elapsed 68269.51s
+epoch: 36, iter: 116600, avg_loss: 360.4463, kl: 4.1384, recon: 356.3079,time elapsed 68290.10s
+epoch: 36, iter: 116800, avg_loss: 376.5474, kl: 4.1545, recon: 372.3929,time elapsed 68311.25s
+epoch: 36, iter: 117000, avg_loss: 363.8022, kl: 4.1148, recon: 359.6874,time elapsed 68332.00s
+epoch: 36, iter: 117200, avg_loss: 371.8991, kl: 4.1455, recon: 367.7536,time elapsed 68352.88s
+epoch: 36, iter: 117400, avg_loss: 341.5138, kl: 4.0243, recon: 337.4895,time elapsed 68372.36s
+epoch: 36, iter: 117600, avg_loss: 362.2894, kl: 4.0863, recon: 358.2030,time elapsed 68392.66s
+epoch: 36, iter: 117800, avg_loss: 384.9734, kl: 4.1531, recon: 380.8203,time elapsed 68414.23s
+epoch: 36, iter: 118000, avg_loss: 385.4602, kl: 4.1499, recon: 381.3103,time elapsed 68435.65s
+epoch: 36, iter: 118200, avg_loss: 373.2855, kl: 4.1587, recon: 369.1268,time elapsed 68456.78s
+epoch: 36, iter: 118400, avg_loss: 361.2650, kl: 4.0601, recon: 357.2048,time elapsed 68477.15s
+epoch: 36, iter: 118600, avg_loss: 357.8449, kl: 4.0336, recon: 353.8113,time elapsed 68497.36s
+epoch: 36, iter: 118800, avg_loss: 357.8597, kl: 4.0792, recon: 353.7805,time elapsed 68517.37s
+epoch: 36, iter: 119000, avg_loss: 355.6576, kl: 4.0806, recon: 351.5770,time elapsed 68537.49s
+kl weight 1.0000
+VAL --- avg_loss: 364.7850, kl: 4.0709, mi: 2.6386, recon: 360.7141, nll: 364.7850, ppl: 42.7463
+update best loss
+epoch: 37, iter: 119200, avg_loss: 357.1732, kl: 4.0926, recon: 353.0806,time elapsed 68576.44s
+epoch: 37, iter: 119400, avg_loss: 370.1060, kl: 4.1285, recon: 365.9775,time elapsed 68597.26s
+epoch: 37, iter: 119600, avg_loss: 372.8625, kl: 4.1399, recon: 368.7226,time elapsed 68618.15s
+epoch: 37, iter: 119800, avg_loss: 375.5926, kl: 4.1765, recon: 371.4161,time elapsed 68639.29s
+epoch: 37, iter: 120000, avg_loss: 348.3348, kl: 4.0591, recon: 344.2757,time elapsed 68659.18s
+epoch: 37, iter: 120200, avg_loss: 376.8180, kl: 4.1723, recon: 372.6457,time elapsed 68680.27s
+epoch: 37, iter: 120400, avg_loss: 365.8236, kl: 4.0951, recon: 361.7286,time elapsed 68700.96s
+epoch: 37, iter: 120600, avg_loss: 373.2678, kl: 4.1838, recon: 369.0841,time elapsed 68722.10s
+epoch: 37, iter: 120800, avg_loss: 360.1510, kl: 4.0636, recon: 356.0874,time elapsed 68742.59s
+epoch: 37, iter: 121000, avg_loss: 382.1157, kl: 4.1165, recon: 377.9992,time elapsed 68763.96s
+epoch: 37, iter: 121200, avg_loss: 379.7282, kl: 4.1523, recon: 375.5759,time elapsed 68785.15s
+epoch: 37, iter: 121400, avg_loss: 376.5606, kl: 4.1362, recon: 372.4244,time elapsed 68806.24s
+epoch: 37, iter: 121600, avg_loss: 350.7897, kl: 4.0009, recon: 346.7888,time elapsed 68826.05s
+epoch: 37, iter: 121800, avg_loss: 360.3140, kl: 4.0424, recon: 356.2716,time elapsed 68846.43s
+epoch: 37, iter: 122000, avg_loss: 367.3109, kl: 4.1055, recon: 363.2054,time elapsed 68867.12s
+epoch: 37, iter: 122200, avg_loss: 372.4260, kl: 4.1492, recon: 368.2768,time elapsed 68887.94s
+kl weight 1.0000
+VAL --- avg_loss: 365.0943, kl: 4.0979, mi: 2.6590, recon: 360.9964, nll: 365.0943, ppl: 42.8826
+epoch: 38, iter: 122400, avg_loss: 382.2797, kl: 4.2295, recon: 378.0502,time elapsed 68925.89s
+epoch: 38, iter: 122600, avg_loss: 361.1582, kl: 4.0809, recon: 357.0772,time elapsed 68946.79s
+epoch: 38, iter: 122800, avg_loss: 395.7761, kl: 4.2218, recon: 391.5543,time elapsed 68968.89s
+epoch: 38, iter: 123000, avg_loss: 356.3920, kl: 4.0707, recon: 352.3213,time elapsed 68989.37s
+epoch: 38, iter: 123200, avg_loss: 341.6996, kl: 3.9934, recon: 337.7062,time elapsed 69008.83s
+epoch: 38, iter: 123400, avg_loss: 376.3659, kl: 4.1686, recon: 372.1972,time elapsed 69030.29s
+epoch: 38, iter: 123600, avg_loss: 334.1198, kl: 3.9426, recon: 330.1772,time elapsed 69049.64s
+epoch: 38, iter: 123800, avg_loss: 361.5733, kl: 4.0343, recon: 357.5390,time elapsed 69070.34s
+epoch: 38, iter: 124000, avg_loss: 384.7343, kl: 4.1338, recon: 380.6005,time elapsed 69092.02s
+epoch: 38, iter: 124200, avg_loss: 378.8298, kl: 4.1315, recon: 374.6983,time elapsed 69113.52s
+epoch: 38, iter: 124400, avg_loss: 382.3602, kl: 4.1336, recon: 378.2267,time elapsed 69135.22s
+epoch: 38, iter: 124600, avg_loss: 374.6419, kl: 4.0963, recon: 370.5457,time elapsed 69156.22s
+epoch: 38, iter: 124800, avg_loss: 372.4226, kl: 4.0511, recon: 368.3716,time elapsed 69177.38s
+epoch: 38, iter: 125000, avg_loss: 358.1316, kl: 4.0357, recon: 354.0958,time elapsed 69197.60s
+epoch: 38, iter: 125200, avg_loss: 352.1094, kl: 3.9887, recon: 348.1207,time elapsed 69217.72s
+epoch: 38, iter: 125400, avg_loss: 372.1479, kl: 4.0593, recon: 368.0886,time elapsed 69238.85s
+kl weight 1.0000
+VAL --- avg_loss: 364.3968, kl: 4.0730, mi: 2.5597, recon: 360.3238, nll: 364.3968, ppl: 42.5758
+update best loss
+epoch: 39, iter: 125600, avg_loss: 362.5124, kl: 4.0863, recon: 358.4262,time elapsed 69277.09s
+epoch: 39, iter: 125800, avg_loss: 380.2175, kl: 4.1759, recon: 376.0416,time elapsed 69298.38s
+epoch: 39, iter: 126000, avg_loss: 361.5686, kl: 4.1015, recon: 357.4671,time elapsed 69318.72s
+epoch: 39, iter: 126200, avg_loss: 372.5913, kl: 4.1032, recon: 368.4881,time elapsed 69339.65s
+epoch: 39, iter: 126400, avg_loss: 365.1118, kl: 4.0782, recon: 361.0336,time elapsed 69360.19s
+epoch: 39, iter: 126600, avg_loss: 364.8949, kl: 4.0575, recon: 360.8374,time elapsed 69380.82s
+epoch: 39, iter: 126800, avg_loss: 374.8485, kl: 4.0635, recon: 370.7851,time elapsed 69401.80s
+epoch: 39, iter: 127000, avg_loss: 381.0410, kl: 4.1095, recon: 376.9315,time elapsed 69423.17s
+epoch: 39, iter: 127200, avg_loss: 369.1754, kl: 4.0603, recon: 365.1151,time elapsed 69444.01s
+epoch: 39, iter: 127400, avg_loss: 381.9096, kl: 4.1913, recon: 377.7184,time elapsed 69465.42s
+epoch: 39, iter: 127600, avg_loss: 372.4120, kl: 4.0552, recon: 368.3569,time elapsed 69486.43s
+epoch: 39, iter: 127800, avg_loss: 375.9247, kl: 4.0531, recon: 371.8716,time elapsed 69507.80s
+epoch: 39, iter: 128000, avg_loss: 368.0882, kl: 4.1052, recon: 363.9830,time elapsed 69528.59s
+epoch: 39, iter: 128200, avg_loss: 343.0458, kl: 3.9532, recon: 339.0926,time elapsed 69548.16s
+epoch: 39, iter: 128400, avg_loss: 346.4237, kl: 3.9184, recon: 342.5053,time elapsed 69567.78s
+epoch: 39, iter: 128600, avg_loss: 362.7699, kl: 4.0080, recon: 358.7619,time elapsed 69588.25s
+kl weight 1.0000
+VAL --- avg_loss: 364.8457, kl: 4.0284, mi: 2.5833, recon: 360.8173, nll: 364.8457, ppl: 42.7730
+epoch: 40, iter: 128800, avg_loss: 358.6026, kl: 4.0846, recon: 354.5180,time elapsed 69625.39s
+epoch: 40, iter: 129000, avg_loss: 389.3071, kl: 4.2074, recon: 385.0996,time elapsed 69647.28s
+epoch: 40, iter: 129200, avg_loss: 359.6714, kl: 4.0284, recon: 355.6430,time elapsed 69667.72s
+epoch: 40, iter: 129400, avg_loss: 377.3853, kl: 4.1400, recon: 373.2454,time elapsed 69689.00s
+epoch: 40, iter: 129600, avg_loss: 347.6854, kl: 4.0021, recon: 343.6833,time elapsed 69708.71s
+epoch: 40, iter: 129800, avg_loss: 387.1155, kl: 4.1751, recon: 382.9403,time elapsed 69730.50s
+epoch: 40, iter: 130000, avg_loss: 368.5746, kl: 4.0710, recon: 364.5036,time elapsed 69751.17s
+epoch: 40, iter: 130200, avg_loss: 372.6704, kl: 4.1791, recon: 368.4913,time elapsed 69772.22s
+epoch: 40, iter: 130400, avg_loss: 341.7817, kl: 3.9364, recon: 337.8454,time elapsed 69791.68s
+epoch: 40, iter: 130600, avg_loss: 360.0834, kl: 4.0930, recon: 355.9904,time elapsed 69811.91s
+epoch: 40, iter: 130800, avg_loss: 384.4924, kl: 4.0923, recon: 380.4001,time elapsed 69833.37s
+epoch: 40, iter: 131000, avg_loss: 339.3353, kl: 3.8646, recon: 335.4707,time elapsed 69852.67s
+epoch: 40, iter: 131200, avg_loss: 373.6356, kl: 4.0332, recon: 369.6024,time elapsed 69873.68s
+epoch: 40, iter: 131400, avg_loss: 351.3065, kl: 3.9251, recon: 347.3814,time elapsed 69893.57s
+epoch: 40, iter: 131600, avg_loss: 362.4124, kl: 4.0454, recon: 358.3670,time elapsed 69913.90s
+epoch: 40, iter: 131800, avg_loss: 372.9685, kl: 4.0307, recon: 368.9377,time elapsed 69934.89s
+kl weight 1.0000
+VAL --- avg_loss: 364.5656, kl: 4.0309, mi: 2.6455, recon: 360.5347, nll: 364.5656, ppl: 42.6498
+new lr: 0.250000
+TEST --- avg_loss: 361.9826, kl: 4.0453, mi: 2.6008, recon: 357.9373, nll: 361.9826, ppl: 42.3123
+epoch: 41, iter: 132000, avg_loss: 371.6782, kl: 4.1825, recon: 367.4957,time elapsed 69994.93s
+epoch: 41, iter: 132200, avg_loss: 389.1175, kl: 4.1899, recon: 384.9276,time elapsed 70016.92s
+epoch: 41, iter: 132400, avg_loss: 365.7295, kl: 4.0567, recon: 361.6728,time elapsed 70037.87s
+epoch: 41, iter: 132600, avg_loss: 354.3896, kl: 4.0595, recon: 350.3301,time elapsed 70058.31s
+epoch: 41, iter: 132800, avg_loss: 362.0089, kl: 4.0771, recon: 357.9318,time elapsed 70079.15s
+epoch: 41, iter: 133000, avg_loss: 357.7350, kl: 3.9443, recon: 353.7907,time elapsed 70099.80s
+epoch: 41, iter: 133200, avg_loss: 350.4158, kl: 3.9670, recon: 346.4489,time elapsed 70120.01s
+epoch: 41, iter: 133400, avg_loss: 381.4561, kl: 4.1247, recon: 377.3313,time elapsed 70141.70s
+epoch: 41, iter: 133600, avg_loss: 362.2153, kl: 4.0236, recon: 358.1917,time elapsed 70162.53s
+epoch: 41, iter: 133800, avg_loss: 349.9980, kl: 3.9705, recon: 346.0275,time elapsed 70182.78s
+epoch: 41, iter: 134000, avg_loss: 362.1933, kl: 4.0039, recon: 358.1894,time elapsed 70203.89s
+epoch: 41, iter: 134200, avg_loss: 366.3153, kl: 4.0174, recon: 362.2980,time elapsed 70225.00s
+epoch: 41, iter: 134400, avg_loss: 350.5822, kl: 3.9946, recon: 346.5876,time elapsed 70245.40s
+epoch: 41, iter: 134600, avg_loss: 361.8287, kl: 4.0216, recon: 357.8071,time elapsed 70266.33s
+epoch: 41, iter: 134800, avg_loss: 378.0298, kl: 4.0381, recon: 373.9918,time elapsed 70287.90s
+epoch: 41, iter: 135000, avg_loss: 343.4635, kl: 3.9550, recon: 339.5085,time elapsed 70307.79s
+kl weight 1.0000
+VAL --- avg_loss: 362.5026, kl: 4.0143, mi: 2.7117, recon: 358.4883, nll: 362.5026, ppl: 41.7535
+update best loss
+epoch: 42, iter: 135200, avg_loss: 365.8467, kl: 4.0951, recon: 361.7516,time elapsed 70346.61s
+epoch: 42, iter: 135400, avg_loss: 348.3629, kl: 3.9407, recon: 344.4222,time elapsed 70366.88s
+epoch: 42, iter: 135600, avg_loss: 385.5603, kl: 4.1447, recon: 381.4156,time elapsed 70388.99s
+epoch: 42, iter: 135800, avg_loss: 371.0407, kl: 4.0162, recon: 367.0245,time elapsed 70410.07s
+epoch: 42, iter: 136000, avg_loss: 330.5095, kl: 3.9028, recon: 326.6067,time elapsed 70429.29s
+epoch: 42, iter: 136200, avg_loss: 367.9807, kl: 4.0327, recon: 363.9480,time elapsed 70450.45s
+epoch: 42, iter: 136400, avg_loss: 354.9574, kl: 4.0152, recon: 350.9422,time elapsed 70470.92s
+epoch: 42, iter: 136600, avg_loss: 360.0344, kl: 3.9578, recon: 356.0766,time elapsed 70491.63s
+epoch: 42, iter: 136800, avg_loss: 349.8913, kl: 3.9558, recon: 345.9355,time elapsed 70511.74s
+epoch: 42, iter: 137000, avg_loss: 359.6957, kl: 3.9822, recon: 355.7134,time elapsed 70532.23s
+epoch: 42, iter: 137200, avg_loss: 372.6608, kl: 4.0651, recon: 368.5956,time elapsed 70553.65s
+epoch: 42, iter: 137400, avg_loss: 359.8983, kl: 3.9635, recon: 355.9348,time elapsed 70574.31s
+epoch: 42, iter: 137600, avg_loss: 371.8763, kl: 4.0435, recon: 367.8329,time elapsed 70595.53s
+epoch: 42, iter: 137800, avg_loss: 356.3910, kl: 3.9885, recon: 352.4024,time elapsed 70616.06s
+epoch: 42, iter: 138000, avg_loss: 369.5633, kl: 4.0388, recon: 365.5245,time elapsed 70637.09s
+epoch: 42, iter: 138200, avg_loss: 363.5495, kl: 4.0084, recon: 359.5411,time elapsed 70657.93s
+kl weight 1.0000
+VAL --- avg_loss: 362.4099, kl: 3.9515, mi: 2.6263, recon: 358.4584, nll: 362.4099, ppl: 41.7137
+update best loss
+epoch: 43, iter: 138400, avg_loss: 385.3501, kl: 4.0978, recon: 381.2524,time elapsed 70696.79s
+epoch: 43, iter: 138600, avg_loss: 355.8569, kl: 3.9725, recon: 351.8844,time elapsed 70717.39s
+epoch: 43, iter: 138800, avg_loss: 347.4547, kl: 3.9341, recon: 343.5206,time elapsed 70737.70s
+epoch: 43, iter: 139000, avg_loss: 356.9488, kl: 4.0347, recon: 352.9141,time elapsed 70758.08s
+epoch: 43, iter: 139200, avg_loss: 370.5047, kl: 4.0325, recon: 366.4722,time elapsed 70779.32s
+epoch: 43, iter: 139400, avg_loss: 358.0373, kl: 3.9759, recon: 354.0613,time elapsed 70799.92s
+epoch: 43, iter: 139600, avg_loss: 371.5481, kl: 4.0129, recon: 367.5352,time elapsed 70821.11s
+epoch: 43, iter: 139800, avg_loss: 342.1059, kl: 3.9413, recon: 338.1646,time elapsed 70840.94s
+epoch: 43, iter: 140000, avg_loss: 355.1585, kl: 4.0062, recon: 351.1522,time elapsed 70861.45s
+epoch: 43, iter: 140200, avg_loss: 353.4296, kl: 4.0005, recon: 349.4290,time elapsed 70881.61s
+epoch: 43, iter: 140400, avg_loss: 363.0062, kl: 4.0222, recon: 358.9840,time elapsed 70902.41s
+epoch: 43, iter: 140600, avg_loss: 375.8975, kl: 4.1135, recon: 371.7841,time elapsed 70923.83s
+epoch: 43, iter: 140800, avg_loss: 369.2549, kl: 4.0187, recon: 365.2362,time elapsed 70944.77s
+epoch: 43, iter: 141000, avg_loss: 368.0151, kl: 4.0443, recon: 363.9708,time elapsed 70965.86s
+epoch: 43, iter: 141200, avg_loss: 349.7022, kl: 3.9132, recon: 345.7890,time elapsed 70986.08s
+epoch: 43, iter: 141400, avg_loss: 367.7898, kl: 4.0257, recon: 363.7641,time elapsed 71007.28s
+kl weight 1.0000
+VAL --- avg_loss: 362.3859, kl: 3.9746, mi: 2.6518, recon: 358.4113, nll: 362.3859, ppl: 41.7035
+update best loss
+epoch: 44, iter: 141600, avg_loss: 434.2665, kl: 4.4185, recon: 429.8480,time elapsed 71046.28s
+epoch: 44, iter: 141800, avg_loss: 360.9257, kl: 3.9670, recon: 356.9587,time elapsed 71067.21s
+epoch: 44, iter: 142000, avg_loss: 350.1407, kl: 3.9534, recon: 346.1874,time elapsed 71087.35s
+epoch: 44, iter: 142200, avg_loss: 367.1522, kl: 4.0185, recon: 363.1337,time elapsed 71108.47s
+epoch: 44, iter: 142400, avg_loss: 364.9739, kl: 3.9910, recon: 360.9829,time elapsed 71129.55s
+epoch: 44, iter: 142600, avg_loss: 362.8407, kl: 4.0010, recon: 358.8397,time elapsed 71150.40s
+epoch: 44, iter: 142800, avg_loss: 341.5722, kl: 3.9048, recon: 337.6675,time elapsed 71170.11s
+epoch: 44, iter: 143000, avg_loss: 363.4001, kl: 4.0133, recon: 359.3868,time elapsed 71190.92s
+epoch: 44, iter: 143200, avg_loss: 362.9089, kl: 3.9954, recon: 358.9135,time elapsed 71211.87s
+epoch: 44, iter: 143400, avg_loss: 366.3046, kl: 3.9927, recon: 362.3119,time elapsed 71232.90s
+epoch: 44, iter: 143600, avg_loss: 373.8681, kl: 4.0450, recon: 369.8231,time elapsed 71254.37s
+epoch: 44, iter: 143800, avg_loss: 377.1230, kl: 3.9727, recon: 373.1503,time elapsed 71275.84s
+epoch: 44, iter: 144000, avg_loss: 348.8687, kl: 3.8959, recon: 344.9728,time elapsed 71295.98s
+epoch: 44, iter: 144200, avg_loss: 366.0782, kl: 4.0034, recon: 362.0748,time elapsed 71317.25s
+epoch: 44, iter: 144400, avg_loss: 351.7507, kl: 3.9490, recon: 347.8018,time elapsed 71337.52s
+epoch: 44, iter: 144600, avg_loss: 370.2911, kl: 4.0210, recon: 366.2701,time elapsed 71358.95s
+epoch: 44, iter: 144800, avg_loss: 342.0107, kl: 3.8345, recon: 338.1762,time elapsed 71378.80s
+kl weight 1.0000
+VAL --- avg_loss: 362.2891, kl: 3.8285, mi: 2.5782, recon: 358.4606, nll: 362.2891, ppl: 41.6619
+update best loss
+epoch: 45, iter: 145000, avg_loss: 355.3335, kl: 3.9502, recon: 351.3833,time elapsed 71417.33s
+epoch: 45, iter: 145200, avg_loss: 369.0923, kl: 4.0047, recon: 365.0876,time elapsed 71438.39s
+epoch: 45, iter: 145400, avg_loss: 345.0362, kl: 3.9609, recon: 341.0753,time elapsed 71458.45s
+epoch: 45, iter: 145600, avg_loss: 362.1039, kl: 4.0035, recon: 358.1004,time elapsed 71479.21s
+epoch: 45, iter: 145800, avg_loss: 357.4869, kl: 3.9759, recon: 353.5110,time elapsed 71499.80s
+epoch: 45, iter: 146000, avg_loss: 371.6768, kl: 4.0854, recon: 367.5914,time elapsed 71521.35s
+epoch: 45, iter: 146200, avg_loss: 356.2882, kl: 3.9425, recon: 352.3457,time elapsed 71541.89s
+epoch: 45, iter: 146400, avg_loss: 338.4141, kl: 3.8821, recon: 334.5320,time elapsed 71561.58s
+epoch: 45, iter: 146600, avg_loss: 378.8780, kl: 4.0584, recon: 374.8195,time elapsed 71583.43s
+epoch: 45, iter: 146800, avg_loss: 353.3676, kl: 3.9296, recon: 349.4380,time elapsed 71603.96s
+epoch: 45, iter: 147000, avg_loss: 378.9746, kl: 4.0101, recon: 374.9644,time elapsed 71625.81s
+epoch: 45, iter: 147200, avg_loss: 375.3122, kl: 4.0163, recon: 371.2958,time elapsed 71647.41s
+epoch: 45, iter: 147400, avg_loss: 340.6398, kl: 3.9053, recon: 336.7345,time elapsed 71667.41s
+epoch: 45, iter: 147600, avg_loss: 349.0436, kl: 3.9203, recon: 345.1233,time elapsed 71687.71s
+epoch: 45, iter: 147800, avg_loss: 371.5692, kl: 4.0173, recon: 367.5518,time elapsed 71709.19s
+epoch: 45, iter: 148000, avg_loss: 365.3869, kl: 4.0200, recon: 361.3669,time elapsed 71730.18s
+kl weight 1.0000
+VAL --- avg_loss: 362.1123, kl: 3.9050, mi: 2.6116, recon: 358.2073, nll: 362.1123, ppl: 41.5862
+update best loss
+TEST --- avg_loss: 359.7773, kl: 3.8774, mi: 2.5920, recon: 355.8999, nll: 359.7773, ppl: 41.3578
+epoch: 46, iter: 148200, avg_loss: 345.6661, kl: 3.9471, recon: 341.7190,time elapsed 71785.19s
+epoch: 46, iter: 148400, avg_loss: 357.8906, kl: 3.9846, recon: 353.9060,time elapsed 71805.86s
+epoch: 46, iter: 148600, avg_loss: 363.7359, kl: 4.0054, recon: 359.7305,time elapsed 71826.91s
+epoch: 46, iter: 148800, avg_loss: 352.1081, kl: 3.8978, recon: 348.2103,time elapsed 71847.45s
+epoch: 46, iter: 149000, avg_loss: 383.8527, kl: 4.0538, recon: 379.7988,time elapsed 71869.20s
+epoch: 46, iter: 149200, avg_loss: 376.3283, kl: 3.9912, recon: 372.3371,time elapsed 71890.78s
+epoch: 46, iter: 149400, avg_loss: 342.1241, kl: 3.9091, recon: 338.2149,time elapsed 71910.72s
+epoch: 46, iter: 149600, avg_loss: 362.6952, kl: 4.0373, recon: 358.6578,time elapsed 71931.59s
+epoch: 46, iter: 149800, avg_loss: 355.0085, kl: 3.9111, recon: 351.0974,time elapsed 71951.78s
+epoch: 46, iter: 150000, avg_loss: 372.4918, kl: 3.9469, recon: 368.5449,time elapsed 71973.06s
+epoch: 46, iter: 150200, avg_loss: 370.2305, kl: 4.0078, recon: 366.2227,time elapsed 71994.26s
+epoch: 46, iter: 150400, avg_loss: 372.1291, kl: 3.9811, recon: 368.1480,time elapsed 72015.53s
+epoch: 46, iter: 150600, avg_loss: 331.4306, kl: 3.8548, recon: 327.5759,time elapsed 72034.93s
+epoch: 46, iter: 150800, avg_loss: 377.7497, kl: 4.0238, recon: 373.7259,time elapsed 72056.57s
+epoch: 46, iter: 151000, avg_loss: 380.1247, kl: 4.0255, recon: 376.0992,time elapsed 72078.43s
+epoch: 46, iter: 151200, avg_loss: 326.6626, kl: 3.8334, recon: 322.8291,time elapsed 72097.54s
+kl weight 1.0000
+VAL --- avg_loss: 362.1887, kl: 3.9331, mi: 2.5931, recon: 358.2556, nll: 362.1887, ppl: 41.6189
+epoch: 47, iter: 151400, avg_loss: 367.9694, kl: 4.0124, recon: 363.9570,time elapsed 72135.54s
+epoch: 47, iter: 151600, avg_loss: 351.5095, kl: 3.9845, recon: 347.5249,time elapsed 72156.12s
+epoch: 47, iter: 151800, avg_loss: 342.0698, kl: 3.8763, recon: 338.1934,time elapsed 72176.13s
+epoch: 47, iter: 152000, avg_loss: 347.0023, kl: 3.9020, recon: 343.1003,time elapsed 72196.26s
+epoch: 47, iter: 152200, avg_loss: 350.8008, kl: 3.9366, recon: 346.8643,time elapsed 72216.66s
+epoch: 47, iter: 152400, avg_loss: 374.0641, kl: 4.0299, recon: 370.0342,time elapsed 72238.48s
+epoch: 47, iter: 152600, avg_loss: 349.2492, kl: 3.9268, recon: 345.3223,time elapsed 72259.03s
+epoch: 47, iter: 152800, avg_loss: 369.2457, kl: 4.0435, recon: 365.2022,time elapsed 72280.33s
+epoch: 47, iter: 153000, avg_loss: 379.3973, kl: 4.0470, recon: 375.3503,time elapsed 72302.32s
+epoch: 47, iter: 153200, avg_loss: 370.4645, kl: 3.9767, recon: 366.4879,time elapsed 72323.63s
+epoch: 47, iter: 153400, avg_loss: 347.0296, kl: 3.8912, recon: 343.1384,time elapsed 72343.52s
+epoch: 47, iter: 153600, avg_loss: 365.3967, kl: 4.0229, recon: 361.3738,time elapsed 72364.63s
+epoch: 47, iter: 153800, avg_loss: 361.6723, kl: 3.9738, recon: 357.6985,time elapsed 72385.80s
+epoch: 47, iter: 154000, avg_loss: 350.0726, kl: 3.9135, recon: 346.1591,time elapsed 72406.15s
+epoch: 47, iter: 154200, avg_loss: 375.7273, kl: 4.0051, recon: 371.7221,time elapsed 72427.88s
+epoch: 47, iter: 154400, avg_loss: 365.7253, kl: 3.9600, recon: 361.7652,time elapsed 72449.06s
+kl weight 1.0000
+VAL --- avg_loss: 362.0417, kl: 3.8162, mi: 2.5185, recon: 358.2255, nll: 362.0417, ppl: 41.5559
+update best loss
+epoch: 48, iter: 154600, avg_loss: 364.1571, kl: 4.0044, recon: 360.1527,time elapsed 72487.54s
+epoch: 48, iter: 154800, avg_loss: 338.6525, kl: 3.8599, recon: 334.7927,time elapsed 72507.35s
+epoch: 48, iter: 155000, avg_loss: 368.5578, kl: 4.0185, recon: 364.5393,time elapsed 72528.76s
+epoch: 48, iter: 155200, avg_loss: 382.6438, kl: 4.0862, recon: 378.5576,time elapsed 72551.05s
+epoch: 48, iter: 155400, avg_loss: 352.9314, kl: 3.9756, recon: 348.9559,time elapsed 72571.72s
+epoch: 48, iter: 155600, avg_loss: 349.9462, kl: 3.9511, recon: 345.9951,time elapsed 72592.28s
+epoch: 48, iter: 155800, avg_loss: 347.0673, kl: 3.8949, recon: 343.1724,time elapsed 72612.71s
+epoch: 48, iter: 156000, avg_loss: 329.9423, kl: 3.8242, recon: 326.1181,time elapsed 72632.26s
+epoch: 48, iter: 156200, avg_loss: 370.1068, kl: 4.0115, recon: 366.0952,time elapsed 72653.61s
+epoch: 48, iter: 156400, avg_loss: 370.6944, kl: 4.0098, recon: 366.6846,time elapsed 72674.97s
+epoch: 48, iter: 156600, avg_loss: 348.3454, kl: 3.8544, recon: 344.4910,time elapsed 72695.45s
+epoch: 48, iter: 156800, avg_loss: 375.0362, kl: 4.0356, recon: 371.0006,time elapsed 72717.20s
+epoch: 48, iter: 157000, avg_loss: 363.1800, kl: 3.9567, recon: 359.2233,time elapsed 72738.36s
+epoch: 48, iter: 157200, avg_loss: 372.9256, kl: 3.9952, recon: 368.9304,time elapsed 72760.04s
+epoch: 48, iter: 157400, avg_loss: 361.2403, kl: 3.9841, recon: 357.2561,time elapsed 72781.01s
+epoch: 48, iter: 157600, avg_loss: 365.7915, kl: 3.9428, recon: 361.8487,time elapsed 72802.06s
+kl weight 1.0000
+VAL --- avg_loss: 362.0418, kl: 3.9129, mi: 2.6572, recon: 358.1289, nll: 362.0418, ppl: 41.5560
+epoch: 49, iter: 157800, avg_loss: 329.2847, kl: 3.8382, recon: 325.4464,time elapsed 72838.93s
+epoch: 49, iter: 158000, avg_loss: 345.2752, kl: 3.9122, recon: 341.3630,time elapsed 72859.06s
+epoch: 49, iter: 158200, avg_loss: 353.7459, kl: 3.9104, recon: 349.8355,time elapsed 72879.48s
+epoch: 49, iter: 158400, avg_loss: 357.6548, kl: 3.9324, recon: 353.7224,time elapsed 72900.36s
+epoch: 49, iter: 158600, avg_loss: 372.4292, kl: 3.9946, recon: 368.4346,time elapsed 72921.93s
+epoch: 49, iter: 158800, avg_loss: 367.1992, kl: 3.9891, recon: 363.2101,time elapsed 72943.46s
+epoch: 49, iter: 159000, avg_loss: 346.5937, kl: 3.8990, recon: 342.6947,time elapsed 72963.88s
+epoch: 49, iter: 159200, avg_loss: 306.4247, kl: 3.7167, recon: 302.7080,time elapsed 72982.17s
+epoch: 49, iter: 159400, avg_loss: 377.8112, kl: 3.9997, recon: 373.8116,time elapsed 73003.91s
+epoch: 49, iter: 159600, avg_loss: 344.4961, kl: 3.8733, recon: 340.6229,time elapsed 73024.07s
+epoch: 49, iter: 159800, avg_loss: 358.8499, kl: 3.9193, recon: 354.9306,time elapsed 73044.90s
+epoch: 49, iter: 160000, avg_loss: 384.2077, kl: 4.0137, recon: 380.1940,time elapsed 73067.25s
+epoch: 49, iter: 160200, avg_loss: 355.9154, kl: 3.9704, recon: 351.9451,time elapsed 73087.90s
+epoch: 49, iter: 160400, avg_loss: 395.2989, kl: 4.0799, recon: 391.2189,time elapsed 73110.60s
+epoch: 49, iter: 160600, avg_loss: 374.8286, kl: 3.9821, recon: 370.8465,time elapsed 73132.30s
+epoch: 49, iter: 160800, avg_loss: 354.6584, kl: 3.8830, recon: 350.7755,time elapsed 73153.02s
+kl weight 1.0000
+VAL --- avg_loss: 361.8295, kl: 3.8404, mi: 2.6323, recon: 357.9891, nll: 361.8295, ppl: 41.4653
+update best loss
+epoch: 50, iter: 161000, avg_loss: 365.6740, kl: 3.9548, recon: 361.7191,time elapsed 73192.30s
+epoch: 50, iter: 161200, avg_loss: 340.4935, kl: 3.8505, recon: 336.6430,time elapsed 73212.22s
+epoch: 50, iter: 161400, avg_loss: 350.7316, kl: 3.9476, recon: 346.7840,time elapsed 73232.76s
+epoch: 50, iter: 161600, avg_loss: 357.6090, kl: 3.9185, recon: 353.6905,time elapsed 73253.69s
+epoch: 50, iter: 161800, avg_loss: 374.4257, kl: 4.0116, recon: 370.4142,time elapsed 73275.19s
+epoch: 50, iter: 162000, avg_loss: 329.6686, kl: 3.8151, recon: 325.8535,time elapsed 73294.37s
+epoch: 50, iter: 162200, avg_loss: 365.5202, kl: 3.9612, recon: 361.5590,time elapsed 73315.62s
+epoch: 50, iter: 162400, avg_loss: 361.0038, kl: 3.9451, recon: 357.0588,time elapsed 73336.71s
+epoch: 50, iter: 162600, avg_loss: 383.3949, kl: 4.0252, recon: 379.3697,time elapsed 73358.86s
+epoch: 50, iter: 162800, avg_loss: 353.2027, kl: 3.8841, recon: 349.3186,time elapsed 73379.41s
+epoch: 50, iter: 163000, avg_loss: 364.5065, kl: 3.9414, recon: 360.5651,time elapsed 73400.38s
+epoch: 50, iter: 163200, avg_loss: 360.4866, kl: 3.9290, recon: 356.5576,time elapsed 73421.37s
+epoch: 50, iter: 163400, avg_loss: 376.3760, kl: 3.9906, recon: 372.3855,time elapsed 73442.92s
+epoch: 50, iter: 163600, avg_loss: 355.7754, kl: 3.8893, recon: 351.8861,time elapsed 73463.67s
+epoch: 50, iter: 163800, avg_loss: 347.4505, kl: 3.8601, recon: 343.5904,time elapsed 73483.92s
+epoch: 50, iter: 164000, avg_loss: 376.4204, kl: 4.0335, recon: 372.3870,time elapsed 73505.70s
+kl weight 1.0000
+VAL --- avg_loss: 361.9165, kl: 3.8680, mi: 2.5591, recon: 358.0485, nll: 361.9165, ppl: 41.5024
+TEST --- avg_loss: 359.5910, kl: 3.8411, mi: 2.5835, recon: 355.7499, nll: 359.5910, ppl: 41.2782
+epoch: 51, iter: 164200, avg_loss: 378.1585, kl: 4.0002, recon: 374.1583,time elapsed 73560.13s
+epoch: 51, iter: 164400, avg_loss: 351.8834, kl: 3.9125, recon: 347.9709,time elapsed 73580.83s
+epoch: 51, iter: 164600, avg_loss: 357.7671, kl: 3.9636, recon: 353.8035,time elapsed 73601.69s
+epoch: 51, iter: 164800, avg_loss: 341.7327, kl: 3.8821, recon: 337.8505,time elapsed 73621.93s
+epoch: 51, iter: 165000, avg_loss: 355.3198, kl: 3.9442, recon: 351.3757,time elapsed 73642.78s
+epoch: 51, iter: 165200, avg_loss: 369.7997, kl: 3.9560, recon: 365.8437,time elapsed 73664.33s
+epoch: 51, iter: 165400, avg_loss: 368.8770, kl: 4.0006, recon: 364.8764,time elapsed 73686.00s
+epoch: 51, iter: 165600, avg_loss: 348.2720, kl: 3.8858, recon: 344.3862,time elapsed 73706.46s
+epoch: 51, iter: 165800, avg_loss: 372.9823, kl: 3.9871, recon: 368.9952,time elapsed 73728.06s
+epoch: 51, iter: 166000, avg_loss: 360.9385, kl: 3.9264, recon: 357.0122,time elapsed 73748.92s
+epoch: 51, iter: 166200, avg_loss: 363.2385, kl: 3.9100, recon: 359.3285,time elapsed 73770.05s
+epoch: 51, iter: 166400, avg_loss: 356.0819, kl: 3.8948, recon: 352.1871,time elapsed 73790.97s
+epoch: 51, iter: 166600, avg_loss: 335.0341, kl: 3.8412, recon: 331.1929,time elapsed 73810.79s
+epoch: 51, iter: 166800, avg_loss: 376.5076, kl: 3.9732, recon: 372.5344,time elapsed 73832.70s
+epoch: 51, iter: 167000, avg_loss: 359.2402, kl: 3.9057, recon: 355.3345,time elapsed 73853.64s
+epoch: 51, iter: 167200, avg_loss: 371.0109, kl: 3.9441, recon: 367.0668,time elapsed 73875.23s
+kl weight 1.0000
+VAL --- avg_loss: 361.8997, kl: 3.8574, mi: 2.5225, recon: 358.0423, nll: 361.8997, ppl: 41.4952
+new lr: 0.125000
+epoch: 52, iter: 167400, avg_loss: 345.3136, kl: 3.8229, recon: 341.4907,time elapsed 73913.34s
+epoch: 52, iter: 167600, avg_loss: 380.8110, kl: 3.9895, recon: 376.8215,time elapsed 73935.33s
+epoch: 52, iter: 167800, avg_loss: 357.8876, kl: 3.9438, recon: 353.9439,time elapsed 73956.27s
+epoch: 52, iter: 168000, avg_loss: 355.6009, kl: 3.9028, recon: 351.6981,time elapsed 73977.08s
+epoch: 52, iter: 168200, avg_loss: 343.7613, kl: 3.8783, recon: 339.8830,time elapsed 73997.33s
+epoch: 52, iter: 168400, avg_loss: 337.2087, kl: 3.8519, recon: 333.3568,time elapsed 74017.33s
+epoch: 52, iter: 168600, avg_loss: 333.8273, kl: 3.8325, recon: 329.9949,time elapsed 74037.05s
+epoch: 52, iter: 168800, avg_loss: 370.3666, kl: 3.9908, recon: 366.3758,time elapsed 74058.61s
+epoch: 52, iter: 169000, avg_loss: 346.6481, kl: 3.8352, recon: 342.8128,time elapsed 74078.92s
+epoch: 52, iter: 169200, avg_loss: 356.0353, kl: 3.9457, recon: 352.0896,time elapsed 74099.80s
+epoch: 52, iter: 169400, avg_loss: 351.5171, kl: 3.9421, recon: 347.5751,time elapsed 74120.49s
+epoch: 52, iter: 169600, avg_loss: 353.4377, kl: 3.9409, recon: 349.4968,time elapsed 74141.25s
+epoch: 52, iter: 169800, avg_loss: 379.8558, kl: 3.9961, recon: 375.8597,time elapsed 74163.12s
+epoch: 52, iter: 170000, avg_loss: 351.9887, kl: 3.8366, recon: 348.1521,time elapsed 74183.89s
+epoch: 52, iter: 170200, avg_loss: 373.3789, kl: 3.9323, recon: 369.4465,time elapsed 74205.50s
+epoch: 52, iter: 170400, avg_loss: 355.9908, kl: 3.8957, recon: 352.0950,time elapsed 74226.43s
+kl weight 1.0000
+VAL --- avg_loss: 360.9985, kl: 3.8256, mi: 2.5107, recon: 357.1729, nll: 360.9985, ppl: 41.1121
+update best loss
+epoch: 53, iter: 170600, avg_loss: 391.3442, kl: 3.9988, recon: 387.3454,time elapsed 74266.06s
+epoch: 53, iter: 170800, avg_loss: 360.4092, kl: 3.9374, recon: 356.4718,time elapsed 74287.20s
+epoch: 53, iter: 171000, avg_loss: 342.1008, kl: 3.8855, recon: 338.2153,time elapsed 74307.28s
+epoch: 53, iter: 171200, avg_loss: 354.5278, kl: 3.9439, recon: 350.5839,time elapsed 74327.87s
+epoch: 53, iter: 171400, avg_loss: 360.6962, kl: 3.9859, recon: 356.7103,time elapsed 74349.17s
+epoch: 53, iter: 171600, avg_loss: 327.3196, kl: 3.7929, recon: 323.5268,time elapsed 74368.61s
+epoch: 53, iter: 171800, avg_loss: 359.8956, kl: 3.9471, recon: 355.9484,time elapsed 74389.33s
+epoch: 53, iter: 172000, avg_loss: 360.3398, kl: 3.9447, recon: 356.3950,time elapsed 74410.26s
+epoch: 53, iter: 172200, avg_loss: 359.2878, kl: 3.9524, recon: 355.3354,time elapsed 74431.26s
+epoch: 53, iter: 172400, avg_loss: 358.8533, kl: 3.9431, recon: 354.9101,time elapsed 74452.36s
+epoch: 53, iter: 172600, avg_loss: 376.7675, kl: 3.9827, recon: 372.7849,time elapsed 74474.36s
+epoch: 53, iter: 172800, avg_loss: 357.2012, kl: 3.9065, recon: 353.2947,time elapsed 74495.12s
+epoch: 53, iter: 173000, avg_loss: 332.9190, kl: 3.8369, recon: 329.0821,time elapsed 74514.62s
+epoch: 53, iter: 173200, avg_loss: 351.9828, kl: 3.9154, recon: 348.0674,time elapsed 74535.49s
+epoch: 53, iter: 173400, avg_loss: 344.3801, kl: 3.8521, recon: 340.5279,time elapsed 74555.55s
+epoch: 53, iter: 173600, avg_loss: 384.7560, kl: 4.0254, recon: 380.7306,time elapsed 74577.70s
+kl weight 1.0000
+VAL --- avg_loss: 361.0051, kl: 3.7997, mi: 2.5672, recon: 357.2054, nll: 361.0051, ppl: 41.1148
+epoch: 54, iter: 173800, avg_loss: 338.6532, kl: 3.7603, recon: 334.8929,time elapsed 74616.22s
+epoch: 54, iter: 174000, avg_loss: 327.7220, kl: 3.7989, recon: 323.9231,time elapsed 74635.87s
+epoch: 54, iter: 174200, avg_loss: 357.6186, kl: 3.9256, recon: 353.6929,time elapsed 74657.03s
+epoch: 54, iter: 174400, avg_loss: 373.8440, kl: 3.9618, recon: 369.8823,time elapsed 74679.05s
+epoch: 54, iter: 174600, avg_loss: 346.5404, kl: 3.8429, recon: 342.6975,time elapsed 74699.74s
+epoch: 54, iter: 174800, avg_loss: 343.3575, kl: 3.8646, recon: 339.4930,time elapsed 74720.12s
+epoch: 54, iter: 175000, avg_loss: 362.4634, kl: 3.9225, recon: 358.5409,time elapsed 74741.48s
+epoch: 54, iter: 175200, avg_loss: 372.3596, kl: 3.9355, recon: 368.4241,time elapsed 74763.32s
+epoch: 54, iter: 175400, avg_loss: 349.9103, kl: 3.8972, recon: 346.0132,time elapsed 74784.14s
+epoch: 54, iter: 175600, avg_loss: 350.2557, kl: 3.8789, recon: 346.3768,time elapsed 74804.88s
+epoch: 54, iter: 175800, avg_loss: 359.7702, kl: 3.8866, recon: 355.8836,time elapsed 74826.14s
+epoch: 54, iter: 176000, avg_loss: 350.0759, kl: 3.8573, recon: 346.2187,time elapsed 74846.61s
+epoch: 54, iter: 176200, avg_loss: 358.2202, kl: 3.9167, recon: 354.3036,time elapsed 74867.76s
+epoch: 54, iter: 176400, avg_loss: 373.8960, kl: 3.9701, recon: 369.9259,time elapsed 74889.57s
+epoch: 54, iter: 176600, avg_loss: 356.9582, kl: 3.9305, recon: 353.0277,time elapsed 74910.65s
+epoch: 54, iter: 176800, avg_loss: 381.7387, kl: 4.0077, recon: 377.7310,time elapsed 74932.97s
+kl weight 1.0000
+VAL --- avg_loss: 361.0080, kl: 3.8759, mi: 2.6338, recon: 357.1321, nll: 361.0080, ppl: 41.1161
+new lr: 0.062500
+epoch: 55, iter: 177000, avg_loss: 378.3149, kl: 3.9324, recon: 374.3825,time elapsed 74971.05s
+epoch: 55, iter: 177200, avg_loss: 358.9079, kl: 3.9676, recon: 354.9403,time elapsed 74992.03s
+epoch: 55, iter: 177400, avg_loss: 361.0018, kl: 3.9564, recon: 357.0454,time elapsed 75013.09s
+epoch: 55, iter: 177600, avg_loss: 328.2943, kl: 3.8529, recon: 324.4413,time elapsed 75032.60s
+epoch: 55, iter: 177800, avg_loss: 361.0313, kl: 3.9121, recon: 357.1192,time elapsed 75053.67s
+epoch: 55, iter: 178000, avg_loss: 355.8657, kl: 3.9359, recon: 351.9298,time elapsed 75074.34s
+epoch: 55, iter: 178200, avg_loss: 368.3448, kl: 3.9753, recon: 364.3694,time elapsed 75095.75s
+epoch: 55, iter: 178400, avg_loss: 333.2169, kl: 3.8243, recon: 329.3926,time elapsed 75115.33s
+epoch: 55, iter: 178600, avg_loss: 378.1906, kl: 4.0051, recon: 374.1855,time elapsed 75137.37s
+epoch: 55, iter: 178800, avg_loss: 384.5730, kl: 4.0198, recon: 380.5532,time elapsed 75159.48s
+epoch: 55, iter: 179000, avg_loss: 372.6180, kl: 3.9698, recon: 368.6482,time elapsed 75181.26s
+epoch: 55, iter: 179200, avg_loss: 352.5658, kl: 3.8752, recon: 348.6906,time elapsed 75201.89s
+epoch: 55, iter: 179400, avg_loss: 340.6440, kl: 3.8321, recon: 336.8120,time elapsed 75222.29s
+epoch: 55, iter: 179600, avg_loss: 344.2247, kl: 3.8822, recon: 340.3426,time elapsed 75242.54s
+epoch: 55, iter: 179800, avg_loss: 370.7954, kl: 3.9855, recon: 366.8099,time elapsed 75264.12s
+epoch: 55, iter: 180000, avg_loss: 362.8247, kl: 3.9703, recon: 358.8545,time elapsed 75285.32s
+epoch: 55, iter: 180200, avg_loss: 321.8406, kl: 3.7832, recon: 318.0574,time elapsed 75304.42s
+kl weight 1.0000
+VAL --- avg_loss: 360.6846, kl: 3.8684, mi: 2.6110, recon: 356.8162, nll: 360.6846, ppl: 40.9794
+update best loss
+TEST --- avg_loss: 358.3458, kl: 3.8414, mi: 2.5994, recon: 354.5044, nll: 358.3458, ppl: 40.7498
+epoch: 56, iter: 180400, avg_loss: 359.5934, kl: 3.9205, recon: 355.6729,time elapsed 75359.75s
+epoch: 56, iter: 180600, avg_loss: 352.1214, kl: 3.8937, recon: 348.2276,time elapsed 75380.65s
+epoch: 56, iter: 180800, avg_loss: 361.8343, kl: 3.9200, recon: 357.9142,time elapsed 75401.98s
+epoch: 56, iter: 181000, avg_loss: 348.7911, kl: 3.9236, recon: 344.8675,time elapsed 75422.51s
+epoch: 56, iter: 181200, avg_loss: 366.8887, kl: 3.9406, recon: 362.9481,time elapsed 75443.84s
+epoch: 56, iter: 181400, avg_loss: 377.7032, kl: 4.0085, recon: 373.6947,time elapsed 75465.83s
+epoch: 56, iter: 181600, avg_loss: 355.8002, kl: 3.9607, recon: 351.8395,time elapsed 75486.65s
+epoch: 56, iter: 181800, avg_loss: 354.5659, kl: 3.9217, recon: 350.6442,time elapsed 75507.74s
+epoch: 56, iter: 182000, avg_loss: 376.0554, kl: 3.9852, recon: 372.0703,time elapsed 75529.59s
+epoch: 56, iter: 182200, avg_loss: 334.8144, kl: 3.8206, recon: 330.9939,time elapsed 75549.43s
+epoch: 56, iter: 182400, avg_loss: 332.1785, kl: 3.7911, recon: 328.3874,time elapsed 75568.92s
+epoch: 56, iter: 182600, avg_loss: 359.4920, kl: 3.9156, recon: 355.5764,time elapsed 75589.97s
+epoch: 56, iter: 182800, avg_loss: 352.7984, kl: 3.8850, recon: 348.9134,time elapsed 75610.60s
+epoch: 56, iter: 183000, avg_loss: 366.6740, kl: 3.9366, recon: 362.7374,time elapsed 75632.13s
+epoch: 56, iter: 183200, avg_loss: 333.2537, kl: 3.7641, recon: 329.4897,time elapsed 75652.09s
+epoch: 56, iter: 183400, avg_loss: 351.2318, kl: 3.9015, recon: 347.3303,time elapsed 75672.62s
+kl weight 1.0000
+VAL --- avg_loss: 360.6197, kl: 3.8516, mi: 2.6386, recon: 356.7680, nll: 360.6197, ppl: 40.9520
+update best loss
+epoch: 57, iter: 183600, avg_loss: 374.4363, kl: 3.9991, recon: 370.4371,time elapsed 75712.13s
+epoch: 57, iter: 183800, avg_loss: 364.9003, kl: 3.9544, recon: 360.9459,time elapsed 75733.85s
+epoch: 57, iter: 184000, avg_loss: 368.3175, kl: 3.9707, recon: 364.3469,time elapsed 75755.54s
+epoch: 57, iter: 184200, avg_loss: 333.3221, kl: 3.8612, recon: 329.4610,time elapsed 75775.57s
+epoch: 57, iter: 184400, avg_loss: 366.6800, kl: 3.9121, recon: 362.7678,time elapsed 75797.31s
+epoch: 57, iter: 184600, avg_loss: 341.4304, kl: 3.8629, recon: 337.5675,time elapsed 75817.70s
+epoch: 57, iter: 184800, avg_loss: 366.6164, kl: 3.9560, recon: 362.6604,time elapsed 75839.27s
+epoch: 57, iter: 185000, avg_loss: 366.4817, kl: 3.9713, recon: 362.5104,time elapsed 75861.01s
+epoch: 57, iter: 185200, avg_loss: 355.8425, kl: 3.9263, recon: 351.9163,time elapsed 75882.04s
+epoch: 57, iter: 185400, avg_loss: 367.2120, kl: 3.9305, recon: 363.2815,time elapsed 75903.74s
+epoch: 57, iter: 185600, avg_loss: 353.5560, kl: 3.8857, recon: 349.6703,time elapsed 75924.62s
+epoch: 57, iter: 185800, avg_loss: 351.8132, kl: 3.8926, recon: 347.9205,time elapsed 75945.25s
+epoch: 57, iter: 186000, avg_loss: 352.8444, kl: 3.9110, recon: 348.9334,time elapsed 75965.92s
+epoch: 57, iter: 186200, avg_loss: 345.3668, kl: 3.8472, recon: 341.5196,time elapsed 75986.64s
+epoch: 57, iter: 186400, avg_loss: 341.7982, kl: 3.8426, recon: 337.9556,time elapsed 76006.89s
+epoch: 57, iter: 186600, avg_loss: 342.5773, kl: 3.8372, recon: 338.7401,time elapsed 76027.36s
+kl weight 1.0000
+VAL --- avg_loss: 360.6252, kl: 3.8549, mi: 2.6854, recon: 356.7702, nll: 360.6252, ppl: 40.9543
+epoch: 58, iter: 186800, avg_loss: 341.3699, kl: 3.8994, recon: 337.4705,time elapsed 76064.19s
+epoch: 58, iter: 187000, avg_loss: 351.2830, kl: 3.8898, recon: 347.3932,time elapsed 76084.97s
+epoch: 58, iter: 187200, avg_loss: 354.3980, kl: 3.9361, recon: 350.4618,time elapsed 76105.95s
+epoch: 58, iter: 187400, avg_loss: 349.4826, kl: 3.8894, recon: 345.5932,time elapsed 76126.63s
+epoch: 58, iter: 187600, avg_loss: 363.5165, kl: 3.9554, recon: 359.5611,time elapsed 76147.88s
+epoch: 58, iter: 187800, avg_loss: 347.3319, kl: 3.8916, recon: 343.4403,time elapsed 76168.25s
+epoch: 58, iter: 188000, avg_loss: 355.4947, kl: 3.9387, recon: 351.5560,time elapsed 76189.30s
+epoch: 58, iter: 188200, avg_loss: 376.0764, kl: 3.9990, recon: 372.0774,time elapsed 76211.40s
+epoch: 58, iter: 188400, avg_loss: 337.8121, kl: 3.8876, recon: 333.9245,time elapsed 76231.63s
+epoch: 58, iter: 188600, avg_loss: 357.4154, kl: 3.9282, recon: 353.4872,time elapsed 76252.70s
+epoch: 58, iter: 188800, avg_loss: 363.8840, kl: 3.9533, recon: 359.9307,time elapsed 76274.33s
+epoch: 58, iter: 189000, avg_loss: 346.1200, kl: 3.8500, recon: 342.2699,time elapsed 76294.98s
+epoch: 58, iter: 189200, avg_loss: 366.7875, kl: 3.9502, recon: 362.8372,time elapsed 76316.72s
+epoch: 58, iter: 189400, avg_loss: 362.8507, kl: 3.9574, recon: 358.8933,time elapsed 76338.15s
+epoch: 58, iter: 189600, avg_loss: 367.9763, kl: 3.9253, recon: 364.0510,time elapsed 76360.01s
+epoch: 58, iter: 189800, avg_loss: 340.7310, kl: 3.8373, recon: 336.8937,time elapsed 76380.41s
+kl weight 1.0000
+VAL --- avg_loss: 360.6245, kl: 3.8968, mi: 2.6413, recon: 356.7278, nll: 360.6245, ppl: 40.9541
+new lr: 0.031250
+TEST --- avg_loss: 358.2244, kl: 3.8239, mi: 2.5781, recon: 354.4006, nll: 358.2244, ppl: 40.6986
+iw nll computing 00%
+iw nll computing 10%
+iw nll computing 20%
+iw nll computing 30%
+iw nll computing 40%
+iw nll computing 50%
+iw nll computing 60%
+iw nll computing 70%
+iw nll computing 80%
+iw nll computing 90%
+iw nll: 357.0282, iw ppl: 40.1981
