@@ -250,7 +250,6 @@ def main(args):
 
     print(args)
 
-
     opt_dict = {"not_improved": 0, "lr": 1., "best_loss": 1e4}
 
     train_data = MonoTextData(args.train_data)
