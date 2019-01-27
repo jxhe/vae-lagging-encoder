@@ -39,7 +39,11 @@ Datasets used in this paper can be downloaded with:
 python prepare_data.py
 ```
 
-Downloaded data is located in `./datasets/`.
+By default it downloads all four datasets used in the paper, downloaded data is located in `./datasets/`. A `--dataset` option can be provided to specify the dataset name to be downloaded:
+```shell
+python prepare_data.py --dataset yahoo
+```
+The argument should be `synthetic`, `yahoo`, `yelp`, or `omniglot`. 
 
 
 ## Usage

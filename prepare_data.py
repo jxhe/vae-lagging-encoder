@@ -1,3 +1,4 @@
+import argparse
 import requests
 import tarfile
 import os
@@ -32,11 +33,41 @@ def save_response_content(response, destination):
                 f.write(chunk)
 
 if __name__ == "__main__":
-    file_id = "1yH3Ufj20R06OX1prPMPS6E3fKSG_2MqN"
-    destination = "datasets.tar.gz"
-    download_file_from_google_drive(file_id, destination)
+    parser = argparse.ArgumentParser(description="data downloading")
+    parser.add_argument('--dataset', choices=["synthetic", "yahoo", "yelp", "omniglot", "all"], 
+        default="all", help='dataset to use')
 
-    tar = tarfile.open(destination, "r:gz")
-    tar.extractall()
-    tar.close()
-    os.remove(destination)
+    args = parser.parse_args()
+
+    if not os.path.exists("datasets"):
+        os.makedirs("datasets")
+
+    os.chdir("datasets")
+
+    synthetic_id = "1pEHLedf3ZSo7UrHdvR1VWPfWNTcN6oWH"
+    yahoo_id = "13azGlTuGdzWLCmgDmQPmvb_jcexVWX7i"
+    yelp_id = "1FT49oLNV8syhmGXEgiK6XTjEfMNqqEJJ"
+    omniglot_id = "1PbFAm2wtXfdnV7ZixImkBubC0A6-XwHU"
+
+    if args.dataset == "synthetic":
+        file_id = [synthetic_id]
+    elif args.dataset == "yahoo":
+        file_id = [yahoo_id]
+    elif args.dataset == "yelp":
+        file_id = [yelp_id]
+    elif args.dataset == "omniglot":
+        file_id = [omniglot_id]
+    else:
+        file_id = [synthetic_id, yahoo_id, yelp_id, omniglot_id]
+
+    destination = "datasets.tar.gz"
+
+    for file_id_e in file_id:
+        download_file_from_google_drive(file_id_e, destination)  
+        tar = tarfile.open(destination, "r:gz")
+        tar.extractall()
+        tar.close()
+        os.remove(destination)
+
+    os.chdir("../")
+
