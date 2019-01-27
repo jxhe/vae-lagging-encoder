@@ -10,7 +10,7 @@ ICLR 2019
 
 The code seperates optimization of encoder and decoder in VAE, and performs more steps of encoder update in each iteration. This new training procedure mitigates the issue of posterior collapse in VAE and leads to a better VAE model, without changing model components and training objective.
 
-**This repo is able to reproduce quantitative experimental results and qualitative visualizations regarding posterior mean space presented in the paper.**
+**This repo is able to reproduce quantitative experimental results and qualitative visualizations of posterior mean space presented in the paper.**
 
 Please contact junxianh@cs.cmu.edu if you have any questions.
 
@@ -73,7 +73,7 @@ To reproduce this visualization figure, first train the model on the toy dataset
 python toy.py --aggressive 1 --plot_mode multiple
 ```
 
-Here `--plot_mode` can be specified as `single` to reproduce a single-point trajectory figure (Figure 3 in the paper). This command trains a VAE model with aggressive training on synthetic data, and the required statistics is saved in folder `plot_data` (folder would be created automatically if non-existing).
+Here `--plot_mode` can be specified as `single` to reproduce the single-point trajectory figure (Figure 3 in the paper). This command trains a VAE model with aggressive training on synthetic data, and the required statistics is saved in folder `plot_data` (folder would be created automatically if non-existing).
 
 Then run the plotting script:
 
