@@ -104,7 +104,7 @@ Reconstruction:
 python text.py --dataset [dataset] --decode_from [pretrained model path] --decode_input [a text file for reconstruction]
 ```
 
-``--decode_input`` file has one raw sentence per line, wihch is the same format as training data.
+``--decode_input`` file has one raw sentence per line, which is the same format as training data.
 
 Optional `--decoding_strategy` argument can be used to specifiy decoding strategy as `{greedy, beam, sample}`. By default greedy decoding is performed. Generated sentences are saved in folder `samples`.
 
