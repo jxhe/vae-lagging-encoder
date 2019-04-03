@@ -23,6 +23,40 @@ class DecoderBase(nn.Module):
 
         raise NotImplementedError
 
+    def beam_search_decode(self, z, K):
+        """beam search decoding
+        Args:
+            z: (batch_size, nz)
+            K: the beam size
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        raise NotImplementedError
+
+    def sample_decode(self, z):
+        """sampling from z
+        Args:
+            z: (batch_size, nz)
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        raise NotImplementedError
+
+    def greedy_decode(self, z):
+        """greedy decoding from z
+        Args:
+            z: (batch_size, nz)
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        raise NotImplementedError
+
     def log_probability(self, x, z):
         """
         Args:

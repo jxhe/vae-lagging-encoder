@@ -39,11 +39,41 @@ class VAE(nn.Module):
 
         return self.encoder(x)
 
-    def decode(self, z, deterministic):
-        """generate samples from z (perhaps beam search ?)
+    def decode(self, z, strategy, K=5):
+        """generate samples from z given strategy
+
+        Args:
+            z: [batch, nsamples, nz]
+            strategy: "beam" or "greedy" or "sample"
+            K: the beam width parameter
+
+        Returns: List1
+            List1: a list of decoded word sequence
         """
 
-        return self.decoder.decode(z, deterministic)
+        if strategy == "beam":
+            return self.decoder.beam_search_decode(z, K)
+        elif strategy == "greedy":
+            return self.decoder.greedy_decode(z)
+        elif strategy == "sample":
+            return self.decoder.sample_decode(z)
+        else:
+            raise ValueError("the decoding strategy is not supported")
+
+    def reconstruct(self, x, decoding_strategy="greedy", K=5):
+        """reconstruct from input x
+
+        Args:
+            x: (batch, *)
+            decoding_strategy: "beam" or "greedy" or "sample"
+            K: the beam width parameter (if applicable)
+
+        Returns: List1
+            List1: a list of decoded word sequence
+        """
+        z = self.sample_from_inference(x).squeeze(1)
+
+        return self.decode(z, decoding_strategy, K)
 
 
     def loss(self, x, kl_weight, nsamples=1):
@@ -58,7 +88,7 @@ class VAE(nn.Module):
             Tensor2: reconstruction loss shape [batch]
             Tensor3: KL loss shape [batch]
         """
-        
+
         z, KL = self.encode(x, nsamples)
 
         # (batch)
@@ -165,13 +195,24 @@ class VAE(nn.Module):
 
         return log_posterior
 
+    def sample_from_prior(self, nsamples):
+        """sampling from prior distribution
+
+        Returns: Tensor
+            Tensor: samples from prior with shape (nsamples, nz)
+        """
+        return self.prior.sample((nsamples,))
+
+
     def sample_from_inference(self, x, nsamples=1):
         """perform sampling from inference net
         Returns: Tensor
             Tensor: samples from infernece nets with
                 shape (batch_size, nsamples, nz)
         """
-        return self.encoder.sample_from_inference(x, nsamples)
+        z, _ = self.encoder.sample(x, nsamples)
+
+        return z
 
 
     def sample_from_posterior(self, x, nsamples):

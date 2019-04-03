@@ -78,33 +78,6 @@ class GaussianEncoderBase(nn.Module):
 
         return mu_expd + torch.mul(eps, std_expd)
 
-    def sample_from_inference(self, x, nsamples=1):
-        """this function samples from q(Z | X), for the Gaussian family we use
-        mode locations as samples
-
-        Returns: Tensor
-            Tensor: the mode locations, shape [batch_size, nsamples, nz]
-
-        """
-        # (batch_size, nz)
-        mu, logvar = self.forward(x)
-        # std = logvar.mul(0.5).exp()
-
-        # batch_size = mu.size(0)
-        # zrange = zrange.unsqueeze(1).expand(zrange.size(0), batch_size, self.nz)
-
-        # infer_dist = torch.distributions.normal.Normal(mu, std)
-
-        # # (batch_size, k^2)
-        # log_prob = infer_dist.log_prob(zrange).sum(dim=-1).permute(1, 0)
-
-
-        # # (K^2)
-        # log_prob = log_prob.sum(dim=0)
-        batch_size, nz = mu.size()
-
-        return mu.unsqueeze(1).expand(batch_size, nsamples, nz)
-
     def eval_inference_dist(self, x, z, param=None):
         """this function computes log q(z | x)
         Args:

@@ -8,7 +8,7 @@ from .encoder import GaussianEncoderBase
 from ..utils import log_sum_exp
 
 class LSTMEncoder(GaussianEncoderBase):
-    """Gaussian LSTM Encoder with constant-length input"""
+    """Gaussian LSTM Encoder with constant-length batching"""
     def __init__(self, args, vocab_size, model_init, emb_init):
         super(LSTMEncoder, self).__init__()
         self.ni = args.ni
@@ -75,7 +75,7 @@ class LSTMEncoder(GaussianEncoderBase):
 
 
 class VarLSTMEncoder(LSTMEncoder):
-    """Gaussian LSTM Encoder with variable-length input"""
+    """Gaussian LSTM Encoder with variable-length batching"""
     def __init__(self, args, vocab_size, model_init, emb_init):
         super(VarLSTMEncoder, self).__init__(args, vocab_size, model_init, emb_init)
 

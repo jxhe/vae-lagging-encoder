@@ -35,6 +35,13 @@ def init_config():
     parser.add_argument('--eval', action='store_true', default=False, help='compute iw nll')
     parser.add_argument('--load_path', type=str, default='')
 
+
+    # decoding
+    parser.add_argument('--decode_from', type=str, default="", help="pretrained model path")
+    parser.add_argument('--decoding_strategy', type=str, choices=["greedy", "beam", "sample"], default="greedy")
+    parser.add_argument('--decode_input', type=str, default="", help="input text file to perform reconstruction")
+
+
     # annealing paramters
     parser.add_argument('--warm_up', type=int, default=10, help="number of annealing epochs")
     parser.add_argument('--kl_start', type=float, default=1.0, help="starting KL weight")
@@ -62,7 +69,7 @@ def init_config():
     args.seed = seed_set[args.taskid]
 
     id_ = "%s_aggressive%d_kls%.2f_warm%d_%d_%d_%d" % \
-            (args.dataset, args.aggressive, args.kl_start, 
+            (args.dataset, args.aggressive, args.kl_start,
              args.warm_up, args.jobid, args.taskid, args.seed)
 
     save_path = os.path.join(save_dir, id_ + '.pt')
@@ -87,6 +94,23 @@ def init_config():
         torch.backends.cudnn.deterministic = True
 
     return args
+
+
+def reconstruct(model, data, strategy, fname, device):
+    with open(fname, "w") as fout:
+        for batch_data, sent_len in data.data_iter(batch_size=1, device=device,
+                                                   batch_first=True, shuffle=False):
+            decoded_batch = model.reconstruct(batch_data, strategy)
+
+            for sent in decoded_batch:
+                fout.write(" ".join(sent) + "\n")
+
+def sample_from_prior(model, z, strategy, fname):
+    with open(fname, "w") as fout:
+        decoded_batch = model.decode(z, strategy)
+
+        for sent in decoded_batch:
+            fout.write(" ".join(sent) + "\n")
 
 
 def test(model, test_data_batch, mode, args, verbose=True):
@@ -195,49 +219,6 @@ def calc_au(model, test_data_batch, delta=0.01):
     return (au_var >= delta).sum().item(), au_var
 
 
-def sample_sentences(vae, vocab, device, num_sentences):
-    vae.eval()
-    sampled_sents = []
-    for i in range(num_sentences):
-        z = vae.sample_from_prior(1)
-        z = z.view(1,1,-1)
-        start = vocab.word2id['<s>']
-        # START = torch.tensor([[[start]]])
-        START = torch.tensor([[start]])
-        end = vocab.word2id['</s>']
-        START = START.to(device)
-        z = z.to(device)
-        vae.eval()
-        sentence = vae.decoder.sample_text(START, z, end, device)
-        decoded_sentence = vocab.decode_sentence(sentence)
-        sampled_sents.append(decoded_sentence)
-    for i, sent in enumerate(sampled_sents):
-        print(i,":",' '.join(sent))
-
-def visualize_latent(args, vae, device, test_data):
-    f = open('yelp_embeddings_z','w')
-    g = open('yelp_embeddings_labels','w')
-
-    test_data_batch, test_label_batch = test_data.create_data_batch_labels(batch_size=args.batch_size, device=device, batch_first=True)
-    for i in range(len(test_data_batch)):
-        batch_data = test_data_batch[i]
-        batch_label = test_label_batch[i]
-        batch_size, sent_len = batch_data.size()
-        means, _ = vae.encoder.forward(batch_data)
-        for i in range(batch_size):
-            mean = means[i,:].cpu().detach().numpy().tolist()
-            for val in mean:
-                f.write(str(val)+'\t')
-            f.write('\n')
-        for label in batch_label:
-            g.write(label+'\n')
-        fo
-        print(mean.size())
-        print(logvar.size())
-        fooo
-
-
-
 def main(args):
 
     class uniform_initializer(object):
@@ -276,6 +257,9 @@ def main(args):
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
 
+    device = torch.device("cuda" if args.cuda else "cpu")
+    args.device = device
+
     if args.enc_type == 'lstm':
         encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
         args.enc_nh = args.dec_nh
@@ -284,9 +268,30 @@ def main(args):
 
     decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
-    device = torch.device("cuda" if args.cuda else "cpu")
-    args.device = device
     vae = VAE(encoder, decoder, args).to(device)
+
+    if args.decode_from != "":
+        print('begin decoding')
+        vae.load_state_dict(torch.load(args.decode_from))
+        vae.eval()
+        save_dir = "samples/"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        path = ".".join(args.decode_from.split("/")[-1].split(".")[:-1]) + \
+                "_{}".format(args.decoding_strategy)
+        with torch.no_grad():
+            if args.decode_input != "":
+                decode_data = MonoTextData(args.decode_input, vocab=vocab)
+
+                reconstruct(vae, decode_data, args.decoding_strategy,
+                    os.path.join(save_dir, path + ".rec"), args.device)
+            else:
+                z = vae.sample_from_prior(100)
+                sample_from_prior(vae, z, args.decoding_strategy,
+                    os.path.join(save_dir, path + ".sample"))
+
+        return
+
 
     if args.eval:
         print('begin evaluation')
@@ -478,7 +483,7 @@ def main(args):
                 decay_cnt += 1
                 enc_optimizer = optim.SGD(vae.encoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
                 dec_optimizer = optim.SGD(vae.decoder.parameters(), lr=opt_dict["lr"], momentum=args.momentum)
-            
+
         else:
             opt_dict["not_improved"] = 0
             opt_dict["best_loss"] = loss

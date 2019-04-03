@@ -12,14 +12,17 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 import numpy as np
 
 from .decoder import DecoderBase
+from .decoder_helper import BeamSearchNode
 
 class LSTMDecoder(DecoderBase):
-    """LSTM decoder with constant-length data"""
+    """LSTM decoder with constant-length batching"""
     def __init__(self, args, vocab, model_init, emb_init):
         super(LSTMDecoder, self).__init__()
         self.ni = args.ni
         self.nh = args.dec_nh
         self.nz = args.nz
+        self.vocab = vocab
+        self.device = args.device
 
         # no padding when setting padding_idx to -1
         self.embed = nn.Embedding(len(vocab), args.ni, padding_idx=-1)
@@ -59,38 +62,6 @@ class LSTMDecoder(DecoderBase):
         for param in self.parameters():
             model_init(param)
         emb_init(self.embed.weight)
-
-    def sample_text(self, input, z, EOS, device):
-        sentence = [input]
-        max_index = 0
-
-        input_word = input
-        batch_size, n_sample, _ = z.size()
-        seq_len = 1
-        z_ = z.expand(batch_size, seq_len, self.nz)
-        seq_len = input.size(1)
-        softmax = torch.nn.Softmax(dim=0)
-        while max_index != EOS and len(sentence) < 100:
-            # (batch_size, seq_len, ni)
-            word_embed = self.embed(input_word)
-            word_embed = torch.cat((word_embed, z_), -1)
-            c_init = self.trans_linear(z).unsqueeze(0)
-            h_init = torch.tanh(c_init)
-            if len(sentence) == 1:
-                h_init = h_init.squeeze(dim=1)
-                c_init = c_init.squeeze(dim=1)
-                output, hidden = self.lstm.forward(word_embed, (h_init, c_init))
-            else:
-                output, hidden = self.lstm.forward(word_embed, hidden)
-            # (batch_size * n_sample, seq_len, vocab_size)
-            output_logits = self.pred_linear(output)
-            output_logits = output_logits.view(-1)
-            probs = softmax(output_logits)
-            # max_index = torch.argmax(output_logits)
-            max_index = torch.multinomial(probs, num_samples=1)
-            input_word = torch.tensor([[max_index]]).to(device)
-            sentence.append(max_index)
-        return sentence
 
     def decode(self, input, z):
         """
@@ -189,9 +160,215 @@ class LSTMDecoder(DecoderBase):
 
         return -self.reconstruct_error(x, z)
 
+    def beam_search_decode(self, z, K=5):
+        """beam search decoding, code is based on
+        https://github.com/pcyin/pytorch_basic_nmt/blob/master/nmt.py
+
+        the current implementation decodes sentence one by one, further batching would improve the speed
+
+        Args:
+            z: (batch_size, nz)
+            K: the beam width
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        decoded_batch = []
+        batch_size, nz = z.size()
+
+        # (1, batch_size, nz)
+        c_init = self.trans_linear(z).unsqueeze(0)
+        h_init = torch.tanh(c_init)
+
+        # decoding goes sentence by sentence
+        for idx in range(batch_size):
+            # Start with the start of the sentence token
+            decoder_input = torch.tensor([[self.vocab["<s>"]]], dtype=torch.long, device=self.device)
+            decoder_hidden = (h_init[:,idx,:].unsqueeze(1), c_init[:,idx,:].unsqueeze(1))
+
+            node = BeamSearchNode(decoder_hidden, None, decoder_input, 0., 1)
+            live_hypotheses = [node]
+
+            completed_hypotheses = []
+
+            t = 0
+            while len(completed_hypotheses) < K and t < 100:
+                t += 1
+
+                # (len(live), 1)
+                decoder_input = torch.cat([node.wordid for node in live_hypotheses], dim=0)
+
+                # (1, len(live), nh)
+                decoder_hidden_h = torch.cat([node.h[0] for node in live_hypotheses], dim=1)
+                decoder_hidden_c = torch.cat([node.h[1] for node in live_hypotheses], dim=1)
+
+                decoder_hidden = (decoder_hidden_h, decoder_hidden_c)
+
+
+                # (len(live), 1, ni) --> (len(live), 1, ni+nz)
+                word_embed = self.embed(decoder_input)
+                word_embed = torch.cat((word_embed, z[idx].view(1, 1, -1).expand(
+                    len(live_hypotheses), 1, nz)), dim=-1)
+
+                output, decoder_hidden = self.lstm(word_embed, decoder_hidden)
+
+                # (len(live), 1, vocab_size)
+                output_logits = self.pred_linear(output)
+                decoder_output = F.log_softmax(output_logits, dim=-1)
+
+                prev_logp = torch.tensor([node.logp for node in live_hypotheses], dtype=torch.float, device=self.device)
+                decoder_output = decoder_output + prev_logp.view(len(live_hypotheses), 1, 1)
+
+                # (len(live) * vocab_size)
+                decoder_output = decoder_output.view(-1)
+
+                # (K)
+                log_prob, indexes = torch.topk(decoder_output, K-len(completed_hypotheses))
+
+                live_ids = indexes // len(self.vocab)
+                word_ids = indexes % len(self.vocab)
+
+                live_hypotheses_new = []
+                for live_id, word_id, log_prob_ in zip(live_ids, word_ids, log_prob):
+                    node = BeamSearchNode((decoder_hidden[0][:, live_id, :].unsqueeze(1),
+                        decoder_hidden[1][:, live_id, :].unsqueeze(1)),
+                        live_hypotheses[live_id], word_id.view(1, 1), log_prob_, t)
+
+                    if word_id.item() == self.vocab["</s>"]:
+                        completed_hypotheses.append(node)
+                    else:
+                        live_hypotheses_new.append(node)
+
+                live_hypotheses = live_hypotheses_new
+
+                if len(completed_hypotheses) == K:
+                    break
+
+            for live in live_hypotheses:
+                completed_hypotheses.append(live)
+
+            utterances = []
+            for n in sorted(completed_hypotheses, key=lambda node: node.logp, reverse=True):
+                utterance = []
+                utterance.append(self.vocab.id2word(n.wordid.item()))
+                # back trace
+                while n.prevNode != None:
+                    n = n.prevNode
+                    utterance.append(self.vocab.id2word(n.wordid.item()))
+
+                utterance = utterance[::-1]
+
+                utterances.append(utterance)
+
+                # only save the top 1
+                break
+
+            decoded_batch.append(utterances[0])
+
+        return decoded_batch
+
+    def greedy_decode(self, z):
+        """greedy decoding from z
+        Args:
+            z: (batch_size, nz)
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        batch_size = z.size(0)
+        decoded_batch = [[] for _ in range(batch_size)]
+
+        # (batch_size, 1, nz)
+        c_init = self.trans_linear(z).unsqueeze(0)
+        h_init = torch.tanh(c_init)
+
+        decoder_hidden = (h_init, c_init)
+        decoder_input = torch.tensor([self.vocab["<s>"]] * batch_size, dtype=torch.long, device=self.device).unsqueeze(1)
+        end_symbol = torch.tensor([self.vocab["</s>"]] * batch_size, dtype=torch.long, device=self.device)
+
+        mask = torch.ones((batch_size), dtype=torch.uint8, device=self.device)
+        length_c = 1
+        while mask.sum().item() != 0 and length_c < 100:
+
+            # (batch_size, 1, ni) --> (batch_size, 1, ni+nz)
+            word_embed = self.embed(decoder_input)
+            word_embed = torch.cat((word_embed, z.unsqueeze(1)), dim=-1)
+
+            output, decoder_hidden = self.lstm(word_embed, decoder_hidden)
+
+            # (batch_size, 1, vocab_size) --> (batch_size, vocab_size)
+            decoder_output = self.pred_linear(output)
+            output_logits = decoder_output.squeeze(1)
+
+            # (batch_size)
+            max_index = torch.argmax(output_logits, dim=1)
+            # max_index = torch.multinomial(probs, num_samples=1)
+
+            decoder_input = max_index.unsqueeze(1)
+            length_c += 1
+
+            for i in range(batch_size):
+                if mask[i].item():
+                    decoded_batch[i].append(self.vocab.id2word(max_index[i].item()))
+
+            mask = torch.mul((max_index != end_symbol), mask)
+
+        return decoded_batch
+
+    def sample_decode(self, z):
+        """sampling decoding from z
+        Args:
+            z: (batch_size, nz)
+
+        Returns: List1
+            List1: the decoded word sentence list
+        """
+
+        batch_size = z.size(0)
+        decoded_batch = [[] for _ in range(batch_size)]
+
+        # (batch_size, 1, nz)
+        c_init = self.trans_linear(z).unsqueeze(0)
+        h_init = torch.tanh(c_init)
+
+        decoder_hidden = (h_init, c_init)
+        decoder_input = torch.tensor([self.vocab["<s>"]] * batch_size, dtype=torch.long, device=self.device).unsqueeze(1)
+        end_symbol = torch.tensor([self.vocab["</s>"]] * batch_size, dtype=torch.long, device=self.device)
+
+        mask = torch.ones((batch_size), dtype=torch.uint8, device=self.device)
+        length_c = 1
+        while mask.sum().item() != 0 and length_c < 100:
+
+            # (batch_size, 1, ni) --> (batch_size, 1, ni+nz)
+            word_embed = self.embed(decoder_input)
+            word_embed = torch.cat((word_embed, z.unsqueeze(1)), dim=-1)
+
+            output, decoder_hidden = self.lstm(word_embed, decoder_hidden)
+
+            # (batch_size, 1, vocab_size) --> (batch_size, vocab_size)
+            decoder_output = self.pred_linear(output)
+            output_logits = decoder_output.squeeze(1)
+
+            # (batch_size)
+            sample_prob = F.softmax(output_logits, dim=1)
+            sample_index = torch.multinomial(sample_prob, num_samples=1).squeeze(1)
+
+            decoder_input = sample_index.unsqueeze(1)
+            length_c += 1
+
+            for i in range(batch_size):
+                if mask[i].item():
+                    decoded_batch[i].append(self.vocab.id2word(sample_index[i].item()))
+
+            mask = torch.mul((sample_index != end_symbol), mask)
+
+        return decoded_batch
+
 
 class VarLSTMDecoder(LSTMDecoder):
-    """LSTM decoder with constant-length data"""
+    """LSTM decoder with variable-length batching"""
     def __init__(self, args, vocab, model_init, emb_init):
         super(VarLSTMDecoder, self).__init__(args, vocab, model_init, emb_init)
 

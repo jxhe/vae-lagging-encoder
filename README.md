@@ -35,12 +35,12 @@ Our approach is inspired by the definition of "posterior mean space", which help
 
 Datasets used in this paper can be downloaded with:
 
-```shell
+```
 python prepare_data.py
 ```
 
 By default it downloads all four datasets used in the paper, downloaded data is located in `./datasets/`. A `--dataset` option can be provided to specify the dataset name to be downloaded:
-```shell
+```
 python prepare_data.py --dataset yahoo
 ```
 The argument should be `synthetic`, `yahoo`, `yelp`, or `omniglot`. 
@@ -73,7 +73,7 @@ We project 500 data samples onto posterior mean space and observe the change ove
 
 To reproduce this visualization figure, first train the model on the toy dataset to save statistics required for visualization (training uses GPU when available):
 
-```shell
+```
 python toy.py --aggressive 1 --plot_mode multiple
 ```
 
@@ -81,7 +81,7 @@ Here `--plot_mode` can be specified as `single` to reproduce the single-point tr
 
 Then run the plotting script:
 
-```shell
+```
 python plot_scripts/plot_multiple.py --aggressive 1 --iter 2000
 ```
 
@@ -89,12 +89,30 @@ Here `--aggressive` specifies the aggressive training mode (should be the same a
 
 Similarly, run `plot_single.py` is able to generate the single-point trajectory figure.
 
+## Text Generation
+Text generation is supported through sampling from either the prior or posterior (i.e. reconstruction). 
+
+Generation from prior (by default it generates 100 samples):
+
+```
+python text.py --dataset [dataset] --decode_from [pretrained model path]
+```
+
+Reconstruction:
+
+```
+python text.py --dataset [dataset] --decode_from [pretrained model path] --decode_input [a text file for reconstruction]
+```
+
+``--decode_input`` file has one raw sentence per line, wihch is the same format as training data.
+
+Optional `--decoding_strategy` argument can be used to specifiy decoding strategy as `{greedy, beam, sample}`. By default greedy decoding is performed. Generated sentences are saved in folder `samples`.
 
 
 ## Mutual Information and KL Curve
 
 To plot the KL and mutual information curves over course of training (Figure 5 in the paper), first direct standard output to a file at training time:
-```shell
+```
 python text.py --dataset yelp --aggressive 1 --warm_up 10 --kl_start 1.0 > yelp.log
 ```
 
