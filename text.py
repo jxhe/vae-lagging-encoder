@@ -12,6 +12,7 @@ from torch import nn, optim
 from data import MonoTextData
 from modules import VAE
 from modules import LSTMEncoder, LSTMDecoder
+from logger import Logger
 
 clip_grad = 5.0
 decay_epoch = 2
@@ -61,9 +62,13 @@ def init_config():
     args.cuda = torch.cuda.is_available()
 
     save_dir = "models/%s" % args.dataset
+    log_dir = "logs/%s" % args.dataset
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
 
     seed_set = [783435, 101, 202, 303, 404, 505, 606, 707, 808, 909]
     args.seed = seed_set[args.taskid]
@@ -76,6 +81,9 @@ def init_config():
 
     args.save_path = save_path
     print("save path", args.save_path)
+
+    args.log_path = os.path.join(log_dir, id_ + ".log")
+    print("log path", args.log_path)
 
     # load config file into args
     config_file = "config.config_%s" % args.dataset
@@ -515,4 +523,7 @@ def main(args):
 
 if __name__ == '__main__':
     args = init_config()
+    if args.decode_from == "" and not args.eval:
+        sys.stdout = Logger(args.log_path)
     main(args)
+

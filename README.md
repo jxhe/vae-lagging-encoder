@@ -56,6 +56,7 @@ image data:
 ```
 python image.py --dataset omniglot --aggressive 1 --warm_up 10 --kl_start 0.1
 ```
+Logs would be printed on standard output and also saved into folder `logs`.
 
 Here:
 
@@ -104,16 +105,16 @@ Reconstruction:
 python text.py --dataset [dataset] --decode_from [pretrained model path] --decode_input [a text file for reconstruction]
 ```
 
-``--decode_input`` file has one raw sentence per line, wihch is the same format as training data.
+``--decode_input`` file has one raw sentence per line, which is the same format as training data.
 
 Optional `--decoding_strategy` argument can be used to specifiy decoding strategy as `{greedy, beam, sample}`. By default greedy decoding is performed. Generated sentences are saved in folder `samples`.
 
 
 ## Mutual Information and KL Curve
 
-To plot the KL and mutual information curves over course of training (Figure 5 in the paper), first direct standard output to a file at training time:
+To plot the KL and mutual information curves over course of training (Figure 5 in the paper), first run:
 ```
-python text.py --dataset yelp --aggressive 1 --warm_up 10 --kl_start 1.0 > yelp.log
+python text.py --dataset yelp --aggressive 1 --warm_up 10 --kl_start 1.0
 ```
 
 Then please refer to `plot_scripts/plot_log.ipynb` as an example to read the log file and generate plots.
