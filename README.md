@@ -28,8 +28,8 @@ Our approach is inspired by the definition of "posterior mean space", which help
 
 ## Requirements
 
-* Python 3
-* PyTorch 0.4
+* Python >= 3.6
+* PyTorch >= 0.4
 
 ## Data
 
