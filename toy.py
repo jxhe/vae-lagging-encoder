@@ -269,14 +269,15 @@ def main(args):
 
     model_init = uniform_initializer(0.01)
     emb_init = uniform_initializer(0.1)
+    
+    device = torch.device("cuda" if args.cuda else "cpu")
+    args.device = device
 
     encoder = LSTMEncoder(args, vocab_size, model_init, emb_init)
     args.enc_nh = args.dec_nh
 
     decoder = LSTMDecoder(args, vocab, model_init, emb_init)
 
-    device = torch.device("cuda" if args.cuda else "cpu")
-    args.device = device
     vae = VAE(encoder, decoder, args).to(device)
 
 
