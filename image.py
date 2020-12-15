@@ -240,7 +240,7 @@ def main(args):
         vae.eval()
         with torch.no_grad():
             sample_z = vae.sample_from_prior(400).to(device)
-            sample_x, sample_probs = vae.decode(sample_z, False)
+            sample_x, sample_probs = vae.decoder.decode(sample_z, False)
         image_file = 'sample_binary_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
         save_image(sample_x.data.cpu(), os.path.join(save_dir, image_file), nrow=20)
         image_file = 'sample_cont_from_%s.png' % (args.sample_from.split('/')[-1][:-3])
